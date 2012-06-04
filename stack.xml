@@ -1,0 +1,22 @@
+<stack>
+  <description brief="cob_scenario_states">
+
+    cob_scenario_states
+
+  </description>
+  <author>Maintained by Florian Weisshardt</author>
+  <license>LGPL</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_scenario_states</url>
+  <depend stack="arm_navigation" /> <!-- kinematics_msgs -->
+  <depend stack="cob_command_tools" /> <!-- cob_script_server -->
+  <depend stack="cob_driver" /> <!-- cob_tray_sensors -->
+  <depend stack="cob_manipulation" /> <!-- cob_mmcontroller -->
+  <depend stack="cob_object_perception" /> <!-- cob_object_detection_msgs, cob_object_detection_fake -->
+  <depend stack="common_msgs" /> <!-- actionlib_msgs -->
+  <depend stack="executive_smach" /> <!-- smach_ros, smach -->
+  <depend stack="geometry" /> <!-- tf -->
+  <depend stack="ros" />
+  <depend stack="ros_comm" /> <!-- rospy -->
+
+</stack>

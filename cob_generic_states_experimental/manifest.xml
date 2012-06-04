@@ -4,8 +4,8 @@
      cob_generic_states_experimental
 
   </description>
-  <author>tys</author>
-  <license>BSD</license>
+  <author>Tobias Sing</author>
+  <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_generic_states_experimental</url>
   <depend package="rospy"/>
