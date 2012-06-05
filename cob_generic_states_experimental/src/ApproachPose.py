@@ -125,12 +125,16 @@ class approach_pose(smach.State):
 		# check for goal status
 		while True:
 			
-			# finished with success
+			# finished with succeeded
 			if (handle_base.get_state() == 3):
 				sss.set_light('green')
 				return 'succeeded'
-			# finished, but goal not reached
+			# finished with aborted
 			elif (handle_base.get_state() == 4):
+				sss.set_light('green')
+				return 'not_reached'
+			# finished with preempted or canceled
+			elif (handle_base.get_state() == 2) or (handle_base.get_state() == 8):
 				sss.set_light('green')
 				return 'not_reached'
 			# return with error
