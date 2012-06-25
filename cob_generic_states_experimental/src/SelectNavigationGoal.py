@@ -7,6 +7,9 @@ import smach_ros
 from simple_script_server import *  # import script
 sss = simple_script_server()
 
+import random
+from nav_msgs.srv import *
+
 class SelectNavigationGoal(smach.State):
 	def __init__(self):
 		smach.State.__init__(self, 
@@ -26,10 +29,9 @@ class SelectNavigationGoal(smach.State):
 		th_min = -3.14
 		th_max = 3.14
 		th_increment = 2*3.1414926/4
-			
-	
+		
 		# generate new list, if list is empty
-		if len(self.goals) == 0:
+		if len(self.goals) == 0:	
 			x = x_min
 			y = y_min
 			th = th_min
@@ -49,5 +51,7 @@ class SelectNavigationGoal(smach.State):
 				th = th_min
 
 		print self.goals
-		userdata.base_pose = self.goals.pop()
+		#userdata.base_pose = self.goals.pop() # takes last element out of list
+		userdata.base_pose = self.goals.pop(random.randint(0,len(self.goals)-1)) # takes random element out of list
+
 		return 'selected'
