@@ -6,12 +6,13 @@ import smach_ros
 from simple_script_server import *  # import script
 sss = simple_script_server()
 
-class Grasp(smach.State):
+class SelectNavigationGoal(smach.State):
 	def __init__(self):
 		smach.State.__init__(self, 
-			outcomes=['grasped','not_grasped','failed'],
-			input_keys=['object_name'])
+			outcomes=['selected','not_selected','failed'],
+			output_keys=['base_pose'])
 	def execute(self, userdata):
-		sss.say(["I am grasping " + userdata.object_name + " now."])
+		sss.say(["I am selecting a navigation goal"])
 		sss.sleep(2)
-		return 'grasped'
+		userdata.base_pose = "home"
+		return 'selected'
