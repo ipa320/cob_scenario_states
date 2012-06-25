@@ -56,7 +56,7 @@
 #################################################################
 
 import roslib
-roslib.load_manifest('cob_generic_states')
+roslib.load_manifest('cob_generic_states_experimental')
 import rospy
 import smach
 import smach_ros
@@ -72,12 +72,12 @@ sss = simple_script_server()
 # \timeout	timeout in [sec] after which the state will return 'not_reached', 0 and negative = unlimited
 #
 # This state will try to move the robot to the given pose.
-class approach_pose(smach.State):
+class ApproachPose(smach.State):
 
 	def __init__(self, pose = "", mode = "omni", timeout = 30.0):
 		smach.State.__init__(
 			self,
-			outcomes=['succeeded', 'not_reached', 'failed'],
+			outcomes=['reached', 'not_reached', 'failed'],
 			input_keys=['base_pose'])
 
 		# Subscriber to base_odometry
@@ -123,12 +123,12 @@ class approach_pose(smach.State):
 		freq = 2.0 # Hz
 		
 		# check for goal status
-		while True:
+		while not rospy.is_shutdown():
 			
 			# finished with succeeded
 			if (handle_base.get_state() == 3):
 				sss.set_light('green')
-				return 'succeeded'
+				return 'reached'
 			# finished with aborted
 			elif (handle_base.get_state() == 4):
 				sss.set_light('green')

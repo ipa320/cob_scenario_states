@@ -6,12 +6,13 @@ import smach_ros
 from simple_script_server import *  # import script
 sss = simple_script_server()
 
-class Grasp(smach.State):
+class DetectPeople(smach.State):
 	def __init__(self):
 		smach.State.__init__(self, 
-			outcomes=['grasped','not_grasped','failed'],
-			input_keys=['object_name'])
+			outcomes=['found','not_found','failed'],
+			input_keys=[])
 	def execute(self, userdata):
-		sss.say(["I am grasping " + userdata.object_name + " now."])
+		sss.say(["I am detecting people now."])
 		sss.sleep(2)
-		return 'grasped'
+		sss.say(["I found two persons."])
+		return 'found'
