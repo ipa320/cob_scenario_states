@@ -121,6 +121,7 @@ class ApproachPose(smach.State):
 		stopping_time = 0.0
 		announce_time = 0.0
 		freq = 2.0 # Hz
+		yellow = False
 		
 		# check for goal status
 		while not rospy.is_shutdown():
@@ -164,9 +165,12 @@ class ApproachPose(smach.State):
 				# set light to "thinking" after not moving for 2 sec
 				if round(stopping_time) >= 2.0:
 					sss.set_light("blue")
+					yellow = False
 			else:
 				# robot is moving
-				sss.set_light("yellow")
+				if not yellow:
+					sss.set_light("yellow")
+					yellow = True
 			
 			# sleep
 			loop_rate.sleep()
