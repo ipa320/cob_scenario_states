@@ -20,8 +20,6 @@ class DetectObjectsFrontside(smach.State):
 			input_keys=[])
 	def execute(self, userdata):
 		sss.say(["I am detecting objects now."])
-		sss.sleep(2)
-		sss.say(["I found three objects."])
 		return 'detected'
 
 class DetectObjectsBackside(smach.State):

@@ -15,8 +15,8 @@ class PublishDetectedObjects(smach.State):
 	def __init__(self):
 		smach.State.__init__(
 			self,
-			outcomes=['published', 'quit'],
-			input_keys=['detection'])
+			outcomes=['published'],
+			input_keys=['object'])
 		self.color_inc = 0
 		self.vis_pub = rospy.Publisher('detected_object_marker', Marker)
 
@@ -26,8 +26,7 @@ class PublishDetectedObjects(smach.State):
 		object_bb = detection.bounding_box_lwh
 
 		marker = Marker()
-		marker.header.frame_id = "base_link"
-		marker.header.stamp = rospy.Time.now()
+		marker.header = detection.pose.header
 		marker.ns = "ExploreScene"
 		marker.id = 0
 		marker.type = 1
@@ -48,7 +47,7 @@ class PublishDetectedObjects(smach.State):
 	
 	def execute(self,userdata):
 		#publish all detected objects
-		self.insert_detected_object(userdata.detection)
+		self.insert_detected_object(userdata.object)
 		return 'published'
 
 
@@ -57,18 +56,17 @@ class SM(smach.StateMachine):
 		smach.StateMachine.__init__(self,outcomes=['ended'])
 		with self:
 			smach.StateMachine.add('STATE',PublishDetectedObjects(),
-				transitions={'quit':'STATE',
-					'published':'STATE'})
+				transitions={'published':'STATE'})
 
 	
 
 if __name__=='__main__':
 	rospy.init_node('PublishDetectedObjects')
 	sm = SM()
-	sm.userdata.detection = Detection()
-	sm.userdata.detection.bounding_box_lwh.x = 0.1
-	sm.userdata.detection.bounding_box_lwh.y = 0.1
-	sm.userdata.detection.bounding_box_lwh.z = 0.1
+	sm.userdata.object = Detection()
+	sm.userdata.object.bounding_box_lwh.x = 0.1
+	sm.userdata.object.bounding_box_lwh.y = 0.1
+	sm.userdata.object.bounding_box_lwh.z = 0.1
 	sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
 	sis.start()
 	outcome = sm.execute()

@@ -17,6 +17,7 @@
   <depend package="nav_msgs"/>
   <depend package="cob_script_server"/>
   <depend package="cob_object_detection_msgs"/>
+  <depend package="visualization_msgs"/>
 
   <python path="${prefix}/states"/>
 
