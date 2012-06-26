@@ -13,6 +13,7 @@ from std_msgs.msg import *
 from sensor_msgs.msg import *
 from geometry_msgs.msg import *
 from cob_object_detection_msgs.msg import *
+from cob_srvs.srv import *
 import tf_conversions.posemath as pm
 import copy
 
@@ -27,8 +28,9 @@ class PressButton(smach.State):
         self.listener = tf.TransformListener()
         rospy.Subscriber("/sdh_controller/one_pad_contact", Bool, self.touch_cb)
         rospy.Subscriber("/arm_controller/wrench", WrenchStamped, self.wrench_cb)
+        self.stiffness = rospy.ServiceProxy('/arm_controller/set_joint_stiffness', SetJointStiffness)
         self.arm_stop_request = False
-        self.wrench_touch_treshold = 0.5
+        self.wrench_touch_treshold = 25
     
     def touch_cb(self,msg):
         if msg.data:
@@ -40,14 +42,11 @@ class PressButton(smach.State):
          
     def execute(self, userdata):
         sss.say(["I am pressing a button now."])
-        #print userdata.button
-        
-        #button_pose_bl = self.listener.transformPose("/base_link", userdata.button.pose)
-        #[r,p,y] = tf.transformations.euler_from_quaternion([userdata.button.pose.pose.orientation.x,userdata.button.pose.pose.orientation.y,userdata.button.pose.pose.orientation.z,userdata.button.pose.pose.orientation.w])
         
         # move in front of button (initial rotation to orient finger to button)
         pose_offset = Pose()
-        pose_offset.position.y = -0.1
+        pose_offset.position.y = -0.15 # move 0.15m in front of button
+        pose_offset.position.y += -0.20 # offset from arm_7_link to finger tip
         [new_x, new_y, new_z, new_w] = tf.transformations.quaternion_from_euler(-1.5708, 0.0, 0.0) # rpy 
         pose_offset.orientation.x = new_x
         pose_offset.orientation.y = new_y
@@ -64,36 +63,50 @@ class PressButton(smach.State):
             return 'not_pressed'
 
         # move towards button (relative movement in button_frame)
-        pose_offset.position.y = 0.1
+        pose_offset.position.y = 0.3
         tmp_pose = copy.deepcopy(userdata.button.pose)
         tmp_pose.pose = integrate_pose(tmp_pose.pose, pose_offset)
         # button_js
-        button_js, error_code = sss.calculate_ik(tmp_pose)        
+        button_js, error_code = sss.calculate_ik(tmp_pose)
         if(error_code.val != error_code.SUCCESS):
             if error_code.val != error_code.NO_IK_SOLUTION:
                 sss.set_light('red')
             rospy.logerr("Ik button Failed")
             return 'not_pressed'
 
-        # move away from button (relative movement in button_frame)
-        pose_offset.position.y = -0.1
-        tmp_pose = copy.deepcopy(userdata.button.pose)
-        tmp_pose.pose = integrate_pose(tmp_pose.pose, pose_offset)
+#        # move away from button (relative movement in button_frame)
+#        pose_offset.position.y = -0.15
+#        tmp_pose = copy.deepcopy(userdata.button.pose)
+#        tmp_pose.pose = integrate_pose(tmp_pose.pose, pose_offset)
         # post_button_js
-        post_button_js, error_code = sss.calculate_ik(tmp_pose)        
-        if(error_code.val != error_code.SUCCESS):
-            if error_code.val != error_code.NO_IK_SOLUTION:
-                sss.set_light('red')
-            rospy.logerr("Ik button Failed")
-            return 'not_pressed'
+#        post_button_js, error_code = sss.calculate_ik(tmp_pose)
+#        if(error_code.val != error_code.SUCCESS):
+#            if error_code.val != error_code.NO_IK_SOLUTION:
+#                sss.set_light('red')
+#            rospy.logerr("Ik button Failed")
+#            return 'not_pressed'
 
         sss.move_planned("arm", [list(pre_button_js.position)])
-        handle_arm = sss.move("arm", [list(button_js.position)])
+
+        sss.move("sdh","button")
+
+        # make arm soft TODO: handle stiffness for schunk arm
+        try:
+            self.stiffness([300,300,300,100,100,100,100])
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+            self.retries = 0
+            return 'failed'
+        handle_arm = sss.move("arm", [list(button_js.position)],False)
         
         self.arm_stop_request = False
-        r = rospy.Rate(10)
+        r = rospy.Rate(30)
         while not rospy.is_shutdown():
-            if handle_arm.get_state() == 3:
+            if self.arm_stop_request:
+                rospy.loginfo("arm stop requested")
+                sss.stop("arm")
+                break
+            elif handle_arm.get_state() == 3:
                 rospy.loginfo("arm reached button pose without touching the button")
                 return 'not_pressed'
                 break
@@ -104,14 +117,19 @@ class PressButton(smach.State):
             elif handle_arm.get_state() == 9:
                 rospy.loginfo("arm movement is lost")
                 break
-            elif self.arm_stop_request:
-                rospy.loginfo("arm stop requested")
-                handle_arm.stop()
-                break
             r.sleep()
         
-        sss.move("arm", [list(post_button_js.position)])
-        sss.move_planned("folded")
+        sss.move("arm", [list(pre_button_js.position)])
+        sss.move("sdh","home")
+
+        # make arm stiff TODO: handle stiffness for schunk arm
+        try:
+            self.stiffness([500,500,500,300,300,300,300])
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+            self.retries = 0
+            return 'failed'
+        sss.move("arm","folded")
         return 'pressed'
 
 
@@ -148,7 +166,7 @@ if __name__=='__main__':
     sm.userdata.button.pose.header.stamp = rospy.Time.now()
     sm.userdata.button.pose.header.frame_id = "/base_link"
     sm.userdata.button.pose.pose.position.x = -0.5
-    sm.userdata.button.pose.pose.position.y = -0.1
+    sm.userdata.button.pose.pose.position.y = -0.5
     sm.userdata.button.pose.pose.position.z = 1.0
     [new_x, new_y, new_z, new_w] = tf.transformations.quaternion_from_euler(0.0, 0.0, 3.14) # rpy 
     sm.userdata.button.pose.pose.orientation.x = new_x
