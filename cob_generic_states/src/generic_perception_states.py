@@ -70,30 +70,16 @@ sss = simple_script_server()
 from cob_object_detection_msgs.msg import *
 from cob_object_detection_msgs.srv import *
 
-## Detect state
-#
-# This state will try to detect an object.
-class detect_object(smach.State):
-	def __init__(self,object_name = "",max_retries = 1):
-		smach.State.__init__(
-			self,
-			outcomes=['succeeded','no_object','no_more_retries','failed'],
-			input_keys=['object_name'],
-			output_keys=['object'])
 
-		self.object_list = DetectionArray()
-		self.max_retries = max_retries
-		self.retries = 0
+## detect_obect
+#
+# In this class the actual object detection is executed exactly one time
+# No further actions are executed
+class ObjectDetector:
+	def __init__(self, detector_srv = '/object_detection/detect_object', object_name = "", min_dist = 2  ):
+		self.detector_srv = detector_srv 
 		self.object_name = object_name
-		self.srv_name_object_detection = '/object_detection/detect_object'
-		
-		self.torso_poses = []
-		self.torso_poses.append("back_right")
-		self.torso_poses.append("back_right_extreme")
-		self.torso_poses.append("back")
-		self.torso_poses.append("back_extreme")
-		self.torso_poses.append("back_left")
-		self.torso_poses.append("back_left_extreme")
+		self.min_dist = min_dist
 
 	def execute(self, userdata):
 		# determine object name
@@ -103,9 +89,117 @@ class detect_object(smach.State):
 			object_name = userdata.object_name
 		else: # this should never happen
 			rospy.logerr("Invalid userdata 'object_name'")
-			self.retries = 0
-			sss.set_light('red')
 			return 'failed'
+
+		# check if object detection service is available
+		try:
+			rospy.wait_for_service(self.detector_srv,10)
+		except rospy.ROSException, e:
+			print "Service not available: %s"%e # no object found within min_dist start value
+			return 'failed'
+
+		# call object detection service
+		try:
+			detector_service = rospy.ServiceProxy(self.detector_srv, DetectObjects)
+			req = DetectObjectsRequest()
+			req.object_name.data = object_name
+			res = detector_service(req)
+		except rospy.ServiceException, e:
+			print "Service call failed: %s"%e
+			return 'failed'
+
+		# HACK TODO FIXME call object detection service TWICE TO GET CURRENT IMAGE
+		try:
+			detector_service = rospy.ServiceProxy(self.srv_name_object_detection, DetectObjects)
+			req = DetectObjectsRequest()
+			req.object_name.data = object_name
+			res = detector_service(req)
+		except rospy.ServiceException, e:
+			print "Service call failed: %s"%e
+			return 'failed'
+			
+		# check for no objects
+		if len(res.object_list.detections) <= 0:
+			rospy.logerr("No objects found")
+			return 'no_object'
+		
+		# select nearest object in x-y-plane in head_camera_left_link
+		obj = Detection()
+		for item in res.object_list.detections:
+			dist = sqrt(item.pose.pose.position.x*item.pose.pose.position.x+item.pose.pose.position.y*item.pose.pose.position.y)
+			if dist < self.min_dist:
+				self.min_dist = dist
+				obj = copy.deepcopy(item)
+		
+		# check if an object could be found within the min_dist start value
+		if obj.label == "":
+			rospy.logerr("Object not within target range")
+			return 'no_object'
+
+		#check if label of object fits to requested object_name
+		if obj.label != object_name:
+			rospy.logerr("The object name doesn't fit.")
+			return 'no_object'
+
+		# HACK for timestamp
+		obj.pose.header.stamp = rospy.Time.now()
+
+		# we succeeded to detect an object
+		userdata.object = obj
+		
+		return 'success'
+		
+
+
+## Detect state
+#
+# This state will try to detect an object in the front of care-o-bot.
+
+class DetectObjectBackside(smach.State):
+	def __init__(self,namespace, detector_srv = '/object_detection/detect_object', object_name = "",max_retries = 1):
+		smach.State.__init__(
+			self,
+			outcomes=['succeeded','no_object','no_more_retries','failed'],
+			input_keys=['object_name'],
+			output_keys=['object'])
+
+		self.object_list = DetectionArray() # UHR: DO we need that? It is not referenced 
+		self.max_retries = max_retries
+		self.retries = 0
+		self.namespace = namespace
+
+		self.object_detector = ObjectDetector(object_name, detector_srv,2)
+	
+		#ToDo: Read from yaml	
+		
+		self.torso_poses = []
+
+		
+		if rospy.has_param(namespace):
+			params = rospy.get_param(namespace)
+			torso_poses = params("torso_poses")
+			
+			rospy.loginfo("Found %d torso poses for state %s on ROS parameter server" %len(torso_poses) %namespace, )
+			for pose in torso_poses:
+				if (pose[0] == 'joints'): #(joints,0;0;0)
+					self.torso_poses.append((pose[1],pose[2],pose[3]))
+				elif (pose[0] == 'xyz'): #(xyz;0;5;3)
+					#TODO call look at point in world (MDL)
+					print "Calling LookAtPointInWorld"
+				else: #string:
+					self.torso_poses.append(pose)
+		else:
+			rospy.loginfo("No torso_poses found for state %s on ROS parameter server, taking 'home' as default" %namespace)
+			self.torso_poses.append("home") # default pose
+
+		#self.torso_poses.append("back_right")
+		#self.torso_poses.append("back_right_extreme")
+		#self.torso_poses.append("back")
+		#self.torso_poses.append("back_extreme")
+		#self.torso_poses.append("back_left")
+		#self.torso_poses.append("back_left_extreme")
+
+	def execute(self, userdata):
 
 		sss.set_light('blue')
 	
@@ -120,9 +214,14 @@ class detect_object(smach.State):
 			return 'no_more_retries'
 		
 		# move sdh as feedback
-		sss.move("sdh","cylclosed",False)
+		sss.move("sdh","cylclosed",False) # UHR: could we choose a different signal? This looks a bit awkward to visitors. We have the speech output anyway - so I would just omit this statement...
 		
 		# make the robot ready to inspect the scene
+		if type(userdata.object_name) is str:
+			object_name = userdata.object_name
+		else:
+			object_name = "given object"
+
 		if self.retries == 0: # only move arm, sdh and head for the first try
 			sss.set_light('yellow')
 			sss.say(["I will now search for the " + object_name + "."],False)
@@ -133,81 +232,145 @@ class detect_object(smach.State):
 			handle_head.wait()
 			handle_torso.wait()
 			sss.set_light('blue')
-		handle_torso = sss.move("torso",self.torso_poses[self.retries % len(self.torso_poses)]) # have an other viewing point for each retry
+
+		# have an other viewing point for each retry
+		handle_torso = sss.move("torso",self.torso_poses[self.retries % len(self.torso_poses)]) 
 		
 		# move sdh as feedback
-		sss.move("sdh","home",False)
+		sss.move("sdh","home",False) # UHR: see above
 		
 		# wait for image to become stable
 		sss.sleep(2)
 	
-		# check if object detection service is available
-		try:
-			rospy.wait_for_service(self.srv_name_object_detection,10)
-		except rospy.ROSException, e:
-			print "Service not available: %s"%e
-			self.retries = 0 # no object found within min_dist start value
-			sss.set_light('red')
-			return 'failed'
-
-		# call object detection service
-		try:
-			detector_service = rospy.ServiceProxy(self.srv_name_object_detection, DetectObjects)
-			req = DetectObjectsRequest()
-			req.object_name.data = object_name
-			res = detector_service(req)
-		except rospy.ServiceException, e:
-			print "Service call failed: %s"%e
+		result = self.object_detector.execute(userdata)
+		if result == 'failed':
 			self.retries = 0
 			sss.set_light('red')
-			return 'failed'
-
-		# HACK TODO FIXME call object detection service TWICE TO GET CURRENT IMAGE
-		try:
-			detector_service = rospy.ServiceProxy(self.srv_name_object_detection, DetectObjects)
-			req = DetectObjectsRequest()
-			req.object_name.data = object_name
-			res = detector_service(req)
-		except rospy.ServiceException, e:
-			print "Service call failed: %s"%e
+		elif results == "no_object":
+			self.retries += 1
+		else: #suceeded
 			self.retries = 0
-			sss.set_light('red')
-			return 'failed'
-			
-		# check for no objects
-		if len(res.object_list.detections) <= 0:
-			rospy.logerr("No objects found")
-			self.retries += 1
-			return 'no_object'
+			sss.move("torso","home")
 		
-		# select nearest object in x-y-plane in head_camera_left_link
-		min_dist = 2 # start value in m
-		obj = Detection()
-		for item in res.object_list.detections:
-			dist = sqrt(item.pose.pose.position.x*item.pose.pose.position.x+item.pose.pose.position.y*item.pose.pose.position.y)
-			if dist < min_dist:
-				min_dist = dist
-				obj = copy.deepcopy(item)
-		
-		# check if an object could be found within the min_dist start value
-		if obj.label == "":
-			rospy.logerr("Object not within target range")
-			self.retries += 1
-			return 'no_object'
+		return result
 
-		#check if label of object fits to requested object_name
-		if obj.label != object_name:
-			rospy.logerr("The object name doesn't fit.")
-			self.retries += 1
-			return 'no_object'
 
-		# HACK for timestamp
-		obj.pose.header.stamp = rospy.Time.now()
+## Detect front state
+#
+# This state will try to detect an object in the back of care-o-bot.
+# It encorporates the movement of the arm to ensure that is not in the vision space  of the cameras
 
-		# we succeeded to detect an object
-		userdata.object = obj
-		
-		sss.move("torso","home")
-		
+class DetectObjectFrontside(smach.State):
+	def __init__(self,namespace, detector_srv = '/object_detection/detect_object', object_name = "",max_retries = 1):
+		smach.State.__init__(
+			self,
+			outcomes=['succeeded','no_object','no_more_retries','failed'],
+			input_keys=['object_name'],
+			output_keys=['object'])
+
+		self.object_list = DetectionArray() # UHR: Do we need that? It is not referenced in the class ...
+		self.max_retries = max_retries
 		self.retries = 0
-		return 'succeeded'
+		self.torso_poses = []
+
+		self.object_detector = ObjectDetector(object_name, detector_srv)
+	
+		#ToDo: Read from yaml	
+		if rospy.has_param(namespace):
+			params = rospy.get_param(namespace)
+			torso_poses = params["torso_poses"]
+			for pose in torso_poses:
+				if (pose[0] == 'joints'): #(joints,0;0;0)
+					self.torso_poses.append((pose[1],pose[2],pose[3]))
+				elif (pose[0] == 'xyz'): #(xyz;0;5;3)
+					#TODO call look at point in world (MDL)
+					print "Call LookAtPointInWorld"
+				else: #string:
+					self.torso_poses.append(pose)
+		else:
+			rospy.loginfo("No torso_poses found for state %s on ROS parameter server, taking 'home' as default" %namespace)
+			self.torso_poses.append("home") # default pose
+
+		#self.torso_poses = []
+		#self.torso_poses.append("front_right")
+		#self.torso_poses.append("front_right_extreme")
+		#self.torso_poses.append("front")
+		#self.torso_poses.append("front_extreme")
+		#self.torso_poses.append("front_left")
+		#self.torso_poses.append("front_left_extreme")
+
+	def execute(self, userdata):
+
+		sss.set_light('blue')
+	
+		# check if maximum retries reached
+		if self.retries > self.max_retries:
+			sss.set_light('yellow')
+			self.retries = 0
+			handle_torso = sss.move("torso","home",False)
+			handle_torso.wait()
+			handle_arm = sss.move("arm","look_at_table-to-folded")
+			sss.set_light('blue')
+			return 'no_more_retries'
+		
+		# move sdh as feedback
+		sss.move("sdh","cylclosed",False) # UHR: could we choose a different signal? This looks a bit awkward to visitors. We have the speech output anyway - so I would just omit this statement...
+		
+		# make the robot ready to inspect the scene
+		if type(userdata.object_name) is str:
+			object_name = userdata.object_name
+		else:
+			object_name = "given object"
+
+		if self.retries == 0: # only move sdh and head for the first try
+			sss.set_light('yellow')
+			sss.say(["I will now search for the " + object_name + "."],False)
+			handle_torso = sss.move("torso","shake",False)
+			handle_head = sss.move("head","front",False)
+			handle_head.wait()
+			handle_torso.wait()
+			sss.set_light('blue')
+
+		# have an other viewing point for each retry
+		handle_torso = sss.move("torso",self.torso_poses[self.retries % len(self.torso_poses)]) 
+		
+		# move sdh as feedback
+		sss.move("sdh","home",False) # UHR: see above
+		
+		# wait for image to become stable
+		sss.sleep(2)
+	
+		result = self.object_detector.execute(userdata)
+		if result == 'failed':
+			self.retries = 0
+			sss.set_light('red')
+		elif results == "no_object":
+			self.retries += 1
+		else: #suceeded
+			self.retries = 0
+			sss.move("torso","home")
+		
+		return result
+
+
+class SM(smach.StateMachine):
+        def __init__(self):
+                smach.StateMachine.__init__(self,outcomes=['ended'])
+                with self:
+                        smach.StateMachine.add('DETECT_OBJECT_TABLE',DetectObjectFrontside("DETECT_OBJECT_TABLE"),
+                                transitions={'no_object':'DETECT_OBJECT_TABLE',
+                                        'failed':'ended',
+					'succeeded':'ended',
+				        'no_more_retries':'ended'})
+
+
+
+if __name__=='__main__':
+        rospy.init_node('DetectObjectFrontside')
+        sm = SM()
+        sm.userdata.object_name = 'milk_box'
+        sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
+        sis.start()
+        outcome = sm.execute()
+        rospy.spin()
+
