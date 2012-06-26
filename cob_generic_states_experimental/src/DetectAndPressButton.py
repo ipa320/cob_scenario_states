@@ -62,7 +62,7 @@ class SM(smach.StateMachine):
 if __name__=='__main__':
     rospy.init_node('DetectAndPressButton')
     sm = SM()
-    sm.userdata.object_name
+    sm.userdata.object_name = "Care-O-bot"
     sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
     sis.start()
     outcome = sm.execute()
