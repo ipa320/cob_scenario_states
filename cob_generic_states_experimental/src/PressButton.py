@@ -40,9 +40,7 @@ class PressButton(smach.State):
         if msg.wrench.force.z >= self.wrench_touch_treshold:
             self.arm_stop_request = True
          
-    def execute(self, userdata):
-        sss.say(["I am pressing a button now."])
-        
+    def execute(self, userdata):        
         # move in front of button (initial rotation to orient finger to button)
         pose_offset = Pose()
         pose_offset.position.y = -0.15 # move 0.15m in front of button
@@ -86,7 +84,10 @@ class PressButton(smach.State):
 #            rospy.logerr("Ik button Failed")
 #            return 'not_pressed'
 
-        sss.move_planned("arm", [list(pre_button_js.position)])
+        sss.say(["I am pressing a button now."])
+        handle_arm = sss.move_planned("arm", [list(pre_button_js.position)])
+        if handle_arm.get_error_code() > 0:
+        	return 'not_pressed'
 
         sss.move("sdh","button")
 

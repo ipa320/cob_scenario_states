@@ -14,7 +14,7 @@ class DetectAndPressButton(smach.StateMachine):
                                          input_keys=['object_name'])
         with self:
 
-            smach.StateMachine.add('DETECT',DetectObjectsBackside('Care-O-bot'),
+            smach.StateMachine.add('DETECT',DetectObjectsBackside(),
                                    transitions={'detected':'PRESS',
                                                 'not_detected':'not_pressed',
                                                 'failed':'failed'},
@@ -62,7 +62,7 @@ class SM(smach.StateMachine):
 if __name__=='__main__':
     rospy.init_node('DetectAndPressButton')
     sm = SM()
-    sm.userdata.object_name = "Care-O-bot"
+    sm.userdata.object_name = "blub"
     sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
     sis.start()
     outcome = sm.execute()
