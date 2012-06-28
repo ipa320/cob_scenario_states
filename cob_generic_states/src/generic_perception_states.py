@@ -70,6 +70,7 @@ sss = simple_script_server()
 from cob_object_detection_msgs.msg import *
 from cob_object_detection_msgs.srv import *
 
+import os
 
 ## detect_obect
 #
@@ -80,6 +81,9 @@ class ObjectDetector:
 		self.detector_srv = detector_srv 
 		self.object_name = object_name
 		self.min_dist = min_dist
+		print "Contructor ObjectDetector:",self.detector_srv
+	
+		print os.environ['PYTHONPATH']
 
 	def execute(self, userdata):
 		# determine object name
@@ -270,10 +274,12 @@ class DetectObjectFrontside(smach.State):
 
 		self.object_list = DetectionArray() # UHR: Do we need that? It is not referenced in the class ...
 		self.max_retries = max_retries
+		self.detector_srv = detector_srv
 		self.retries = 0
 		self.torso_poses = []
 
-		self.object_detector = ObjectDetector(object_name, detector_srv)
+		print "DetectObjectFrontside", self.detector_srv
+		self.object_detector = ObjectDetector(object_name, self.detector_srv)
 	
 		#ToDo: Read from yaml	
 		if rospy.has_param(namespace):

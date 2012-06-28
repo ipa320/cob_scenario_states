@@ -21,89 +21,50 @@ from ObjectDetector import *
 #
 # This state will try to detect an object in the back of care-o-bot.
 # It encorporates the movement of the arm to ensure that is not in the vision space  of the cameras
+# \param namespace Indicates the namespace for the torso poses pushed onto the parameter server (we could have several detection states
+#        with different desired torso poses)
+# \param object_names Input list containing the objects that are looked for
+# \param detector_srv Detection service that is called for the actual obhect detection
+#    	 e.g. /object_detection/detect_object
+# \param mode logical mode for detection result \	
+#	 all: outcome is success only if all objects in object_names are detected
+#	 one: outcome is success if at least one object from object_names list is detected 
+# 
 
 class DetectObjectFrontside(smach.State):
-	def __init__(self,namespace, object_names = [], detector_srv = '/object_detection/detect_object'):
+	def __init__(self,namespace, object_names = [], detector_srv = '/object_detection/detect_object',mode = 'all'):
 		smach.State.__init__(
 			self,
 			outcomes=['detected','not_detected','failed'],
 			input_keys=['object_names'],
 			output_keys=['objects'])
-
-		self.torso_poses = []
-		self.object_names = object_names
-		self.object_detector = ObjectDetector(object_names, detector_srv)
-	
-		#ToDo: Read from yaml	
-		if rospy.has_param(namespace):
-			params = rospy.get_param(namespace)
-			torso_poses = params["torso_poses"]
-			for pose in torso_poses:
-				if (pose[0] == 'joints'): #(joints,0;0;0)
-					self.torso_poses.append((pose[1],pose[2],pose[3]))
-				elif (pose[0] == 'xyz'): #(xyz;0;5;3)
-					#TODO call look at point in world (MDL)
-					print "Call LookAtPointInWorld"
-				else: #string:
-					self.torso_poses.append(pose)
+		
+		if mode not in ['all','one']:
+			rospy.logwarn("Invalid mode: must be 'all', or 'one', selecting default value = 'all'")
+			self.mode = 'all'	
 		else:
-			rospy.loginfo("No torso_poses found for state %s on ROS parameter server, taking 'home' as default" %namespace)
-			self.torso_poses.append("home") # default pose
+			self.mode = mode
+
+		self.object_detector = ObjectDetector(namespace, object_names, detector_srv,self.mode)
+	
 
 	def execute(self, userdata):
-		# determine object_names
-		if self.object_names != []:
-			object_names = self.object_names
-		else
-			object_names = userdata.object_names
-		
-		for name in object_names:
-			if type(name) is str:
 			
-			else:# this should never happen
-				rospy.logerr("Invalid userdata 'object_names':%s",object_names)
-				sss.set_light('red')
-				return 'failed'
 
 		sss.set_light('blue')
 
+		handle_torso = sss.move("torso","shake",False)
+		handle_head = sss.move("head","front",False)
+		handle_head.wait()
+		handle_torso.wait()
+		sss.set_light('blue')
 
-		if self.retries == 0: # only move sdh and head for the first try
-			sss.set_light('yellow')
-			sss.say(["I will now search for the " + object_name + "."],False)
-			handle_torso = sss.move("torso","shake",False)
-			handle_head = sss.move("head","front",False)
-			handle_head.wait()
-			handle_torso.wait()
-			sss.set_light('blue')
-
-	
-		objects = []
-		for pose in self.torso_poses:
-			# have an other viewing point for each retry
-			handle_torso = sss.move("torso",pose)
-			
-			
-			result,detected_object = self.object_detector.execute(userdata)
-			if result == 'failed':
-				break
-			elif result == 'detected'
-				objects.append(detected_object)
-			
-			
-			# wenn von jedem eines gefunden, dann aufhoeren
-			break
-				
-
-
-		#write to userdata
+		result, userdata.objects = self.object_detector.execute(userdata)
 
 		# ... cleanup robot components
 		sss.move("torso","home")
 		sss.set_light('green')
 
-		if len(userdata.objects) == 0:
-			return 'not_detected'
 		
 		return result
 
@@ -127,7 +88,7 @@ class SM(smach.StateMachine):
 if __name__=='__main__':
         rospy.init_node('detect_object_frontside')
         sm = SM()
-        sm.userdata.object_name = 'milk'
+        sm.userdata.object_names = ['milk']
         sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
         sis.start()
         outcome = sm.execute()
