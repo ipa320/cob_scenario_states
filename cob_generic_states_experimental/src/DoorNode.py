@@ -19,7 +19,7 @@ from sensor_msgs.msg import LaserScan
 pub_marker = rospy.Publisher("marker2", MarkerArray)
 
 # global variables
-min_opening_width = 0.9
+min_opening_width = 0.7
 current_state = False
 min_angle = -3.141 / 2.4
 max_angle = 3.141 / 2.4
