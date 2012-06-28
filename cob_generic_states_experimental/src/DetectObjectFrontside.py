@@ -16,11 +16,9 @@ from cob_object_detection_msgs.srv import *
 
 from ObjectDetector import *
 
-
 ## Detect front state
 #
-# This state will try to detect an object in the back of care-o-bot.
-# It encorporates the movement of the arm to ensure that is not in the vision space  of the cameras
+# This state will try to detect an object in the front of care-o-bot.
 # \param namespace Indicates the namespace for the torso poses pushed onto the parameter server (we could have several detection states
 #        with different desired torso poses)
 # \param object_names Input list containing the objects that are looked for
@@ -29,10 +27,9 @@ from ObjectDetector import *
 # \param mode logical mode for detection result \	
 #	 all: outcome is success only if all objects in object_names are detected
 #	 one: outcome is success if at least one object from object_names list is detected 
-# 
 
 class DetectObjectFrontside(smach.State):
-	def __init__(self,namespace, object_names = [], detector_srv = '/object_detection/detect_object',mode = 'all'):
+	def __init__(self,namespace, object_names = [], detector_srv = '/object_detection/detect_object',mode='all'):
 		smach.State.__init__(
 			self,
 			outcomes=['detected','not_detected','failed'],
@@ -49,10 +46,10 @@ class DetectObjectFrontside(smach.State):
 	
 
 	def execute(self, userdata):
-			
 
 		sss.set_light('blue')
 
+		#Preparations for object detection
 		handle_torso = sss.move("torso","shake",False)
 		handle_head = sss.move("head","front",False)
 		handle_head.wait()
@@ -63,8 +60,11 @@ class DetectObjectFrontside(smach.State):
 
 		# ... cleanup robot components
 		sss.move("torso","home")
-		sss.set_light('green')
 
+		if result == "failed":
+			sss.set_light('red')
+		else:
+			sss.set_light('green')
 		
 		return result
 
@@ -79,7 +79,7 @@ class SM(smach.StateMachine):
                 smach.StateMachine.__init__(self,outcomes=['ended'])
                 with self:
                         smach.StateMachine.add('DETECT_OBJECT_TABLE',DetectObjectFrontside("detect_object_table"),
-                                transitions={'not_detected':'DETECT_OBJECT_TABLE',
+                                transitions={'not_detected':'ended',
                                         'failed':'ended',
 					'detected':'ended'})
 
@@ -88,7 +88,8 @@ class SM(smach.StateMachine):
 if __name__=='__main__':
         rospy.init_node('detect_object_frontside')
         sm = SM()
-        sm.userdata.object_names = ['milk']
+        sm.userdata.object_names = ['milk','pringles']
+        rospy.set_param("detect_object_table/torso_poses",['home','front','back','left','right'])
         sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
         sis.start()
         outcome = sm.execute()

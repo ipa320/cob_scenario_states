@@ -87,7 +87,7 @@ from cob_object_detection_msgs.srv import *
 #	 one: outcome is success if at least one object from object_names list is detected 
 
 class ObjectDetector:
-	def __init__(self, namespace, object_names = [], detector_srv = '/object_detection/detect_object', mode = 'all'  ):
+	def __init__(self, namespace, object_names = [], detector_srv = '/object_detection/detect_object', mode = 'all' ):
 		self.detector_srv = detector_srv 
 		self.object_names = object_names
 		self.detected_objects = []
@@ -96,18 +96,26 @@ class ObjectDetector:
 	
 		# get torso poses that should be used for the detection from Parameter Server
 		if rospy.has_param(namespace):
-			params = rospy.get_param(namespace)
-			torso_poses = params("torso_poses")
+			torso_poses = rospy.get_param(namespace + "/torso_poses")
 			
-			rospy.loginfo("Found %d torso poses for state %s on ROS parameter server" %len(torso_poses) %namespace, )
+			rospy.loginfo("Found %d torso poses for state %s on ROS parameter server", len(torso_poses), namespace)
 			for pose in torso_poses:
-				if (pose[0] == 'joints'): #(joints,0;0;0)
-					self.torso_poses.append((pose[1],pose[2],pose[3]))
-				elif (pose[0] == 'xyz'): #(xyz;0;5;3)
-					#TODO call look at point in world (MDL)
-					print "Calling LookAtPointInWorld"
-				else: #string:
+				if type(pose) is str:
 					self.torso_poses.append(pose)
+				elif type(pose) is list:
+					if pose[0] == 'joints': #(joints,0;0;0)
+						if type(pose[1]) is list:
+							self.torso_poses.append([pose[1]])
+						else:
+							print "no valid torso pose specified. Not a list: ",str(pose)
+							return 'failed'
+					elif (pose[0] == 'xyz'): #(xyz;0;5;3)
+						#TODO call look at point in world (MDL)
+						print "Calling LookAtPointInWorld, not implemented yet"
+						return 'failed'
+				else:
+					print "no valid torso pose specified: ",str(pose)
+					return "failed"
 		else:
 			rospy.loginfo("No torso_poses found for state %s on ROS parameter server, taking 'home' as default" %namespace)
 			self.torso_poses.append("home") # default pose
@@ -115,12 +123,12 @@ class ObjectDetector:
 		
 		if mode not in ['all','one']:
 			rospy.logwarn("Invalid mode: must be 'all', or 'one', selecting default value = 'all'")
-			self.mode = 'all'	
+			return 'failed'
 		else:
 			self.mode = mode
 
 	def execute(self, userdata):
-
+		print self.torso_poses
 		# determine object name
 		if self.object_names != []:
 			object_names = self.object_names
@@ -142,41 +150,70 @@ class ObjectDetector:
 			print "Service not available: %s"%e
 			return 'failed'
 	
+		sss.say(["I am now looking for the asked objects"],False)
+	
 		#iterate through torso poses until objects have been detected according to the mode	
 		for pose in self.torso_poses:
 			# have an other viewing point for each retry
 			handle_torso = sss.move("torso",pose)
-		
-			# call object detection service
-			try:
-				sss.say(["I am now looking for the asked objects"],False)
-				detector_service = rospy.ServiceProxy(self.detector_srv, DetectObjects)
-				req = DetectObjectsRequest()
-				req.object_names.data = object_names
-				res = detector_service(req)
-			except rospy.ServiceException, e:
-				print "Service call failed: %s"%e
-				return 'failed'
-				
-			#merge detection into detected_object list
-			for _object in res.object_list.detections:
-				# TODO check if object with same label is inside bounding box
-				self.detected_objects.append(_object)
 
-			#check if required  objects are detected
-			detected_all = true
-			if mode == 'one':
+#			# call object detection service
+#			try:
+#				detector_service = rospy.ServiceProxy(self.detector_srv, DetectObjects)
+#				req = DetectObjectsRequest()
+#				req.object_name.data = object_names
+#				res = detector_service(req)
+#			except rospy.ServiceException, e:
+#				print "Service call failed: %s"%e
+#				return 'failed'
+#			
+#			print res
+#			
+#			#merge detection into detected_object list
+#			for _object in res.object_list.detections:
+#				# TODO check if object with same label is inside bounding box
+#				self.detected_objects.append(_object)
+
+			########## TODO HACK FIXME: should be "req.object_names.data = object_names" --> adapt in object detection component
+			for name in object_names:
+				# call object detection service
+				try:
+					detector_service = rospy.ServiceProxy(self.detector_srv, DetectObjects)
+					req = DetectObjectsRequest()
+					req.object_name.data = name # [0] 
+					res = detector_service(req)
+				except rospy.ServiceException, e:
+					print "Service call failed: %s"%e
+					return 'failed'
+			
+				print res
+			
+				#merge detection into detected_object list
+				for _object in res.object_list.detections:
+					# TODO check if object with same label is inside bounding box
+					self.detected_objects.append(_object)
+			########## HACK END
+
+			#check if required objects are detected
+			
+			if self.mode == 'one':
 				for _searched_object in object_names:
 					for _object in self.detected_objects:
 						if _object.label == _searched_object:
 							return 'detected', self.detected_objects
-			elif mode == 'all':
+			elif self.mode == 'all':
+				detected_all = True
 				for _searched_object in object_names:
+					detected = False
 					for _object in self.detected_objects:
-						if _searched_object != _object.label:
-							detected_all = false
+						if _searched_object == _object.label:
+							detected = True
 							break
-				if detected_all == true:
+					detected_all &= detected
+					if detected == False:
+						break		
+					
+				if detected_all == True:
 					return 'detected', self.detected_objects
 			
 			
@@ -184,7 +221,7 @@ class ObjectDetector:
 				
 					
 		rospy.loginfo("No objects found")
-		return 'not_detected', None
+		return 'not_detected', self.detected_objects
 				
 				
 				
