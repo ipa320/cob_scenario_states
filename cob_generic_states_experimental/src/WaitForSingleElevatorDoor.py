@@ -36,8 +36,9 @@ import rospy
 import smach
 import smach_ros
 from cob_generic_states_experimental.srv import Door
+import math
 
-class WaitForOpenElevatorDoors(smach.State):
+class WaitForSingleElevatorDoor(smach.State):
 
   def __init__(self, waitDuration, useTeachedPoses=True):
     self.useTeachedPoses = useTeachedPoses
@@ -50,8 +51,7 @@ class WaitForOpenElevatorDoors(smach.State):
   def execute(self, userdata):
     if self.useTeachedPoses:
       try:
-        self.elevator_in_left = rospy.get_param('/script_server/base/elevator_in_left')
-        self.elevator_in_right = rospy.get_param('/script_server/base/elevator_in_right')
+        self.post_door = rospy.get_param('/script_server/base/post_door')
       except:
         print 'parameters missing:'
         print '/script_server/base/elevator_in_left'
@@ -72,19 +72,18 @@ class WaitForOpenElevatorDoors(smach.State):
       t1 = rospy.Time.now()
       doorFunc = rospy.ServiceProxy('/door_state', Door)
       doorStatus = doorFunc().doors
-      if len(doorStatus)==1:
-        if doorStatus[0].y > 0.3:  
-          doorOpen = True
-          if self.useTeachedPoses:
-            userdata.base_pose=self.elevator_in_left
-          else:
-            userdata.base_pose=[doorStatus[0].x,doorStatus[0].y,doorStatus[0].theta]
-        elif doorStatus[0].y < -0.3: 
-          doorOpen = True
-          if self.useTeachedPoses:
-            userdata.base_pose=self.elevator_in_right
-          else:
-            userdata.base_pose=[doorStatus[0].x,doorStatus[0].y,doorStatus[0].theta]
+      minI = 0
+      for i in range(0, len(doorStatus)):
+        if math.fabs(doorStatus[i].y) < math.fabs(doorStatus[minI].y):
+          minI = i
+      if len(doorStatus)>0:
+        print "Door number: " + str(minI)
+        print doorStatus[minI].x, doorStatus[minI].y, doorStatus[minI].theta
+        doorOpen = True
+        if self.useTeachedPoses:
+          userdata.base_pose=self.post_door
+        else:
+          userdata.base_pose=[doorStatus[minI].x, doorStatus[minI].y, doorStatus[minI].theta]
       r.sleep()      
 
     if doorOpen:
