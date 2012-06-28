@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+
+<node name="door_test" pkg="cob_generic_states_experimental" type="DoorNode.py" respawn="false" output="screen" />
+
+
+      	<param name="test_1/ndoors" value="1" /> 
+	<param name="test_1/bag_path" value="~/door_test.bag" />	
+	<param name="test_1/position" value="0.5, 0, 0" />
+	<param name="test_1/tolerance" value="0.1,0.1,0.2" />
+	
+	<test test-name="test_1" pkg="cob_generic_states_experimental" type="test_door.py" name="test_1" />	
+
+	<param name="test_2/ndoors" value="1" /> 
+	<param name="test_2/bag_path" value="~/door_test_cob3-3_rear_open1.bag" />	
+	<param name="test_2/position" value="0.8, -0.78, 0" />
+	<param name="test_2/tolerance" value="0.1,0.1,0.2" />
+	
+	<test test-name="test_2" pkg="cob_generic_states_experimental" type="test_door.py" name="test_2" />
+
+</launch>
