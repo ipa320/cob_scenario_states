@@ -7,11 +7,10 @@ import smach_ros
 
 import random
 from nav_msgs.srv import *
+from cob_object_detection_msgs.msg import *
 
 from ApproachPose import *
-from SelectNavigationGoal import *
-from DetectObjects import *
-from PublishDetectedObjects import *
+from DetectObjectsFrontside import *
 
 class SelectNavigationGoal(smach.State):
 	def __init__(self):
@@ -53,11 +52,30 @@ class SelectNavigationGoal(smach.State):
 				y = y_min
 				th = th_min
 
-		print self.goals
+		#print self.goals
 		#userdata.base_pose = self.goals.pop() # takes last element out of list
 		userdata.base_pose = self.goals.pop(random.randint(0,len(self.goals)-1)) # takes random element out of list
 
 		return 'selected'
+
+class AnnounceFoundObjects(smach.State):
+	def __init__(self):
+		smach.State.__init__(self, 
+			outcomes=['announced','not_announced','failed'],
+			input_keys=['objects'],
+			output_keys=['objects'])
+			
+	def execute(self, userdata):
+		object_names = ""
+		for obj in userdata.objects:
+			object_names += obj.label + ", "
+		
+		if object_names != "":
+			sss.say(["I found: " + object_names])
+		else:
+			sss.say(["I found: nothing"])
+		userdata.objects = []
+		return 'announced'
 
 class Explore(smach.StateMachine):
     def __init__(self):
@@ -75,14 +93,15 @@ class Explore(smach.StateMachine):
                                                 'not_reached':'SELECT_GOAL',
                                                 'failed':'failed'})
 
-
-            smach.StateMachine.add('DETECT',DetectObjectsFrontside(),
-                                   transitions={'detected':'SELECT_GOAL',
-                                                'not_detected':'SELECT_GOAL',
+            smach.StateMachine.add('DETECT',DetectObjectsFrontside(['milk','pringles'],mode="one"),
+                                   transitions={'detected':'ANNOUNCE',
+                                                'not_detected':'ANNOUNCE',
                                                 'failed':'failed'})
 
-            smach.StateMachine.add('PUBLISH_MARKER',PublishDetectedObjects(),
-                                   transitions={'published':'SELECT_GOAL'})
+            smach.StateMachine.add('ANNOUNCE',AnnounceFoundObjects(),
+                                   transitions={'announced':'SELECT_GOAL',
+                                                'not_announced':'SELECT_GOAL',
+                                                'failed':'failed'})
 
 
 

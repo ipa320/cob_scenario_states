@@ -75,11 +75,9 @@ from cob_object_detection_msgs.srv import *
 
 ## detect_object
 #
-# In this class the actual object detection is executed exactly one time
-# No further actions are executed
+# \param object_names Input list containing the objects that are looked for
 # \param namespace Indicates the namespace for the torso poses pushed onto the parameter server (we could have several detection states
 #        with different desired torso poses)
-# \param object_names Input list containing the objects that are looked for
 # \param detector_srv Detection service that is called for the actual obhect detection
 #    	 e.g. /object_detection/detect_object
 # \param mode logical mode for detection result \	
@@ -87,39 +85,41 @@ from cob_object_detection_msgs.srv import *
 #	 one: outcome is success if at least one object from object_names list is detected 
 
 class ObjectDetector:
-	def __init__(self, namespace, object_names = [], detector_srv = '/object_detection/detect_object', mode = 'all' ):
+	def __init__(self, object_names, namespace, detector_srv, mode):
 		self.detector_srv = detector_srv 
 		self.object_names = object_names
 		self.detected_objects = []
 		self.torso_poses = []
+		torso_poses = []
 
 	
 		# get torso poses that should be used for the detection from Parameter Server
-		if rospy.has_param(namespace):
-			torso_poses = rospy.get_param(namespace + "/torso_poses")
-			
-			rospy.loginfo("Found %d torso poses for state %s on ROS parameter server", len(torso_poses), namespace)
-			for pose in torso_poses:
-				if type(pose) is str:
-					self.torso_poses.append(pose)
-				elif type(pose) is list:
-					if pose[0] == 'joints': #(joints,0;0;0)
-						if type(pose[1]) is list:
-							self.torso_poses.append([pose[1]])
-						else:
-							print "no valid torso pose specified. Not a list: ",str(pose)
-							return 'failed'
-					elif (pose[0] == 'xyz'): #(xyz;0;5;3)
-						#TODO call look at point in world (MDL)
-						print "Calling LookAtPointInWorld, not implemented yet"
-						return 'failed'
-				else:
-					print "no valid torso pose specified: ",str(pose)
-					return "failed"
+		if namespace != "" and rospy.has_param(namespace):
+				torso_poses = rospy.get_param(namespace + "/torso_poses")	
+				rospy.loginfo("Found %d torso poses for state %s on ROS parameter server", len(torso_poses), namespace)
 		else:
-			rospy.loginfo("No torso_poses found for state %s on ROS parameter server, taking 'home' as default" %namespace)
-			self.torso_poses.append("home") # default pose
+			rospy.loginfo("No torso_poses found for state %s on ROS parameter server, taking default list of poses" %namespace)
+			torso_poses = ['home','back_left','front','back_right','back_extreme','back_left_extreme','front_right','back_right_extreme','front_left'] # default pose
 		
+		for pose in torso_poses:
+			if type(pose) is str:
+				self.torso_poses.append(pose)
+			elif type(pose) is list:
+				if pose[0] == 'joints': #(joints,0;0;0)
+					if type(pose[1]) is list:
+						self.torso_poses.append([pose[1]])
+					else:
+						print "no valid torso pose specified. Not a list: ",str(pose)
+						return 'failed'
+				elif (pose[0] == 'xyz'): #(xyz;0;5;3)
+					#TODO call look at point in world (MDL)
+					print "Calling LookAtPointInWorld, not implemented yet"
+					return 'failed'
+			else:
+				print "no valid torso pose specified: ",str(pose)
+				return "failed"
+		
+		print self.torso_poses
 		
 		if mode not in ['all','one']:
 			rospy.logwarn("Invalid mode: must be 'all', or 'one', selecting default value = 'all'")
@@ -128,7 +128,6 @@ class ObjectDetector:
 			self.mode = mode
 
 	def execute(self, userdata):
-		print self.torso_poses
 		# determine object name
 		if self.object_names != []:
 			object_names = self.object_names
@@ -143,14 +142,14 @@ class ObjectDetector:
 			return 'failed'
 
 		# check if object detection service is available
-		print self.detector_srv
+		#print self.detector_srv
 		try:
 			rospy.wait_for_service(self.detector_srv,10)
 		except rospy.ROSException, e:
 			print "Service not available: %s"%e
 			return 'failed'
 	
-		sss.say(["I am now looking for the asked objects"],False)
+		sss.say(["I am now looking for objects"],False)
 	
 		#iterate through torso poses until objects have been detected according to the mode	
 		for pose in self.torso_poses:
@@ -186,7 +185,7 @@ class ObjectDetector:
 					print "Service call failed: %s"%e
 					return 'failed'
 			
-				print res
+				#print res
 			
 				#merge detection into detected_object list
 				for _object in res.object_list.detections:

@@ -28,8 +28,8 @@ from ObjectDetector import *
 #	 all: outcome is success only if all objects in object_names are detected
 #	 one: outcome is success if at least one object from object_names list is detected 
 
-class DetectObjectFrontside(smach.State):
-	def __init__(self,namespace, object_names = [], detector_srv = '/object_detection/detect_object',mode='all'):
+class DetectObjectsFrontside(smach.State):
+	def __init__(self, object_names = [], namespace = "", detector_srv = '/object_detection/detect_object', mode='all'):
 		smach.State.__init__(
 			self,
 			outcomes=['detected','not_detected','failed'],
@@ -42,7 +42,7 @@ class DetectObjectFrontside(smach.State):
 		else:
 			self.mode = mode
 
-		self.object_detector = ObjectDetector(namespace, object_names, detector_srv,self.mode)
+		self.object_detector = ObjectDetector(object_names, namespace, detector_srv, self.mode)
 	
 
 	def execute(self, userdata):
@@ -78,7 +78,7 @@ class SM(smach.StateMachine):
         def __init__(self):
                 smach.StateMachine.__init__(self,outcomes=['ended'])
                 with self:
-                        smach.StateMachine.add('DETECT_OBJECT_TABLE',DetectObjectFrontside("detect_object_table"),
+                        smach.StateMachine.add('DETECT_OBJECT_TABLE',DetectObjectsFrontside(),
                                 transitions={'not_detected':'ended',
                                         'failed':'ended',
 					'detected':'ended'})
