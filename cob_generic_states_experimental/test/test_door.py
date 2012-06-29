@@ -28,6 +28,7 @@ global Read
 Read = False
 global bag_path
 
+import logging
 ################################################################### runbag class thread 
 class MyThread1 ( threading.Thread ): # bag thread
 
@@ -37,6 +38,7 @@ class MyThread1 ( threading.Thread ): # bag thread
         subprocess.Popen("rosbag play  -l "+bag_path, shell=True) # run bag	
         while not Read :
             rospy.sleep(0.1)	
+        print "hoho"
         os.system("killall -9 play") #stop bag
 		
 
@@ -85,6 +87,7 @@ class PythonAPITest(unittest.TestCase):
             print '/door_state service not found!'
             self.fail("Service not available")
 
+        self.id()
         print "hi"
         print "hi ndoors: " + str(ndoors)
         try:
@@ -101,14 +104,27 @@ class PythonAPITest(unittest.TestCase):
         doors = res.doors
         if len(doors) != ndoors:
             self.fail("Wrong number of recognized doors, should be " + str(ndoors) + ", detected = " + str(len(doors)))
+        if len(doors) == ndoors:
+            for i in range(0, len(doors)):
+                print doors[i]
+
 
         # Stop rospy						
         def myhook(): 
             print "shutdown time!"
+            logging.info('shutdown')
             rospy.on_shutdown(myhook)
 			
 ################################################################### start the rostest
 if __name__ == '__main__':
+    #logging.basicConfig( stream=sys.stderr )
+    #logging.getLogger( "SomeTest.testSomething" ).setLevel( logging.DEBUG )
+    logging.basicConfig(filename='/home/tys/git/care-o-bot/cob_scenario_states/cob_generic_states_experimental/test/example.log',level=logging.DEBUG)
+    logging.debug('This message should go to the log file')
+    logging.info('So should this')
+    logging.warning('And this, too')
+    #unittest.main()
+
     try:
         rostest.run('rostest', 'door_test', PythonAPITest, sys.argv)
     except KeyboardInterrupt, e:
