@@ -18,7 +18,7 @@ class PutObjectOnTray(smach.State):
 	def __init__(self):
 		smach.State.__init__(
 			self,
-			outcomes=['succeeded', 'failed'],
+			outcomes=['put', 'not_put', 'failed'],
 			input_keys=['object'])
 
 		self.transformer = rospy.ServiceProxy('/cob_pose_transform/get_pose_stamped_transformed', GetPoseStampedTransformed)
@@ -82,4 +82,4 @@ class PutObjectOnTray(smach.State):
 		sss.sleep(3)
 		sss.move("sdh","home")
 		handle_arm.wait()
-		return 'succeeded'
+		return 'put'
