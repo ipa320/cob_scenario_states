@@ -110,20 +110,20 @@ class ObjectDetector:
 						self.torso_poses.append([pose[1]])
 					else:
 						print "no valid torso pose specified. Not a list: ",str(pose)
-						return 'failed'
+						return 'failed', self.detected_objects
 				elif (pose[0] == 'xyz'): #(xyz;0;5;3)
 					#TODO call look at point in world (MDL)
 					print "Calling LookAtPointInWorld, not implemented yet"
 					return 'failed'
 			else:
 				print "no valid torso pose specified: ",str(pose)
-				return "failed"
+				return "failed", self.detected_objects
 		
 		print self.torso_poses
 		
 		if mode not in ['all','one']:
 			rospy.logwarn("Invalid mode: must be 'all', or 'one', selecting default value = 'all'")
-			return 'failed'
+			return 'failed', self.detected_objects
 		else:
 			self.mode = mode
 
@@ -135,11 +135,11 @@ class ObjectDetector:
 			for name in userdata.object_names:
 				if type(name) is not str:
 					rospy.logerr("Invalid userdata: must be list of strings")
-					return 'failed'
+					return 'failed', self.detected_objects
 			object_names = userdata.object_names
 		else: # this should never happen
 			rospy.logerr("Invalid userdata 'object_names'")
-			return 'failed'
+			return 'failed', self.detected_objects
 
 		# check if object detection service is available
 		#print self.detector_srv
@@ -147,7 +147,7 @@ class ObjectDetector:
 			rospy.wait_for_service(self.detector_srv,10)
 		except rospy.ROSException, e:
 			print "Service not available: %s"%e
-			return 'failed'
+			return 'failed', self.detected_objects
 	
 		sss.say(["I am now looking for objects"],False)
 	
@@ -164,7 +164,7 @@ class ObjectDetector:
 #				res = detector_service(req)
 #			except rospy.ServiceException, e:
 #				print "Service call failed: %s"%e
-#				return 'failed'
+#				return 'failed', self.detected_objects
 #			
 #			print res
 #			
@@ -174,6 +174,7 @@ class ObjectDetector:
 #				self.detected_objects.append(_object)
 
 			########## TODO HACK FIXME: should be "req.object_names.data = object_names" --> adapt in object detection component
+			print "calling detector: " + self.detector_srv
 			for name in object_names:
 				# call object detection service
 				try:
@@ -183,7 +184,7 @@ class ObjectDetector:
 					res = detector_service(req)
 				except rospy.ServiceException, e:
 					print "Service call failed: %s"%e
-					return 'failed'
+					return 'failed', self.detected_objects
 			
 				#print res
 			
