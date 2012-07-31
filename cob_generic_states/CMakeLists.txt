@@ -30,4 +30,4 @@ rosbuild_gensrv()
 #target_link_libraries(example ${PROJECT_NAME})
 
 # rostest
-rosbuild_add_rostest(test/generic_states.test TIMEOUT 30.0)
+#rosbuild_add_rostest(test/generic_states.test TIMEOUT 30.0)
