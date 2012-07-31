@@ -128,6 +128,9 @@ class ObjectDetector:
 			self.mode = mode
 
 	def execute(self, userdata):
+		# empty former detection results
+		self.detected_objects = []
+	
 		# determine object name
 		if self.object_names != []:
 			object_names = self.object_names
