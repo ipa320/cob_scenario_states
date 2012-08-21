@@ -10,6 +10,8 @@
   <url>http://ros.org/wiki/cob_skill_api</url>
   <depend package="rospy"/>
   <depend package="smach"/>
+  <depend package="smach_ros"/>
+  <depend package="smach_tutorials"/> <!--Temporary dependency -->
 
 </package>
 
