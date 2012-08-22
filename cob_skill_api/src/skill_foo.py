@@ -28,9 +28,9 @@ class SkillImplementation(SkillsBase):
 	def __init__(self):
 		smach.StateMachine.__init__(self, outcomes=['success', 'failed', 'ended'])
 		with self:
-			self.add('PRECONDITION_CHECK', self.pre_conditions("pre.yaml"), transitions={'success':'SKILL_SM'})
+			self.add('PRECONDITION_CHECK', self.pre_conditions("yaml/pre.yaml"), transitions={'success':'SKILL_SM'})
 			self.add('SKILL_SM',self.execute_machine(), transitions={'success':'POSTCONDITION_CHECK'})
-			self.add('POSTCONDITION_CHECK',self.post_conditions("post.yaml"), transitions={'success':'ended'})
+			self.add('POSTCONDITION_CHECK',self.post_conditions("yaml/post.yaml"), transitions={'success':'ended'})
 
 	def execute_machine(self):
 		mach =  skill_sm_foo.skill_sm_foo()
