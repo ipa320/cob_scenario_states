@@ -19,12 +19,9 @@ from actionlib.msg import *
 
 import pre_check
 import post_check
-
-
 import skill_sm_foo
 
 class SkillImplementation(SkillsBase):
-
 	def __init__(self):
 		smach.StateMachine.__init__(self, outcomes=['success', 'failed', 'ended'])
 		with self:
