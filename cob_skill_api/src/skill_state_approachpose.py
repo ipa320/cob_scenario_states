@@ -1,5 +1,5 @@
 import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+roslib.load_manifest('cob_skill_api')
 import rospy
 import smach
 import smach_ros

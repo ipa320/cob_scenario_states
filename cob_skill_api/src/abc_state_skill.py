@@ -9,7 +9,6 @@ roslib.load_manifest('cob_skill_api')
 import rospy
 import smach
 import smach_ros
-from smach_tutorials.msg import TestAction
 from actionlib import *
 from actionlib.msg import *
 
