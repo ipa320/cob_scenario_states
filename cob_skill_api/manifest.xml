@@ -11,7 +11,6 @@
   <depend package="rospy"/>
   <depend package="smach"/>
   <depend package="smach_ros"/>
-  <depend package="smach_tutorials"/> <!--Temporary dependency -->
 
 </package>
 
