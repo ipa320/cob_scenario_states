@@ -15,7 +15,7 @@ import skill_approachpose
 if __name__ == "__main__":
 
 	rospy.init_node('skill_template')
-	sm = skill_approachpose.SkillImplementation()
+	sm = skill_approachpose.SkillImplementation("yaml/cob3_3.yaml")
 	sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
 	sis.start()
 	outcome = sm.execute()

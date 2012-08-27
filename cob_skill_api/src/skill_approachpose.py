@@ -69,14 +69,14 @@ class SelectNavigationGoal(smach.State):
 
 
 class SkillImplementation(SkillsBase):
-	def __init__(self):
+	def __init__(self, yamlFile):
 		smach.StateMachine.__init__(self, outcomes=['success', 'failed', 'ended', 'reached', 'not_reached'])
 		with self:
 			
-			self.add('PRECONDITION_CHECK', self.pre_conditions("yaml/pre.yaml"), transitions={'success':'SELECT_GOAL'})
+			self.add('PRECONDITION_CHECK', self.pre_conditions(yamlFile), transitions={'success':'SELECT_GOAL'})
 			self.add('SELECT_GOAL',SelectNavigationGoal(),transitions={'selected':'SKILL_SM','not_selected':'failed','failed':'failed'})
 			self.add('SKILL_SM',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_GOAL', 'not_reached': 'SELECT_GOAL'})
-			self.add('POSTCONDITION_CHECK',self.post_conditions("yaml/post.yaml"), transitions={'success':'ended'})
+			self.add('POSTCONDITION_CHECK',self.post_conditions(yamlFile), transitions={'success':'success'})
 
 	def execute_machine(self):
 		mach =  skill_state_approachpose.skill_state_approachpose()
@@ -88,6 +88,7 @@ class SkillImplementation(SkillsBase):
 		pre_conditions = yaml.load(open(yaml_filename).read())
 		checkMachine = pre_check.PreConditionCheck(pre_conditions)
 		return checkMachine
+
 	# tf frames comparison : base_link against map
 	def post_conditions(self, yaml_filename):
 		post_conditions = yaml.load(open(yaml_filename).read())

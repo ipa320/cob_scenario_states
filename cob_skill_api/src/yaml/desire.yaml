@@ -1,0 +1,48 @@
+# parametrization of skill and/or robot
+robot_name: desire
+
+# for requirements which are optional
+required_components:
+  base
+
+optional components:
+# light
+
+# sound #this means do not use sound
+
+# definition of pre condition checks
+pre_check:
+  init_check: [base, tray, torso] #move robot components to predefined positions
+  joint_configuration_check: #check if the positions were succesfully achieved
+    arm_left: 
+      joint_states: [0.1, -2.0, -2.7, -1.88, -2.84, 0.0, 1.76] # 7-DOF arm
+      allowed_error: 0.2 # rad
+    arm_right: 
+      joint_states: [2.3, 2.0, -0.1, -1.38, -2.84, 0.0, 1.76] # 7-DOF arm
+      allowed_error: 0.2 # rad
+    torso:
+      joint_states: [1.1,1.2,0.23] # 3-DOF arm
+      allowed_error: 0.1 # rad
+  pose_check:
+    link_name: arm_7_link
+    pose: [x,y,z,r,p,y]
+    allowed_error_position: 0.5 #m
+    allowed_error_orientation: 0.1 #rad
+
+post_check:
+  joint_configuration_check: 
+    arm_left: 
+      joint_states: [0.1, -2.0, -2.7, -1.88, -2.84, 0.0, 1.76] # 7-DOF arm
+      allowed_error: 0.2 # rad
+    arm_right: 
+      joint_states: [2.3, 2.0, -0.1, -1.38, -2.84, 0.0, 1.76] # 7-DOF arm
+      allowed_error: 0.2 # rad
+    torso:
+      joint_states: [1.1,1.2,0.23] # 3-DOF arm
+      allowed_error: 0.1 # rad
+  pose_check:
+    link_name: arm_7_link
+    pose: [x,y,z,r,p,y]
+    allowed_error_position: 0.5 #m
+    allowed_error_orientation: 0.1 #rad
+
