@@ -21,6 +21,10 @@ import pre_check
 import post_check
 import skill_state_approachpose
 
+import tf
+from tf.msg import tfMessage 
+from tf.transformations import euler_from_quaternion
+
 class SelectNavigationGoal(smach.State):
         def __init__(self):
                 smach.State.__init__(self,
@@ -71,29 +75,40 @@ class SelectNavigationGoal(smach.State):
 class SkillImplementation(SkillsBase):
 	def __init__(self, yamlFile):
 		smach.StateMachine.__init__(self, outcomes=['success', 'failed', 'ended', 'reached', 'not_reached'])
+
+		self.main_conditions = yaml.load(open(yamlFile).read())
+
+		self.full_components = ""
+		self.required_components = ""
+		self.optional_components = ""
+
+		self.check_pre = None
+		self.check_post = None
+
+		self.tfL = tf.TransformListener()
+
 		with self:
-			
+
 			self.add('PRECONDITION_CHECK', self.pre_conditions(yamlFile), transitions={'success':'SELECT_GOAL'})
 			self.add('SELECT_GOAL',SelectNavigationGoal(),transitions={'selected':'SKILL_SM','not_selected':'failed','failed':'failed'})
 			self.add('SKILL_SM',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_GOAL', 'not_reached': 'SELECT_GOAL'})
 			self.add('POSTCONDITION_CHECK',self.post_conditions(yamlFile), transitions={'success':'success'})
 
 	def execute_machine(self):
-		mach =  skill_state_approachpose.skill_state_approachpose()
+		mach =  skill_state_approachpose.skill_state_approachpose(components = self.check_pre.full_components)
 		return mach
 
 # base reports some diagn info 
 	def pre_conditions(self, yaml_filename):
 		
-		pre_conditions = yaml.load(open(yaml_filename).read())
-		checkMachine = pre_check.PreConditionCheck(pre_conditions)
-		return checkMachine
+		self.check_pre = pre_check.PreConditionCheck(self.main_conditions, self.tfL)
+		return self.check_pre
 
 	# tf frames comparison : base_link against map
 	def post_conditions(self, yaml_filename):
-		post_conditions = yaml.load(open(yaml_filename).read())
-		checkMachine = post_check.PostConditionCheck(post_conditions)
-		return checkMachine
+
+		self.check_post = post_check.PostConditionCheck(self.main_conditions, self.tfL)
+		return self.check_post
 
 	@property    
 	def inputs(self):

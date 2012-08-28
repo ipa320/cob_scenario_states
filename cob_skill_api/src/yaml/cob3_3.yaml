@@ -4,9 +4,14 @@ robot_name: cob3-3
 # for requirements which are optional
 required_components:
   base
+  torso
+  tray
+  arm
+  #head
 
-optional components:
-# light
+optional_components:
+  light
+  sound
 
 # sound #this means do not use sound
 
@@ -15,28 +20,37 @@ pre_check:
   init_check: [base, tray, torso] #move robot components to predefined positions
   joint_configuration_check: #check if the positions were succesfully achieved
     arm: 
-      joint_states: [2.3, 2.0, -0.1, -1.38, -2.84, 0.0, 1.76] # 7-DOF arm
+      joint_states: [-1.1572567240035734, -1.9104664691761568, -2.5334780195730255, -1.7853311980377056, -0.072798739390243047, 0.91767934923272776, -1.8876618005378798] # 7-DOF arm
       allowed_error: 0.2 # rad
     torso:
-      joint_states: [1.1,1.2,0.23] # 3-DOF arm
+      joint_states: [0.0010824396779440804, 8.6520986677385281e-06, -7.8278951622934301e-06] # 3-DOF arm
       allowed_error: 0.1 # rad
   pose_check:
-    link_name: arm_7_link
-    pose: [x,y,z,r,p,y]
+    pose: [0,0,0]
     allowed_error_position: 0.5 #m
-    allowed_error_orientation: 0.1 #rad
+    allowed_error_orientation: 0.2 #rad
+    links:
+     head_axis_link:
+      position: [0.12220727200998366, -0.00030636243266805169, 1.2939164404139307, 0.710, -0.002, 0.048, 0.702]
+     arm_7_link:
+      position: [-0.228, 0.102, 0.690, -0.386, 0.824, -0.415, -0.004]
+    
 
 post_check:
   joint_configuration_check: 
     arm: 
-      joint_states: [2.3, 2.0, -0.1, -1.38, -2.84, 0.0, 1.76] # 7-DOF arm
+      joint_states: [-1.1572567240035734, -1.9104664691761568, -2.5334780195730255, -1.7853311980377056, -0.072798739390243047, 0.91767934923272776, -1.8876618005378798] # 7-DOF arm
       allowed_error: 0.2 # rad
     torso:
-      joint_states: [1.1,1.2,0.23] # 3-DOF arm
+      joint_states: [0.0010824396779440804, 8.6520986677385281e-06, -7.8278951622934301e-06] # 3-DOF arm
       allowed_error: 0.1 # rad
   pose_check:
-    link_name: arm_7_link
-    pose: [x,y,z,r,p,y]
+    pose: [0,0,0]
     allowed_error_position: 0.5 #m
-    allowed_error_orientation: 0.1 #rad
+    allowed_error_orientation: 0.2 #rad
+    links:
+     head_axis_link:
+      position: [0.12220727200998366, -0.00030636243266805169, 1.2939164404139307, 0.710, -0.002, 0.048, 0.702]
+     arm_7_link:
+      position: [-0.228, 0.102, 0.690, -0.386, 0.824, -0.415, -0.004]
 

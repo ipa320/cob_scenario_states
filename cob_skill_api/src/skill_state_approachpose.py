@@ -13,7 +13,7 @@ from abc_state_skill import SkillsState
 
 class skill_state_approachpose(SkillsState):
 
-	def __init__(self, pose = "", mode = "omni", timeout = 30.0):
+	def __init__(self, components = [], pose = "", mode = "omni", timeout = 30.0):
 			smach.State.__init__(
 				self,
 				outcomes=['reached', 'not_reached', 'failed'],
@@ -21,6 +21,8 @@ class skill_state_approachpose(SkillsState):
 
 			# Subscriber to base_odometry
 			rospy.Subscriber("/base_controller/odometry", Odometry, self.callback)
+
+			self.components = components
 
 			self.pose = pose
 			self.mode = mode
@@ -67,20 +69,24 @@ class skill_state_approachpose(SkillsState):
 		
 			# finished with succeeded
 			if (handle_base.get_state() == 3):
-				sss.set_light('green')
+				if ("light" in self.components):
+					sss.set_light('green')
 				return 'reached'
 			# finished with aborted
 			elif (handle_base.get_state() == 4):
-				sss.set_light('green')
+				if ("light" in self.components):
+					sss.set_light('green')
 				return 'not_reached'
 			# finished with preempted or canceled
 			elif (handle_base.get_state() == 2) or (handle_base.get_state() == 8):
-				sss.set_light('green')
+				if ("light" in self.components):
+					sss.set_light('green')
 				return 'not_reached'
 			# return with error
 			elif (handle_base.get_error_code() > 0):
 				print "error_code = " + str(handle_base.get_error_code())
-				sss.set_light('red')
+				if ("light" in self.components):
+					sss.set_light('red')
 				return 'failed'
 
 			# check if the base is moving
@@ -93,22 +99,26 @@ class skill_state_approachpose(SkillsState):
 				# abort after timeout is reached
 				if stopping_time >= self.timeout:
 					sss.stop("base")
-					sss.set_light('green')
+					if ("light" in self.components):
+						sss.set_light('green')
 					return 'not_reached'
 			
 				# announce warning after every 10 sec
 				if announce_time >= 10.0:
-					sss.say([self.warnings[random.randint(0,len(self.warnings)-1)]],False)
+					if "sound" in self.components:
+						sss.say([self.warnings[random.randint(0,len(self.warnings)-1)]],False)
 					announce_time = 0.0
 
 				# set light to "thinking" after not moving for 2 sec
 				if round(stopping_time) >= 2.0:
-					sss.set_light("blue")
+					if ("light" in self.components):
+						sss.set_light("blue")
 					yellow = False
 			else:
 				# robot is moving
 				if not yellow:
-					sss.set_light("yellow")
+					if ("light" in self.components):
+						sss.set_light("yellow")
 					yellow = True
 		
 			# sleep

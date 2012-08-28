@@ -4,9 +4,11 @@ robot_name: desire
 # for requirements which are optional
 required_components:
   base
+  arm_left
+  arm_right
 
-optional components:
-# light
+optional_components:
+  #light
 
 # sound #this means do not use sound
 
@@ -21,13 +23,19 @@ pre_check:
       joint_states: [2.3, 2.0, -0.1, -1.38, -2.84, 0.0, 1.76] # 7-DOF arm
       allowed_error: 0.2 # rad
     torso:
-      joint_states: [1.1,1.2,0.23] # 3-DOF arm
+      joint_states: [0.0010824396779440804, 8.6520986677385281e-06, -7.8278951622934301e-06] # 3-DOF arm
       allowed_error: 0.1 # rad
   pose_check:
-    link_name: arm_7_link
-    pose: [x,y,z,r,p,y]
+    pose: [0,0,0]
     allowed_error_position: 0.5 #m
-    allowed_error_orientation: 0.1 #rad
+    allowed_error_orientation: 0.2 #rad
+    links:
+     head_axis_link:
+      position: [0.12220727200998366, -0.00030636243266805169, 1.2939164404139307, 0.710, -0.002, 0.048, 0.702]
+     arm_left_7_link:
+      position: [-0.228, 0.102, 0.690, -0.386, 0.824, -0.415, -0.004]
+     arm_right_7_link:
+      position: [-0.228, 0.102, 0.690, -0.386, 0.824, -0.415, -0.004]
 
 post_check:
   joint_configuration_check: 
@@ -38,11 +46,17 @@ post_check:
       joint_states: [2.3, 2.0, -0.1, -1.38, -2.84, 0.0, 1.76] # 7-DOF arm
       allowed_error: 0.2 # rad
     torso:
-      joint_states: [1.1,1.2,0.23] # 3-DOF arm
+      joint_states: [0.0010824396779440804, 8.6520986677385281e-06, -7.8278951622934301e-06] # 3-DOF arm
       allowed_error: 0.1 # rad
   pose_check:
-    link_name: arm_7_link
-    pose: [x,y,z,r,p,y]
+    pose: [0,0,0]
     allowed_error_position: 0.5 #m
-    allowed_error_orientation: 0.1 #rad
+    allowed_error_orientation: 0.2 #rad
+    links:
+     head_axis_link:
+      position: [0.12220727200998366, -0.00030636243266805169, 1.2939164404139307, 0.710, -0.002, 0.048, 0.702]
+     arm_left_7_link:
+      position: [-0.228, 0.102, 0.690, -0.386, 0.824, -0.415, -0.004]
+     arm_right_7_link:
+      position: [-0.228, 0.102, 0.690, -0.386, 0.824, -0.415, -0.004]
 
