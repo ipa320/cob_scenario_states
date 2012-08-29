@@ -14,7 +14,7 @@ optional_components:
 
 # definition of pre condition checks
 pre_check:
-  init_check: [base, tray, torso] #move robot components to predefined positions
+  init_check: True  #move robot components to predefined positions
   joint_configuration_check: #check if the positions were succesfully achieved
     arm_left: 
       joint_states: [0.1, -2.0, -2.7, -1.88, -2.84, 0.0, 1.76] # 7-DOF arm
