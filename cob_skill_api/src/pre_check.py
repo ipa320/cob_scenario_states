@@ -70,12 +70,12 @@ class PreConditionCheck(ConditionCheck):
 	def init_check(self):
 
 		def check_base():
-
 			if rospy.has_param('move_base'):
 				self.result = "success"
 			else:
 				self.result = "failed"
-			
+
+			rospy.loginfo("Checking the <<base>> component resulted on %s"%self.result)			
 
 		def check_head():
 
@@ -83,20 +83,47 @@ class PreConditionCheck(ConditionCheck):
 				self.result = "success"
 			else:
 				self.result = "failed"
-
+			rospy.loginfo("Checking the <<head>> component resulted on %s"%self.result)
 
 		def check_arm():
+
 			if rospy.has_param('arm_controller'):
 				self.result = "success"
 			else:
 				self.result = "failed"
 
+			rospy.loginfo("Checking the <<arm>> component resulted on %s"%self.result)
+
+
+		def check_arm_left():
+
+			if rospy.has_param('arm_left_controller'):
+				self.result = "success"
+			else:
+				self.result = "failed"
+
+			rospy.loginfo("Checking the <<left arm>> component resulted on %s"%self.result)
+
+		def check_arm_right():
+
+			if rospy.has_param('arm_right_controller'):
+				self.result = "success"
+			else:
+				self.result = "failed"
+
+			rospy.loginfo("Checking the <<right arm>> component resulted on %s"%self.result)
+
+
+
 		def check_tray():
+
 			if rospy.has_param('tray_controller'):
 
 				self.result = "success"
 			else:
 				self.result = "failed"
+
+			rospy.loginfo("Checking the <<tray>> component resulted on %s"%self.result)
 
 		def check_torso():
 
@@ -105,17 +132,26 @@ class PreConditionCheck(ConditionCheck):
 			else:
 				self.result = "failed"
 
+			rospy.loginfo("Checking the <<torso>> component resulted on %s"%self.result)
+
 		def check_sdh():
+
 			if rospy.has_param('sdh_controller'):
 				self.result = "success"
 			else:
 				self.result = "failed"
 
+			rospy.loginfo("Checking the <<sdh>> component resulted on %s"%self.result)
 
-		for check in self.checks['init_check']:
+		for check in self.full_components:
+
 			try:
-				{'base': check_base, 'tray': check_tray, 'torso': check_torso}[check]()
+				{'base': check_base, 'tray': check_tray, 'torso': check_torso, 'head': check_head, 'arm': check_arm, \
+					'sdh': check_sdh, 'arm_left': check_arm_left, 'arm_right': check_arm_right}[check]()
 
+				if self.result == "failed":
+					rospy.logerr("Failed when checking component <<%s>>"%check)
+					return
 			except KeyError:
 				pass
 
@@ -235,12 +271,26 @@ class PreConditionCheck(ConditionCheck):
 
 				except KeyError:
 					pass
+
+				except AssertionError,e:
+					self.result = "failed"
+					rospy.logerr("<<Error Message>>:%s"%e)
+					rospy.logerr("at:%s"%check)
+					return
 			else:
 				try:
 					{'arm': arm_joint, 'torso': torso_joint}[check]()
 
 				except KeyError:
 					pass
+
+				except AssertionError,e:
+					self.result = "failed"
+					rospy.logerr("<<Error Message>>:%s"%e)
+					rospy.logerr("at:%s"%check)
+					return
+
+		self.result = "success"
 
 	####################################################################
 	# function: pose_check()
@@ -249,89 +299,96 @@ class PreConditionCheck(ConditionCheck):
 	####################################################################
 
 	def pose_check(self):
-
-		rospy.loginfo("Checking the Robot Pose")
-
-		self.tfL.waitForTransform("/map", "/base_link", rospy.Time(), rospy.Duration(20.0))
-
-		(trans,rot) = self.tfL.lookupTransform('/map', '/base_link', rospy.Time(0))
-
-		angles = euler_from_quaternion(rot)
 		
-		messageX = (str)(trans[0]) + " " + (str)(self.checks['pose_check']['pose'][0]) + " "+ (str)(self.xy_goal_tolerance)
-		messageY = (str)(trans[1]) + " " + (str)(self.checks['pose_check']['pose'][1]) + " "+ (str)(self.xy_goal_tolerance)
-		messageA = (str)(angles[2]) + " " + (str)(self.checks['pose_check']['pose'][2]) + " "+ (str)(self.yaw_goal_tolerance)
+		try:
+			rospy.loginfo("Checking the Robot Pose")
 
+			self.tfL.waitForTransform("/map", "/base_link", rospy.Time(), rospy.Duration(20.0))
 
-		assert abs(trans[0] - self.checks['pose_check']['pose'][0]) <= self.xy_goal_tolerance, "Error on the X axis position %s"%messageX
-		assert abs(trans[1] - self.checks['pose_check']['pose'][1]) <= self.xy_goal_tolerance, "Error on the Y axis position %s"%messageY
-		assert abs(angles[2] - self.checks['pose_check']['pose'][2]) <= self.yaw_goal_tolerance, "Error on the Angle %s"%messageA
+			(trans,rot) = self.tfL.lookupTransform('/map', '/base_link', rospy.Time(0))
+
+			angles = euler_from_quaternion(rot)
 		
-		if self.robot_name == "desire":
+			messageX = (str)(trans[0]) + " " + (str)(self.checks['pose_check']['pose'][0]) + " "+ (str)(self.xy_goal_tolerance)
+			messageY = (str)(trans[1]) + " " + (str)(self.checks['pose_check']['pose'][1]) + " "+ (str)(self.xy_goal_tolerance)
+			messageA = (str)(angles[2]) + " " + (str)(self.checks['pose_check']['pose'][2]) + " "+ (str)(self.yaw_goal_tolerance)
 
-			# Checking Arm 7 Link Position 
-			if "arm_left" in self.full_components:
-				rospy.loginfo("Checking the <<left arm>> Position")
+
+			assert abs(trans[0] - self.checks['pose_check']['pose'][0]) <= self.xy_goal_tolerance, "Error on the X axis position %s"%messageX
+			assert abs(trans[1] - self.checks['pose_check']['pose'][1]) <= self.xy_goal_tolerance, "Error on the Y axis position %s"%messageY
+			assert abs(angles[2] - self.checks['pose_check']['pose'][2]) <= self.yaw_goal_tolerance, "Error on the Angle %s"%messageA
+		
+			if self.robot_name == "desire":
+
+				# Checking Arm 7 Link Position 
+				if "arm_left" in self.full_components:
+					rospy.loginfo("Checking the <<left arm>> Position")
+					now = rospy.Time.now()
+
+					self.tfL.waitForTransform('/base_link', '/arm_left_7_link', now, rospy.Duration(4.0))
+					(trans,rot) = self.tfL.lookupTransform('/base_link', '/arm_left_7_link', now)
+
+					assert abs(trans[0] - self.checks['pose_check']['links']['arm_left_7_link']['position'][0]) <= self.xy_goal_tolerance, "Error on the X axis position for the ARM 7 Link"
+					assert abs(trans[1] - self.checks['pose_check']['links']['arm_left_7_link']['position'][1]) <= self.xy_goal_tolerance, "Error on the Y axis position for the ARM 7 Link"
+					assert abs(trans[2] - self.checks['pose_check']['links']['arm_left_7_link']['position'][2]) <= self.xy_goal_tolerance, "Error on the Z axis position for the ARM 7 Link"
+					assert abs(rot[0] - self.checks['pose_check']['links']['arm_left_7_link']['position'][3]) <= self.yaw_goal_tolerance, "Error on W for the ARM 7 Link"
+					assert abs(rot[1] - self.checks['pose_check']['links']['arm_left_7_link']['position'][4]) <= self.yaw_goal_tolerance, "Error on Raw for the ARM 7 Link"
+					assert abs(rot[2] - self.checks['pose_check']['links']['arm_left_7_link']['position'][5]) <= self.yaw_goal_tolerance, "Error on Pitch for the ARM 7 Link"
+					assert abs(rot[3] - self.checks['pose_check']['links']['arm_left_7_link']['position'][6]) <= self.yaw_goal_tolerance, "Error on Yaw for the ARM 7 Link"
+
+				if "arm_right" in self.full_components:
+					rospy.loginfo("Checking the <<right arm>> Position")
+					now = rospy.Time.now()
+
+					self.tfL.waitForTransform('/base_link', '/arm_right_7_link', now, rospy.Duration(4.0))
+					(trans,rot) = self.tfL.lookupTransform('/base_link', '/arm_right_7_link', now)
+
+					assert abs(trans[0] - self.checks['pose_check']['links']['arm_right_7_link']['position'][0]) <= self.xy_goal_tolerance, "Error on the X axis position for the ARM 7 Link"
+					assert abs(trans[1] - self.checks['pose_check']['links']['arm_right_7_link']['position'][1]) <= self.xy_goal_tolerance, "Error on the Y axis position for the ARM 7 Link"
+					assert abs(trans[2] - self.checks['pose_check']['links']['arm_right_7_link']['position'][2]) <= self.xy_goal_tolerance, "Error on the Z axis position for the ARM 7 Link"
+					assert abs(rot[0] - self.checks['pose_check']['links']['arm_right_7_link']['position'][3]) <= self.yaw_goal_tolerance, "Error on W for the ARM 7 Link"
+					assert abs(rot[1] - self.checks['pose_check']['links']['arm_right_7_link']['position'][4]) <= self.yaw_goal_tolerance, "Error on Raw for the ARM 7 Link"
+					assert abs(rot[2] - self.checks['pose_check']['links']['arm_right_7_link']['position'][5]) <= self.yaw_goal_tolerance, "Error on Pitch for the ARM 7 Link"
+					assert abs(rot[3] - self.checks['pose_check']['links']['arm_right_7_link']['position'][6]) <= self.yaw_goal_tolerance, "Error on Yaw for the ARM 7 Link"
+
+			else:
+				# Checking Arm 7 Link Position 
+				if "arm" in self.full_components:
+					rospy.loginfo("Checking the <<arm>> Position")
+					now = rospy.Time.now()
+
+					self.tfL.waitForTransform('/base_link', '/arm_7_link', now, rospy.Duration(4.0))
+					(trans,rot) = self.tfL.lookupTransform('/base_link', '/arm_7_link', now)
+
+					assert abs(trans[0] - self.checks['pose_check']['links']['arm_7_link']['position'][0]) <= self.xy_goal_tolerance, "Error on the X axis position for the ARM 7 Link"
+					assert abs(trans[1] - self.checks['pose_check']['links']['arm_7_link']['position'][1]) <= self.xy_goal_tolerance, "Error on the Y axis position for the ARM 7 Link"
+					assert abs(trans[2] - self.checks['pose_check']['links']['arm_7_link']['position'][2]) <= self.xy_goal_tolerance, "Error on the Z axis position for the ARM 7 Link"
+					assert abs(rot[0] - self.checks['pose_check']['links']['arm_7_link']['position'][3]) <= self.yaw_goal_tolerance, "Error on W for the ARM 7 Link"
+					assert abs(rot[1] - self.checks['pose_check']['links']['arm_7_link']['position'][4]) <= self.yaw_goal_tolerance, "Error on Raw for the ARM 7 Link"
+					assert abs(rot[2] - self.checks['pose_check']['links']['arm_7_link']['position'][5]) <= self.yaw_goal_tolerance, "Error on Pitch for the ARM 7 Link"
+					assert abs(rot[3] - self.checks['pose_check']['links']['arm_7_link']['position'][6]) <= self.yaw_goal_tolerance, "Error on Yaw for the ARM 7 Link"
+
+			# Checking Head Axis Link Position 
+			if "head" in self.full_components:
+				rospy.loginfo("Checking the <<head>> Position")
 				now = rospy.Time.now()
 
-				self.tfL.waitForTransform('/base_link', '/arm_left_7_link', now, rospy.Duration(4.0))
-				(trans,rot) = self.tfL.lookupTransform('/base_link', '/arm_left_7_link', now)
-
-				assert abs(trans[0] - self.checks['pose_check']['links']['arm_left_7_link']['position'][0]) <= self.xy_goal_tolerance, "Error on the X axis position for the ARM 7 Link"
-				assert abs(trans[1] - self.checks['pose_check']['links']['arm_left_7_link']['position'][1]) <= self.xy_goal_tolerance, "Error on the Y axis position for the ARM 7 Link"
-				assert abs(trans[2] - self.checks['pose_check']['links']['arm_left_7_link']['position'][2]) <= self.xy_goal_tolerance, "Error on the Z axis position for the ARM 7 Link"
-				assert abs(rot[0] - self.checks['pose_check']['links']['arm_left_7_link']['position'][3]) <= self.yaw_goal_tolerance, "Error on W for the ARM 7 Link"
-				assert abs(rot[1] - self.checks['pose_check']['links']['arm_left_7_link']['position'][4]) <= self.yaw_goal_tolerance, "Error on Raw for the ARM 7 Link"
-				assert abs(rot[2] - self.checks['pose_check']['links']['arm_left_7_link']['position'][5]) <= self.yaw_goal_tolerance, "Error on Pitch for the ARM 7 Link"
-				assert abs(rot[3] - self.checks['pose_check']['links']['arm_left_7_link']['position'][6]) <= self.yaw_goal_tolerance, "Error on Yaw for the ARM 7 Link"
-
-			if "arm_right" in self.full_components:
-				rospy.loginfo("Checking the <<right arm>> Position")
-				now = rospy.Time.now()
-
-				self.tfL.waitForTransform('/base_link', '/arm_right_7_link', now, rospy.Duration(4.0))
-				(trans,rot) = self.tfL.lookupTransform('/base_link', '/arm_right_7_link', now)
-
-				assert abs(trans[0] - self.checks['pose_check']['links']['arm_right_7_link']['position'][0]) <= self.xy_goal_tolerance, "Error on the X axis position for the ARM 7 Link"
-				assert abs(trans[1] - self.checks['pose_check']['links']['arm_right_7_link']['position'][1]) <= self.xy_goal_tolerance, "Error on the Y axis position for the ARM 7 Link"
-				assert abs(trans[2] - self.checks['pose_check']['links']['arm_right_7_link']['position'][2]) <= self.xy_goal_tolerance, "Error on the Z axis position for the ARM 7 Link"
-				assert abs(rot[0] - self.checks['pose_check']['links']['arm_right_7_link']['position'][3]) <= self.yaw_goal_tolerance, "Error on W for the ARM 7 Link"
-				assert abs(rot[1] - self.checks['pose_check']['links']['arm_right_7_link']['position'][4]) <= self.yaw_goal_tolerance, "Error on Raw for the ARM 7 Link"
-				assert abs(rot[2] - self.checks['pose_check']['links']['arm_right_7_link']['position'][5]) <= self.yaw_goal_tolerance, "Error on Pitch for the ARM 7 Link"
-				assert abs(rot[3] - self.checks['pose_check']['links']['arm_right_7_link']['position'][6]) <= self.yaw_goal_tolerance, "Error on Yaw for the ARM 7 Link"
-
-		else:
-			# Checking Arm 7 Link Position 
-			if "arm" in self.full_components:
-				rospy.loginfo("Checking the <<arm>> Position")
-				now = rospy.Time.now()
-
-				self.tfL.waitForTransform('/base_link', '/arm_7_link', now, rospy.Duration(4.0))
-				(trans,rot) = self.tfL.lookupTransform('/base_link', '/arm_7_link', now)
-
-				assert abs(trans[0] - self.checks['pose_check']['links']['arm_7_link']['position'][0]) <= self.xy_goal_tolerance, "Error on the X axis position for the ARM 7 Link"
-				assert abs(trans[1] - self.checks['pose_check']['links']['arm_7_link']['position'][1]) <= self.xy_goal_tolerance, "Error on the Y axis position for the ARM 7 Link"
-				assert abs(trans[2] - self.checks['pose_check']['links']['arm_7_link']['position'][2]) <= self.xy_goal_tolerance, "Error on the Z axis position for the ARM 7 Link"
-				assert abs(rot[0] - self.checks['pose_check']['links']['arm_7_link']['position'][3]) <= self.yaw_goal_tolerance, "Error on W for the ARM 7 Link"
-				assert abs(rot[1] - self.checks['pose_check']['links']['arm_7_link']['position'][4]) <= self.yaw_goal_tolerance, "Error on Raw for the ARM 7 Link"
-				assert abs(rot[2] - self.checks['pose_check']['links']['arm_7_link']['position'][5]) <= self.yaw_goal_tolerance, "Error on Pitch for the ARM 7 Link"
-				assert abs(rot[3] - self.checks['pose_check']['links']['arm_7_link']['position'][6]) <= self.yaw_goal_tolerance, "Error on Yaw for the ARM 7 Link"
-
-		# Checking Head Axis Link Position 
-		if "head" in self.full_components:
-			rospy.loginfo("Checking the <<head>> Position")
-			now = rospy.Time.now()
-
-			self.tfL.waitForTransform('/base_link', '/head_axis_link', now, rospy.Duration(4.0))
-			(trans,rot) = self.tfL.lookupTransform('/base_link', '/head_axis_link', now)
+				self.tfL.waitForTransform('/base_link', '/head_axis_link', now, rospy.Duration(4.0))
+				(trans,rot) = self.tfL.lookupTransform('/base_link', '/head_axis_link', now)
 		
-			assert abs(trans[0] - self.checks['pose_check']['links']['head_axis_link']['position'][0]) <= self.xy_goal_tolerance, "Error on the X axis position for the Head Axis Link"
-			assert abs(trans[1] - self.checks['pose_check']['links']['head_axis_link']['position'][1]) <= self.xy_goal_tolerance, "Error on the Y axis position for the Head Axis Link"
-			assert abs(trans[2] - self.checks['pose_check']['links']['head_axis_link']['position'][2]) <= self.xy_goal_tolerance, "Error on the Z axis position for the Head Axis Link"
-			assert abs(rot[0] - self.checks['pose_check']['links']['head_axis_link']['position'][3]) <= self.yaw_goal_tolerance, "Error on W for the Head Axis Link"
-			assert abs(rot[1] - self.checks['pose_check']['links']['head_axis_link']['position'][4]) <= self.yaw_goal_tolerance, "Error on Raw for the Head Axis Link"
-			assert abs(rot[2] - self.checks['pose_check']['links']['head_axis_link']['position'][5]) <= self.yaw_goal_tolerance, "Error on Pitch for the Head Axis Link"
-			assert abs(rot[3] - self.checks['pose_check']['links']['head_axis_link']['position'][6]) <= self.yaw_goal_tolerance, "Error on Yaw for the Head Axis Link"
+				assert abs(trans[0] - self.checks['pose_check']['links']['head_axis_link']['position'][0]) <= self.xy_goal_tolerance, "Error on the X axis position for the Head Axis Link"
+				assert abs(trans[1] - self.checks['pose_check']['links']['head_axis_link']['position'][1]) <= self.xy_goal_tolerance, "Error on the Y axis position for the Head Axis Link"
+				assert abs(trans[2] - self.checks['pose_check']['links']['head_axis_link']['position'][2]) <= self.xy_goal_tolerance, "Error on the Z axis position for the Head Axis Link"
+				assert abs(rot[0] - self.checks['pose_check']['links']['head_axis_link']['position'][3]) <= self.yaw_goal_tolerance, "Error on W for the Head Axis Link"
+				assert abs(rot[1] - self.checks['pose_check']['links']['head_axis_link']['position'][4]) <= self.yaw_goal_tolerance, "Error on Raw for the Head Axis Link"
+				assert abs(rot[2] - self.checks['pose_check']['links']['head_axis_link']['position'][5]) <= self.yaw_goal_tolerance, "Error on Pitch for the Head Axis Link"
+				assert abs(rot[3] - self.checks['pose_check']['links']['head_axis_link']['position'][6]) <= self.yaw_goal_tolerance, "Error on Yaw for the Head Axis Link"
+
+		except AssertionError,e:
+			self.result = "failed"
+			rospy.logerr("<<Error Message>>:%s"%e)		
+			rospy.logerr("at pose_check")
+			return
 		
 		
 		self.result = "success" 
@@ -394,18 +451,26 @@ class PreConditionCheck(ConditionCheck):
 
 	def execute(self, userdata):	
 
-		if 'init_check' in self.checks:
+		if self.checks['init_check'] == True:
 			self.init_check()
+
+		if (self.result == "failed"):
+			rospy.logerr("Check failure on <<init_check>>")
+			return self.result
 
 		for check in self.checks:
 			try:
 				{'joint_configuration_check': self.joint_configuration_check, 'pose_check': self.pose_check}[check]()
 
+				if (self.result == "failed"):
+					rospy.logerr("Check failure on <<%s>>"%check)
+					return self.result
+
 			except KeyError:
 				pass
 
 		# announce ready
-		if "sound" in self.full_components:
+		if ("sound" in self.full_components) and (self.result == "success"):
 			sss.say(["Ready."])
 
 		return self.result

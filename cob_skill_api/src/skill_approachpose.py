@@ -89,7 +89,7 @@ class SkillImplementation(SkillsBase):
 
 		with self:
 
-			self.add('PRECONDITION_CHECK', self.pre_conditions(yamlFile), transitions={'success':'SELECT_GOAL'})
+			self.add('PRECONDITION_CHECK', self.pre_conditions(yamlFile), transitions={'success':'SELECT_GOAL', 'failed':'PRECONDITION_CHECK'})
 			self.add('SELECT_GOAL',SelectNavigationGoal(),transitions={'selected':'SKILL_SM','not_selected':'failed','failed':'failed'})
 			self.add('SKILL_SM',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_GOAL', 'not_reached': 'SELECT_GOAL'})
 			self.add('POSTCONDITION_CHECK',self.post_conditions(yamlFile), transitions={'success':'success'})
