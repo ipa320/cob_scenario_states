@@ -100,7 +100,7 @@ class PreConditionCheck(ConditionCheck):
 
 		def check_torso():
 
-			if rospy.has_param('move_base'):
+			if rospy.has_param('torso_controller'):
 				self.result = "success"
 			else:
 				self.result = "failed"
