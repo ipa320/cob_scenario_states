@@ -1,40 +1,46 @@
 # parametrization of skill and/or robot
 robot_name: cob3-3
 
-# for requirements which are optional
-required_components:
-  base
+required_components: #--> check with /diagnostics
+  #base
   torso
-  tray
-  arm
-  #head
+  #tray
+  #arm
 
 optional_components:
-  light
-  sound
+  #light
+  #sound
 
 # sound #this means do not use sound
 
 # definition of pre condition checks
 pre_check:
-  init_check: True #move robot components to predefined positions
-  joint_configuration_check: #check if the positions were succesfully achieved
-    arm: 
-      joint_states: [-1.1572567240035734, -1.9104664691761568, -2.5334780195730255, -1.7853311980377056, -0.072798739390243047, 0.91767934923272776, -1.8876618005378798] # 7-DOF arm
+  ready_check: True 
+
+  #joint_configuration_check_js: #check the configuration according to the joint state message
+ #   - joint_names: [arm_1_joint,arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint] 
+  #    joint_states: [-1.1572567240035734, -1.9104664691761568, -2.5334780195730255, -1.7853311980377056, -0.072798739390243047, 0.91767934923272776, -1.8876618005378798] # 7-DOF arm
+   #   allowed_error: 0.2 # rad
+   # - joint_names: [torso_tilt_joint,torso_pan_joint] 
+    #  joint_states: [-1.1572567240035734, -1.9104664691761568] # 2-DOF torso
+     # allowed_error: 0.2 # rad
+
+  joint_configuration_check_ss:
+    - joint_names: [torso_pan_joint, torso_tilt_joint] 
+      component: torso #get joint_names from /script_server/torso
+      configuration: home #--> look up joint_states on /script_server/torso/home
       allowed_error: 0.2 # rad
-    torso:
-      joint_states: [0.0010824396779440804, 8.6520986677385281e-06, -7.8278951622934301e-06] # 3-DOF arm
-      allowed_error: 0.1 # rad
+
   pose_check:
-    pose: [0,0,0]
-    allowed_error_position: 0.5 #m
-    allowed_error_orientation: 0.2 #rad
-    links:
-     head_axis_link:
-      position: [0.12220727200998366, -0.00030636243266805169, 1.2939164404139307, 0.710, -0.002, 0.048, 0.702]
-     arm_7_link:
-      position: [-0.228, 0.102, 0.690, -0.386, 0.824, -0.415, -0.004]
-    
+    - reference_frame: /base_link
+      target_pose:
+        - frame_id: /map
+        - position: [x,y,z]
+        - orientation: [r,p,y]
+      allowed_position_error: 0.1 #m
+      allowed_orientation_error: 0.1 #rad
+
+# --> rosrun tf tf_echo target_pose.frame_id reference_frame --> x,y,z,r,p,y compare with target_pose
 
 post_check:
   joint_configuration_check: 
