@@ -25,13 +25,26 @@ pre_check:
     - joint_names: [arm_1_joint,arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint] 
       joint_states: [-1.1572567240035734, -1.9104664691761568, -2.5334780195730255, -1.7853311980377056, -0.072798739390243047, 0.91767934923272776, -1.8876618005378798] # 7-DOF arm
       allowed_error: 0.2 # rad
+    - joint_names: [torso_lower_neck_tilt_joint, torso_pan_joint, torso_upper_neck_tilt_joint] 
+      joint_states: [0.0, 0.0, 0.0] # 7-DOF arm
+      allowed_error: 0.2 # rad
 
   - joint_configuration_check_ss:
     - component: torso #get joint_names from /script_server/torso
       configuration: home #--> look up joint_states on /script_server/torso/home
       allowed_error: 0.2 # rad
+    - component: arm #get joint_names from /script_server/arm
+      configuration: folded #--> look up joint_states on /script_server/arm/folded
+      allowed_error: 0.2 # rad
 
   - pose_check:
+    - reference_frame: /base_link
+      target_pose:
+        frame_id: /map
+        position: [0,0,0]
+        orientation: [0,0,0]
+      allowed_position_error: 0.1 #m
+      allowed_orientation_error: 0.1 #rad
     - reference_frame: /base_link
       target_pose:
         frame_id: /map

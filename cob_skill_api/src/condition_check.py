@@ -84,7 +84,7 @@ import types
 class ConditionCheck(ConditionCheck):
 
 	def __init__(self, defined_checks, checkType, tfL):
-		smach.State.__init__(self, outcomes=['success','failed'])
+		smach.State.__init__(self, outcomes=['success','failed'], input_keys=['base_pose'])
 
 		self.checkType = checkType
 		self.checks = defined_checks[self.checkType]
@@ -116,7 +116,7 @@ class ConditionCheck(ConditionCheck):
 
 		self.result = "failed"
 
-		self.status = None
+		self.status = 0
 
 		rospy.Subscriber('diagnostics', DiagnosticArray, self.diagnostics_callback)
 
@@ -154,29 +154,33 @@ class ConditionCheck(ConditionCheck):
 
 		rospy.loginfo("<<joint_configuration_check_js>>")
 
-		joint_names = params.values()[0][0]['joint_names']
-		joint_states = params.values()[0][0]['joint_states']
-		aw_error = params.values()[0][0]['allowed_error']
+		for item in params.values()[0]:	
 
-		return self.joint_configuration_check(joint_names,joint_states, aw_error)
- 
+			joint_names = item['joint_names']
+			joint_states = item['joint_states']
+			aw_error = item['allowed_error']
+
+			self.joint_configuration_check(joint_names,joint_states, aw_error)
+
 
 	def joint_configuration_check_ss(self, params, userdata):
 		
 		rospy.loginfo("<<joint_configuration_check_ss>>")
 
-		component = params.values()[0][0]['component']
-		configuration = params.values()[0][0]['configuration']
+		for item in params.values()[0]:
 
-		ss_names_path = "/script_server/" + component + "/joint_names"
-		ss_values_path = "/script_server/" + component + "/" + configuration
+			component = item['component']
+			configuration = item['configuration']
 
-		joint_names = rospy.get_param(ss_names_path)
-		joint_states = rospy.get_param(ss_values_path)[0]
+			ss_names_path = "/script_server/" + component + "/joint_names"
+			ss_values_path = "/script_server/" + component + "/" + configuration
+
+			joint_names = rospy.get_param(ss_names_path)
+			joint_states = rospy.get_param(ss_values_path)[0]
 		
-		aw_error = params.values()[0][0]['allowed_error']
+			aw_error = item['allowed_error']
 
-		return self.joint_configuration_check(joint_names,joint_states, aw_error)
+			self.joint_configuration_check(joint_names,joint_states, aw_error)
 
 	def joint_configuration_check(self, joint_names, joint_states, aw_error):
 
@@ -301,9 +305,9 @@ class ConditionCheck(ConditionCheck):
 				messageA = (str)(angles[2]) + " " + (str)(userdata.base_pose[2]) + " "+ (str)(yaw_goal_tolerance)
 
 
-				assert abs(trans[0] - userdata.base_pose[0]) <= self.xy_goal_tolerance, "Error on the X axis position %s"%messageX
-				assert abs(trans[1] - userdata.base_pose[1]) <= self.xy_goal_tolerance, "Error on the Y axis position %s"%messageY
-				assert abs(angles[2] - userdata.base_pose[2]) <= self.yaw_goal_tolerance, "Error on the Angle %s"%messageA
+				assert abs(trans[0] - userdata.base_pose[0]) <= xy_goal_tolerance, "Error on the X axis position %s"%messageX
+				assert abs(trans[1] - userdata.base_pose[1]) <= xy_goal_tolerance, "Error on the Y axis position %s"%messageY
+				assert abs(angles[2] - userdata.base_pose[2]) <= yaw_goal_tolerance, "Error on the Angle %s"%messageA
 
 			else:
 				rospy.logerr("Test type %s is not recognized" % self.checkType)
