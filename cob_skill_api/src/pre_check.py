@@ -265,9 +265,13 @@ class PreConditionCheck(ConditionCheck):
 		try:
 			rospy.loginfo("Checking the Robot <<Pose>>")
 
-			self.tfL.waitForTransform("/map", "/base_link", rospy.Time(), rospy.Duration(20.0))
+			reference_frame = params.values()[0][0]['reference_frame']
+			target_frame = params.values()[0][0]['target_pose']['frame_id']
 
-			(trans,rot) = self.tfL.lookupTransform('/map', '/base_link', rospy.Time(0))
+
+			self.tfL.waitForTransform(target_frame, reference_frame, rospy.Time(), rospy.Duration(20.0))
+
+			(trans,rot) = self.tfL.lookupTransform(target_frame, reference_frame, rospy.Time(0))
 
 			angles = euler_from_quaternion(rot)
 		
