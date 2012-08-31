@@ -72,8 +72,7 @@ from actionlib import *
 from actionlib.msg import *
 import random
 
-import pre_check
-import post_check
+import condition_check
 import skill_state_approachpose
 
 import tf
@@ -156,13 +155,13 @@ class SkillImplementation(SkillsBase):
 # base reports some diagn info 
 	def pre_conditions(self, yaml_filename):
 		
-		self.check_pre = pre_check.PreConditionCheck(self.main_conditions, self.tfL)
+		self.check_pre = condition_check.ConditionCheck(self.main_conditions, "pre_check", self.tfL)
 		return self.check_pre
 
 	# tf frames comparison : base_link against map
 	def post_conditions(self, yaml_filename):
 
-		self.check_post = post_check.PostConditionCheck(self.main_conditions, self.tfL)
+		self.check_post = condition_check.ConditionCheck(self.main_conditions,"post_check",  self.tfL)
 		return self.check_post
 
 	@property    

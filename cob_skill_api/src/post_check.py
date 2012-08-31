@@ -108,10 +108,6 @@ class PostConditionCheck(ConditionCheck):
 		self.optional_components = self.optional_components.split()
 		self.full_components = self.full_components.split()
 
-		self.xy_goal_tolerance  = self.checks['pose_check']['allowed_error_position']
-		self.yaw_goal_tolerance = self.checks['pose_check']['allowed_error_orientation']
-
-
 	#####################################################################
 	# function: joint_configuration_check()
 	# This function is responsible for checking the 

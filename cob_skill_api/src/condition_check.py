@@ -81,12 +81,13 @@ from abc_conditioncheck import ConditionCheck
 
 import types
 
-class PreConditionCheck(ConditionCheck):
+class ConditionCheck(ConditionCheck):
 
 	def __init__(self, defined_checks, checkType, tfL):
 		smach.State.__init__(self, outcomes=['success','failed'])
 
-		self.checks = defined_checks[checkType]
+		self.checkType = checkType
+		self.checks = defined_checks[self.checkType]
 		self.robot_name = defined_checks['robot_name']
 
 		self.required_components = defined_checks['required_components']
@@ -131,7 +132,7 @@ class PreConditionCheck(ConditionCheck):
 
 		for check in self.checks:
 
-				getattr(self, check.keys()[0])(check)
+				getattr(self, check.keys()[0])(check, userdata)
 
 				if (self.result == "failed"):
 					rospy.logerr("Check failure on <<%s>>"%check)
@@ -152,9 +153,9 @@ class PreConditionCheck(ConditionCheck):
 		#TODO:: get joint_names from parameter server (yaml)
 		#TODO:: get joint_states from parameter server (yaml)
 
-	def joint_configuration_check_js(self, params): # from parameter server, get names and supposed states
+	def joint_configuration_check_js(self, params, userdata): # from parameter server, get names and supposed states
 
-		rospy.loginfo("<<joint_configuration_check_ss>>")
+		rospy.loginfo("<<joint_configuration_check_js>>")
 
 		joint_names = params.values()[0][0]['joint_names']
 		joint_states = params.values()[0][0]['joint_states']
@@ -163,7 +164,7 @@ class PreConditionCheck(ConditionCheck):
 		return self.joint_configuration_check(joint_names,joint_states, aw_error)
  
 
-	def joint_configuration_check_ss(self, params):
+	def joint_configuration_check_ss(self, params, userdata):
 		
 		rospy.loginfo("<<joint_configuration_check_ss>>")
 
@@ -215,7 +216,7 @@ class PreConditionCheck(ConditionCheck):
 	# provided by the user for proper operation of the Robot
 	#####################################################################
 
-	def component_ready_check(self, params): #Simplified due to the current simulation possibilities
+	def component_ready_check(self, params, userdata): #Simplified due to the current simulation possibilities
 
 		try:
 			rospy.loginfo("Started to check if all components are ready")		
@@ -242,7 +243,7 @@ class PreConditionCheck(ConditionCheck):
 	#####################################################################
 
 
-	def action_check(self, params):
+	def action_check(self, params, userdata):
 
 		rospy.loginfo("Checking <<actions>>")
 
@@ -265,7 +266,7 @@ class PreConditionCheck(ConditionCheck):
 	# is convenient for performing the skill action
 	####################################################################
 
-	def pose_check(self, params):
+	def pose_check(self, params, userdata):
 		
 		try:
 			rospy.loginfo("Checking the Robot <<Pose>>")
@@ -282,16 +283,33 @@ class PreConditionCheck(ConditionCheck):
 		
 			xy_goal_tolerance = params.values()[0][0]['allowed_position_error']
 			yaw_goal_tolerance = params.values()[0][0]['allowed_orientation_error']
-			
-			messageX = (str)(trans[0]) + " " + (str)(params.values()[0][0]['target_pose']['position'][0]) + " "+ (str)(xy_goal_tolerance)
-			messageY = (str)(trans[1]) + " " + (str)(params.values()[0][0]['target_pose']['position'][1]) + " "+ (str)(xy_goal_tolerance)
-			messageA = (str)(angles[2]) + " " + (str)(params.values()[0][0]['target_pose']['position'][2]) + " "+ (str)(yaw_goal_tolerance)
+		
+
+			if(self.checkType == "pre_check"):
+	
+				messageX = (str)(trans[0]) + " " + (str)(params.values()[0][0]['target_pose']['position'][0]) + " "+ (str)(xy_goal_tolerance)
+				messageY = (str)(trans[1]) + " " + (str)(params.values()[0][0]['target_pose']['position'][1]) + " "+ (str)(xy_goal_tolerance)
+				messageA = (str)(angles[2]) + " " + (str)(params.values()[0][0]['target_pose']['position'][2]) + " "+ (str)(yaw_goal_tolerance)
 
 
 
-			assert abs(trans[0] - params.values()[0][0]['target_pose']['position'][0]) <= xy_goal_tolerance, "Error on the X axis position %s"%messageX
-			assert abs(trans[1] - params.values()[0][0]['target_pose']['position'][1]) <= xy_goal_tolerance, "Error on the Y axis position %s"%messageY
-			assert abs(angles[2] - params.values()[0][0]['target_pose']['position'][2]) <= yaw_goal_tolerance, "Error on the Angle %s"%messageA
+				assert abs(trans[0] - params.values()[0][0]['target_pose']['position'][0]) <= xy_goal_tolerance, "Error on the X axis position %s"%messageX
+				assert abs(trans[1] - params.values()[0][0]['target_pose']['position'][1]) <= xy_goal_tolerance, "Error on the Y axis position %s"%messageY
+				assert abs(angles[2] - params.values()[0][0]['target_pose']['position'][2]) <= yaw_goal_tolerance, "Error on the Angle %s"%messageA
+
+			elif(self.checkType == "post_check"):
+
+				messageX = (str)(trans[0]) + " " + (str)(userdata.base_pose[0]) + " "+ (str)(self.xy_goal_tolerance)
+				messageY = (str)(trans[1]) + " " + (str)(userdata.base_pose[1]) + " "+ (str)(self.xy_goal_tolerance)
+				messageA = (str)(angles[2]) + " " + (str)(userdata.base_pose[2]) + " "+ (str)(self.yaw_goal_tolerance)
+
+
+				assert abs(trans[0] - userdata.base_pose[0]) <= self.xy_goal_tolerance, "Error on the X axis position %s"%messageX
+				assert abs(trans[1] - userdata.base_pose[1]) <= self.xy_goal_tolerance, "Error on the Y axis position %s"%messageY
+				assert abs(angles[2] - userdata.base_pose[2]) <= self.yaw_goal_tolerance, "Error on the Angle %s"%messageA
+
+			else:
+				rospy.logerr("Test type %s is not recognized" % self.checkType)
 		
 			
 		except AssertionError,e:
