@@ -248,15 +248,20 @@ class ConditionCheck(ConditionCheck):
 
 		rospy.loginfo("Checking <<actions>>")
 
-		action_type = params.values()[0][0]['action_type']
-		action_name = params.values()[0][0]['action_name']
+		for item in params.values()[0]:
 
-		mod = __import__(action_name, fromlist=[action_type])
-		cls = getattr(mod, action_type)
+			action_type = item['action_type']
+			action_name = item['action_name']
 
-		ac_client = actionlib.SimpleActionClient(action_name, cls)
+			rospy.loginfo("Now checking <<%s>>", action_name)
+			rospy.loginfo("Of type <<%s>>", action_type)
 
-		ac_client.wait_for_server(rospy.Duration(5))	
+			mod = __import__(action_name, fromlist=[action_type])
+			cls = getattr(mod, action_type)
+
+			ac_client = actionlib.SimpleActionClient(action_name, cls)
+
+			ac_client.wait_for_server(rospy.Duration(5))	
 
 		rospy.loginfo("Finished Checking <<actions>>")
 

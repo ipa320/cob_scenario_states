@@ -2,10 +2,11 @@
 robot_name: cob3-3
 
 required_components: 
-  #base
   torso
+  arm
+  #base	
   #tray
-  #arm
+  
 
 optional_components:
   light
@@ -17,6 +18,8 @@ pre_check:
     - base_controller
 
   - action_check: 
+    - action_name: move_base_msgs.msg
+      action_type: MoveBaseAction
     - action_name: move_base_msgs.msg
       action_type: MoveBaseAction
      
