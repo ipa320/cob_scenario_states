@@ -149,18 +149,23 @@ class PreConditionCheck(ConditionCheck):
 	# Joint configuration of the Robot before performing the skill action
 	#####################################################################
 
+		#TODO:: get joint_names from parameter server (yaml)
+		#TODO:: get joint_states from parameter server (yaml)
+
 	def joint_configuration_check_js(self, params): # from parameter server, get names and supposed states
 
-		#get joint_names from parameter server (yaml)
-		#get joint_states from parameter server (yaml)
+		rospy.loginfo("<<joint_configuration_check_ss>>")
+
+		joint_names = params.values()[0][0]['joint_names']
+		joint_states = params.values()[0][0]['joint_states']
 		aw_error = params.values()[0][0]['allowed_error']
 
-		return self.joint_configuration_check(joint_names,joint_states)
+		return self.joint_configuration_check(joint_names,joint_states, aw_error)
  
 
 	def joint_configuration_check_ss(self, params):
-
-
+		
+		rospy.loginfo("<<joint_configuration_check_ss>>")
 
 		component = params.values()[0][0]['component']
 		configuration = params.values()[0][0]['configuration']
@@ -198,7 +203,7 @@ class PreConditionCheck(ConditionCheck):
 		except AssertionError,e:
 			self.result = "failed"
 			rospy.logerr("<<Error Message>>:%s"%e)
-			rospy.logerr("at:%s"%check)
+			rospy.logerr("at joint_configuration_check")
 			return
 
 
