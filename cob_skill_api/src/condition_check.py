@@ -118,9 +118,6 @@ class ConditionCheck(ConditionCheck):
 
 		self.status = None
 
-		self.xy_goal_tolerance  = 0.1
-		self.yaw_goal_tolerance = 0.2
-
 		rospy.Subscriber('diagnostics', DiagnosticArray, self.diagnostics_callback)
 
 	####################################################################
@@ -299,9 +296,9 @@ class ConditionCheck(ConditionCheck):
 
 			elif(self.checkType == "post_check"):
 
-				messageX = (str)(trans[0]) + " " + (str)(userdata.base_pose[0]) + " "+ (str)(self.xy_goal_tolerance)
-				messageY = (str)(trans[1]) + " " + (str)(userdata.base_pose[1]) + " "+ (str)(self.xy_goal_tolerance)
-				messageA = (str)(angles[2]) + " " + (str)(userdata.base_pose[2]) + " "+ (str)(self.yaw_goal_tolerance)
+				messageX = (str)(trans[0]) + " " + (str)(userdata.base_pose[0]) + " "+ (str)(xy_goal_tolerance)
+				messageY = (str)(trans[1]) + " " + (str)(userdata.base_pose[1]) + " "+ (str)(xy_goal_tolerance)
+				messageA = (str)(angles[2]) + " " + (str)(userdata.base_pose[2]) + " "+ (str)(yaw_goal_tolerance)
 
 
 				assert abs(trans[0] - userdata.base_pose[0]) <= self.xy_goal_tolerance, "Error on the X axis position %s"%messageX

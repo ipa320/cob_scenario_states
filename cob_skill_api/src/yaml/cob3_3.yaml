@@ -8,8 +8,8 @@ required_components:
   #arm
 
 optional_components:
-  #light
-  #sound
+  light
+  sound
 
 # definition of pre condition checks
 pre_check:
