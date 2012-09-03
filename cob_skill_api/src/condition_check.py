@@ -24,7 +24,7 @@
 # \date Date of creation: August 2012
 #
 # \brief
-# Pre-checks for the Skills API
+# Definition of the conditions checks for the Skill API
 #
 #################################################################
 #
@@ -83,15 +83,15 @@ import types
 
 class ConditionCheck(ConditionCheck):
 
-	def __init__(self, defined_checks, checkType, tfL):
+	def __init__(self, checkType, tfL):
 		smach.State.__init__(self, outcomes=['success','failed'], input_keys=['base_pose'])
 
 		self.checkType = checkType
-		self.checks = defined_checks[self.checkType]
-		self.robot_name = defined_checks['robot_name']
+		self.checks = rospy.get_param(self.checkType)
+		self.robot_name = rospy.get_param('robot_name')
 
-		self.required_components = defined_checks['required_components']
-		self.optional_components = defined_checks['optional_components']
+		self.required_components = rospy.get_param('required_components')
+		self.optional_components = rospy.get_param('optional_components')
 		
 		if isinstance(self.required_components, types.NoneType) and isinstance(self.optional_components, types.NoneType):
 			self.full_components = ""
@@ -146,9 +146,6 @@ class ConditionCheck(ConditionCheck):
 	# This function is responsible for checking the 
 	# Joint configuration of the Robot before performing the skill action
 	#####################################################################
-
-		#TODO:: get joint_names from parameter server (yaml)
-		#TODO:: get joint_states from parameter server (yaml)
 
 	def joint_configuration_check_js(self, params, userdata): # from parameter server, get names and supposed states
 
@@ -373,6 +370,7 @@ class ConditionCheck(ConditionCheck):
 
 		# wait for all movements to be finished
 		# announce ready
+
 		if "sound" in self.full_components:
 			sss.say(["Ready."])
 

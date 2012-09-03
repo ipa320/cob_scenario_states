@@ -88,7 +88,7 @@ class SelectNavigationGoal(smach.State):
                 self.goals = []
 
         def execute(self, userdata):
-                # defines
+
                 x_min = 0
                 x_max = 4.0
                 x_increment = 2
@@ -99,7 +99,6 @@ class SelectNavigationGoal(smach.State):
                 th_max = 3.14
                 th_increment = 2*3.1414926/4
 
-                # generate new list, if list is empty
                 if len(self.goals) == 0:
                         x = x_min
                         y = y_min
@@ -119,18 +118,14 @@ class SelectNavigationGoal(smach.State):
                                 y = y_min
                                 th = th_min
 
-                #print self.goals
-                #userdata.base_pose = self.goals.pop() # takes last element out of list
-                userdata.base_pose = self.goals.pop(random.randint(0,len(self.goals)-1)) # takes random element out of list
+                userdata.base_pose = self.goals.pop(random.randint(0,len(self.goals)-1))
 
                 return 'selected'
 
 
 class SkillImplementation(SkillsBase):
-	def __init__(self, yamlFile):
+	def __init__(self):
 		smach.StateMachine.__init__(self, outcomes=['success', 'failed', 'ended', 'reached', 'not_reached'])
-
-		self.main_conditions = yaml.load(open(yamlFile).read())
 
 		self.full_components = ""
 		self.required_components = ""
@@ -143,25 +138,23 @@ class SkillImplementation(SkillsBase):
 
 		with self:
 
-			self.add('PRECONDITION_CHECK', self.pre_conditions(yamlFile), transitions={'success':'SELECT_GOAL', 'failed':'PRECONDITION_CHECK'})
+			self.add('PRECONDITION_CHECK', self.pre_conditions(), transitions={'success':'SELECT_GOAL', 'failed':'PRECONDITION_CHECK'})
 			self.add('SELECT_GOAL',SelectNavigationGoal(),transitions={'selected':'SKILL_SM','not_selected':'failed','failed':'failed'})
 			self.add('SKILL_SM',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_GOAL', 'not_reached': 'SELECT_GOAL'})
-			self.add('POSTCONDITION_CHECK',self.post_conditions(yamlFile), transitions={'success':'success'})
+			self.add('POSTCONDITION_CHECK',self.post_conditions(), transitions={'success':'success'})
 
 	def execute_machine(self):
 		mach =  skill_state_approachpose.skill_state_approachpose(components = self.check_pre.full_components)
 		return mach
 
-# base reports some diagn info 
-	def pre_conditions(self, yaml_filename):
+	def pre_conditions(self):
 		
-		self.check_pre = condition_check.ConditionCheck(self.main_conditions, "pre_check", self.tfL)
+		self.check_pre = condition_check.ConditionCheck("pre_check", self.tfL)
 		return self.check_pre
 
-	# tf frames comparison : base_link against map
-	def post_conditions(self, yaml_filename):
+	def post_conditions(self):
 
-		self.check_post = condition_check.ConditionCheck(self.main_conditions,"post_check",  self.tfL)
+		self.check_post = condition_check.ConditionCheck("post_check",  self.tfL)
 		return self.check_post
 
 	@property    

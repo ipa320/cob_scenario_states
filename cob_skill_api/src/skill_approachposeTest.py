@@ -73,8 +73,7 @@ if __name__ == "__main__":
 
 	rospy.init_node('skill_template')
 
-	fName = sys.argv[1] 
-	sm = skill_approachpose.SkillImplementation(fName)
+	sm = skill_approachpose.SkillImplementation()
 
 	sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
 	sis.start()
