@@ -6,9 +6,9 @@ required_components:
   arm_left
   arm_right
 
-optional_components:
+#optional_components:
   #light
-  sound
+ # sound
 
 # definition of pre condition checks
 pre_check:
