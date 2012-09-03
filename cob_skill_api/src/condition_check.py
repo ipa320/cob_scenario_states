@@ -157,6 +157,7 @@ class ConditionCheck(ConditionCheck):
 	def joint_configuration_check_js(self, params, userdata): # from parameter server, get names and supposed states
 
 		rospy.loginfo("<<joint_configuration_check_js>>")
+		rospy.loginfo("This is part of the <<%s>>", self.checkType)
 
 		for item in params.values()[0]:	
 
@@ -280,48 +281,49 @@ class ConditionCheck(ConditionCheck):
 		
 		try:
 			rospy.loginfo("Checking the Robot <<Pose>>")
+			rospy.loginfo("This is part of the <<%s>>", self.checkType)
 
-			reference_frame = params.values()[0][0]['reference_frame']
-			target_frame = params.values()[0][0]['target_pose']['frame_id']
+			for item in params.values()[0]:
 
+				reference_frame = item['reference_frame']
+				target_frame = item['target_pose']['frame_id']
+				
+				mes = "Checking the " + reference_frame + " against the " + target_frame
 
-			self.tfL.waitForTransform(target_frame, reference_frame, rospy.Time(), rospy.Duration(20.0))
+				rospy.loginfo(mes)
 
-			(trans,rot) = self.tfL.lookupTransform(target_frame, reference_frame, rospy.Time(0))
+				self.tfL.waitForTransform(target_frame, reference_frame, rospy.Time(), rospy.Duration(20.0))
 
-			angles = euler_from_quaternion(rot)
+				(trans,rot) = self.tfL.lookupTransform(target_frame, reference_frame, rospy.Time(0))
+
+				angles = euler_from_quaternion(rot)
 		
-			xy_goal_tolerance = params.values()[0][0]['allowed_position_error']
-			yaw_goal_tolerance = params.values()[0][0]['allowed_orientation_error']
+				xy_goal_tolerance = item['allowed_position_error']
+				yaw_goal_tolerance = item['allowed_orientation_error']
+
+				if (item['target_pose']['position'] == "userdata"): # kept this for analyzing user defined goals(post_check)
+
+					assert abs(trans[0] - userdata.base_pose[0]) <= xy_goal_tolerance, "Error on the X axis position"
+					assert abs(trans[1] - userdata.base_pose[1]) <= xy_goal_tolerance, "Error on the Y axis position"
+					assert abs(angles[2] - userdata.base_pose[2]) <= yaw_goal_tolerance, "Error on the Angle"
+
+				else:
+					
+					for pos in range(len(trans)):
+						
+					
+						messageX = (str)(trans[pos]) + " " + (str)(item['target_pose']['position'][pos]) + " "+ (str)(xy_goal_tolerance)
+						assert abs(trans[pos] - item['target_pose']['position'][pos]) <= xy_goal_tolerance, "Error on the position %s"%messageX
+
+						rospy.loginfo(messageX)
+
+					for ori in range(len(angles)):
+						
+						messageA = (str)(angles[ori]) + " " + (str)(item['target_pose']['orientation'][ori]) + " "+ (str)(yaw_goal_tolerance)
+						assert abs(angles[ori] - item['target_pose']['orientation'][ori]) <= yaw_goal_tolerance, "Error on the orientation %s"%messageA
+
+						rospy.loginfo(messageA)
 		
-
-			if(self.checkType == "pre_check"):
-	
-				messageX = (str)(trans[0]) + " " + (str)(params.values()[0][0]['target_pose']['position'][0]) + " "+ (str)(xy_goal_tolerance)
-				messageY = (str)(trans[1]) + " " + (str)(params.values()[0][0]['target_pose']['position'][1]) + " "+ (str)(xy_goal_tolerance)
-				messageA = (str)(angles[2]) + " " + (str)(params.values()[0][0]['target_pose']['position'][2]) + " "+ (str)(yaw_goal_tolerance)
-
-
-
-				assert abs(trans[0] - params.values()[0][0]['target_pose']['position'][0]) <= xy_goal_tolerance, "Error on the X axis position %s"%messageX
-				assert abs(trans[1] - params.values()[0][0]['target_pose']['position'][1]) <= xy_goal_tolerance, "Error on the Y axis position %s"%messageY
-				assert abs(angles[2] - params.values()[0][0]['target_pose']['position'][2]) <= yaw_goal_tolerance, "Error on the Angle %s"%messageA
-
-			elif(self.checkType == "post_check"):
-
-				messageX = (str)(trans[0]) + " " + (str)(userdata.base_pose[0]) + " "+ (str)(xy_goal_tolerance)
-				messageY = (str)(trans[1]) + " " + (str)(userdata.base_pose[1]) + " "+ (str)(xy_goal_tolerance)
-				messageA = (str)(angles[2]) + " " + (str)(userdata.base_pose[2]) + " "+ (str)(yaw_goal_tolerance)
-
-
-				assert abs(trans[0] - userdata.base_pose[0]) <= xy_goal_tolerance, "Error on the X axis position %s"%messageX
-				assert abs(trans[1] - userdata.base_pose[1]) <= xy_goal_tolerance, "Error on the Y axis position %s"%messageY
-				assert abs(angles[2] - userdata.base_pose[2]) <= yaw_goal_tolerance, "Error on the Angle %s"%messageA
-
-			else:
-				rospy.logerr("Test type %s is not recognized" % self.checkType)
-		
-			
 		except AssertionError,e:
 			self.result = "failed"
 			rospy.logerr("<<Error Message>>:%s"%e)		

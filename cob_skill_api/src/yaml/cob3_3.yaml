@@ -4,10 +4,9 @@ robot_name: cob3-3
 required_components: 
   torso
   arm
-  #base	
-  #tray
+  tray
+  #base
   
-
 optional_components:
   light
   sound
@@ -29,7 +28,7 @@ pre_check:
       joint_states: [-1.1572567240035734, -1.9104664691761568, -2.5334780195730255, -1.7853311980377056, -0.072798739390243047, 0.91767934923272776, -1.8876618005378798] # 7-DOF arm
       allowed_error: 0.2 # rad
     - joint_names: [torso_lower_neck_tilt_joint, torso_pan_joint, torso_upper_neck_tilt_joint] 
-      joint_states: [0.0, 0.0, 0.0] # 7-DOF arm
+      joint_states: [0.0, 0.0, 0.0] 
       allowed_error: 0.2 # rad
 
   - joint_configuration_check_ss:
@@ -41,11 +40,11 @@ pre_check:
       allowed_error: 0.2 # rad
 
   - pose_check:
-    - reference_frame: /base_link
+    - reference_frame: /arm_7_link
       target_pose:
-        frame_id: /map
-        position: [0,0,0]
-        orientation: [0,0,0]
+        frame_id: /base_link
+        position: [-0.227,0.102, 0.596] 
+        orientation: [-2.337, -0.334, -2.408]
       allowed_position_error: 0.1 #m
       allowed_orientation_error: 0.1 #rad
     - reference_frame: /base_link
@@ -53,8 +52,8 @@ pre_check:
         frame_id: /map
         position: [0,0,0]
         orientation: [0,0,0]
-      allowed_position_error: 0.1 #m
-      allowed_orientation_error: 0.1 #rad
+      allowed_position_error: 0.2 #m
+      allowed_orientation_error: 0.2 #rad
 
 # --> rosrun tf tf_echo target_pose.frame_id reference_frame --> x,y,z,r,p,y compare with target_pose
  
@@ -70,12 +69,17 @@ post_check:
       allowed_error: 0.2 # rad
 
   - pose_check:
+    - reference_frame: /arm_7_link
+      target_pose:
+        frame_id: /base_link
+        position: [-0.227,0.102, 0.596] 
+        orientation: [-2.337, -0.334, -2.408]
+      allowed_position_error: 0.2 #m
+      allowed_orientation_error: 0.2 #rad
     - reference_frame: /base_link
       target_pose:
         frame_id: /map
-        position: [0,0,0]
-        orientation: [0,0,0]
+        position: userdata
+        orientation: userdata
       allowed_position_error: 0.1 #m
       allowed_orientation_error: 0.1 #rad
-
-

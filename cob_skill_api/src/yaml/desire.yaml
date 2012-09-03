@@ -37,13 +37,6 @@ pre_check:
         orientation: [0,0,0]
       allowed_position_error: 0.1 #m
       allowed_orientation_error: 0.1 #rad
-    - reference_frame: /base_link
-      target_pose:
-        frame_id: /map
-        position: [0,0,0]
-        orientation: [0,0,0]
-      allowed_position_error: 0.1 #m
-      allowed_orientation_error: 0.1 #rad
 
 post_check:
   - joint_configuration_check_ss:
@@ -58,7 +51,7 @@ post_check:
     - reference_frame: /base_link
       target_pose:
         frame_id: /map
-        position: [0,0,0]
-        orientation: [0,0,0]
-      allowed_position_error: 0.1 #m
-      allowed_orientation_error: 0.1 #rad
+        position: userdata
+        orientation: userdata
+      allowed_position_error: 0.2 #m
+      allowed_orientation_error: 0.2 #rad
