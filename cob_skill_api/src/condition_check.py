@@ -70,7 +70,7 @@ import tf
 from tf.msg import tfMessage 
 from tf.transformations import euler_from_quaternion
 
-from simple_script_server import *  # import script
+from simple_script_server import *
 sss = simple_script_server()
 
 from kinematics_msgs.srv import *
@@ -163,7 +163,7 @@ class ConditionCheck(ConditionCheck):
 			self.joint_configuration_check(joint_names,joint_states, aw_error)
 
 
-	def joint_configuration_check_ss(self, params, userdata):
+	def joint_configuration_check_ss(self, params, userdata): # get names and states from script server
 		
 		rospy.loginfo("<<joint_configuration_check_ss>>")
 
