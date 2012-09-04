@@ -229,6 +229,8 @@ class ConditionCheck(ConditionCheck):
 
 			assert self.status == 0, "<<base>> component is not ready yet."
 
+			rospy.loginfo("All Necessary components are present.")
+
 			self.init_components()
 
 			rospy.loginfo("Components successfully initialized.")

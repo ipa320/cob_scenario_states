@@ -45,8 +45,22 @@ pre_check:
         frame_id: /base_link
         position: [-0.227,0.102, 0.596] 
         orientation: [-2.337, -0.334, -2.408]
+      allowed_position_error: 0.2 #m
+      allowed_orientation_error: 0.2 #rad
+    - reference_frame: /sdh_grasp_link
+      target_pose:
+        frame_id: /base_link
+        position: [-0.168,-0.021, 0.570] 
+        orientation: [-2.694, 0.758, 2.628]
       allowed_position_error: 0.1 #m
-      allowed_orientation_error: 0.1 #rad
+      allowed_orientation_error: 0.2 #rad
+    - reference_frame: /arm_3_link
+      target_pose:
+        frame_id: /base_link
+        position: [-0.132,-0.033, 1.064] 
+        orientation: [-0.320, -1.286, -0.813]
+      allowed_position_error: 0.2 #m
+      allowed_orientation_error: 0.2 #rad
     - reference_frame: /base_link
       target_pose:
         frame_id: /map
@@ -74,6 +88,20 @@ post_check:
         frame_id: /base_link
         position: [-0.227,0.102, 0.596] 
         orientation: [-2.337, -0.334, -2.408]
+      allowed_position_error: 0.2 #m
+      allowed_orientation_error: 0.2 #rad
+    - reference_frame: /sdh_grasp_link
+      target_pose:
+        frame_id: /base_link
+        position: [-0.168,-0.021, 0.570] 
+        orientation: [-2.694, 0.758, 2.628]
+      allowed_position_error: 0.2 #m
+      allowed_orientation_error: 0.2 #rad
+    - reference_frame: /arm_3_link
+      target_pose:
+        frame_id: /base_link
+        position: [-0.132,-0.033, 1.064] 
+        orientation: [-0.320, -1.286, -0.813]
       allowed_position_error: 0.2 #m
       allowed_orientation_error: 0.2 #rad
     - reference_frame: /base_link
