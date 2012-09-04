@@ -18,9 +18,7 @@ pre_check:
   - action_check: 
     - action_name: move_base_msgs.msg
       action_type: MoveBaseAction
-    - action_name: move_base_msgs.msg
-      action_type: MoveBaseAction
-     
+
   - joint_configuration_check_ss:
     - component: arm_left #get joint_names from /script_server/torso
       configuration: folded #--> look up joint_states on /script_server/torso/home

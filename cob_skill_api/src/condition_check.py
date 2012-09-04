@@ -90,31 +90,26 @@ class ConditionCheck(ConditionCheck):
 		self.checks = rospy.get_param(self.checkType)
 		self.robot_name = rospy.get_param('robot_name')
 		
-		if rospy.has_param('required_components'):
+		if rospy.has_param('required_components') and rospy.has_param('optional_components'):
 			self.required_components = rospy.get_param('required_components')
-		else:
-			self.required_components = None
-
-		if rospy.has_param('optional_components'):
 			self.optional_components = rospy.get_param('optional_components')
-		else:
-			self.optional_components = None
-		
-		if isinstance(self.required_components, types.NoneType) and isinstance(self.optional_components, types.NoneType):
-			self.full_components = ""
-			self.optional_components = ""
-			self.required_components = ""
-		
-		elif isinstance(self.required_components, types.NoneType):
-			self.full_components = self.optional_components 
-			self.required_components = ""
+			self.full_components = self.required_components + " " + self.optional_components
 
-		elif isinstance(self.optional_components, types.NoneType):
-			self.full_components = self.required_components 
+		elif rospy.has_param('required_components'):
+			self.required_components = rospy.get_param('required_components')
 			self.optional_components = ""
+			self.full_components = self.required_components
+
+		elif rospy.has_param('optional_components'):
+			self.optional_components = rospy.get_param('optional_components')
+			self.required_components = ""
+			self.full_components = self.optional_components
+
 		else:
-			self.full_components = self.required_components + " " + self.optional_components 
-		
+			self.required_components = ""
+			self.optional_components =""
+			self.full_components = ""
+
 		self.required_components = self.required_components.split()
 		self.optional_components = self.optional_components.split()
 		self.full_components = self.full_components.split()
