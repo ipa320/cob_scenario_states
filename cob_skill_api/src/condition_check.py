@@ -309,14 +309,18 @@ class ConditionCheck(ConditionCheck):
 					for pos in range(len(trans)):
 						
 					
-						messageX = (str)(trans[pos]) + " " + (str)(item['target_pose']['position'][pos]) + " "+ (str)(xy_goal_tolerance)
+						messageX = "Position " + (str)(pos) + ":" +  " Real Position: " +  (str)(trans[pos]) + ", Target Position: " + \
+							(str)(item['target_pose']['position'][pos]) + ", Tolerance: "+ (str)(xy_goal_tolerance)
+
 						assert abs(trans[pos] - item['target_pose']['position'][pos]) <= xy_goal_tolerance, "Error on the position %s"%messageX
 
 						rospy.loginfo(messageX)
 
 					for ori in range(len(angles)):
 						
-						messageA = (str)(angles[ori]) + " " + (str)(item['target_pose']['orientation'][ori]) + " "+ (str)(yaw_goal_tolerance)
+						messageA = "Orientation " + (str)(ori) + ":" + " Real Orientation: " + (str)(angles[ori]) + ", Target Orientation: " + \
+							(str)(item['target_pose']['orientation'][ori]) + ", Tolerance: "+ (str)(yaw_goal_tolerance)
+						
 						assert abs(angles[ori] - item['target_pose']['orientation'][ori]) <= yaw_goal_tolerance, "Error on the orientation %s"%messageA
 
 						rospy.loginfo(messageA)
