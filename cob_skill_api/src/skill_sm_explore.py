@@ -21,10 +21,10 @@
 # \author
 # Supervised by: Florian Weisshardt, email:florian.weisshardt@ipa.fhg.de
 #
-# \date Date of creation: August 2012
+# \date Date of creation: September 2012
 #
 # \brief
-# Abstract Class for Defining Skills State Machines
+# Explore State Machine using the Skills API
 #
 #################################################################
 #
@@ -56,18 +56,54 @@
 # If not, see < http://www.gnu.org/licenses/>.
 #
 #################################################################
-import abc
 
 import roslib
-roslib.load_manifest('cob_skill_api')
+roslib.load_manifest('cob_generic_states_experimental')
 import rospy
 import smach
 import smach_ros
-from actionlib import *
-from actionlib.msg import *
+import random
+from nav_msgs.msg import Odometry
 
-import smach
+from simple_script_server import *
+sss = simple_script_server()	
 
-class SkillsSM(smach.StateMachine):
+from abc_sm_skill import SkillsSM
 
-	__metaclass__ = abc.ABCMeta
+import skill_approachpose
+import skill_detectobjectsfront
+import skill_state_announcefoundobjects
+
+class skill_sm_explore(SkillsSM):
+
+	def __init__(self):
+		smach.StateMachine.__init__(self,
+			outcomes=['success', 'failed'])
+
+		with self:
+		    
+
+			self.add('APPROACH_SKILL',self.mach_approach(),
+					   transitions={'success':'DETECT',
+						        'failed':'APPROACH_SKILL'})
+
+			self.add('DETECT',self.mach_detect(),
+					   transitions={'ended':'ANNOUNCE'})
+
+			self.add('ANNOUNCE',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
+					   transitions={'announced':'APPROACH_SKILL',
+						        'not_announced':'APPROACH_SKILL',
+						        'failed':'failed'})
+
+	def mach_approach(self):
+		rospy.loginfo("Executing the Approach pose Skill!")
+		mach =  skill_approachpose.SkillImplementation()
+		return mach
+
+	
+	def mach_detect(self):
+		rospy.loginfo("Executing the Detect Skill!")
+		mach =  skill_detectobjectsfront.SkillImplementation()
+		return mach
+
+

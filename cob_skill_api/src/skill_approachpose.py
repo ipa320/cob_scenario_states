@@ -125,7 +125,9 @@ class SelectNavigationGoal(smach.State):
 
 class SkillImplementation(SkillsBase):
 	def __init__(self):
-		smach.StateMachine.__init__(self, outcomes=['success', 'failed', 'ended', 'reached', 'not_reached'])
+		smach.StateMachine.__init__(self, outcomes=['success', 'failed'])
+		
+		rospy.loginfo("Started executing the ApproachPose State Machine")
 
 		self.full_components = ""
 		self.required_components = ""
@@ -139,11 +141,12 @@ class SkillImplementation(SkillsBase):
 		with self:
 
 			self.add('PRECONDITION_CHECK', self.pre_conditions(), transitions={'success':'SELECT_GOAL', 'failed':'PRECONDITION_CHECK'})
-			self.add('SELECT_GOAL',SelectNavigationGoal(),transitions={'selected':'SKILL_SM','not_selected':'failed','failed':'failed'})
-			self.add('SKILL_SM',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_GOAL', 'not_reached': 'SELECT_GOAL'})
+			self.add('SELECT_GOAL',SelectNavigationGoal(),transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
+			self.add('APPROACH_POSE',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_GOAL', 'not_reached': 'SELECT_GOAL'})
 			self.add('POSTCONDITION_CHECK',self.post_conditions(), transitions={'success':'success'})
 
 	def execute_machine(self):
+		rospy.loginfo("Executing the Approach pose Skill!")
 		mach =  skill_state_approachpose.skill_state_approachpose(components = self.check_pre.full_components)
 		return mach
 
@@ -168,3 +171,16 @@ class SkillImplementation(SkillsBase):
 	@property
 	def requirements(self):
 		return "Some Requirements"
+
+
+if __name__ == "__main__":
+
+	rospy.init_node('skill_template')
+
+	sm = SkillImplementation()
+
+	sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
+	sis.start()
+	outcome = sm.execute()
+	rospy.spin()
+	sis.stop()

@@ -21,10 +21,10 @@
 # \author
 # Supervised by: Florian Weisshardt, email:florian.weisshardt@ipa.fhg.de
 #
-# \date Date of creation: August 2012
+# \date Date of creation: September 2012
 #
 # \brief
-# Abstract Class for Defining Skills State Machines
+# Explore Machine implemented using the skills API
 #
 #################################################################
 #
@@ -56,18 +56,50 @@
 # If not, see < http://www.gnu.org/licenses/>.
 #
 #################################################################
-import abc
 
 import roslib
 roslib.load_manifest('cob_skill_api')
 import rospy
 import smach
 import smach_ros
-from actionlib import *
-from actionlib.msg import *
 
-import smach
+import skill_sm_explore
+from abc_skill import SkillsBase
 
-class SkillsSM(smach.StateMachine):
+class SkillImplementation(SkillsBase):
 
-	__metaclass__ = abc.ABCMeta
+	def __init__(self):
+		smach.StateMachine.__init__(self,outcomes=['success', 'failed'])
+
+		with self:
+			self.add('Explore',skill_sm_explore.skill_sm_explore(),
+		    		transitions={'success':'Explore'})
+
+	def pre_conditions(self):
+		
+		print "Some preconditions"
+
+	def post_conditions(self):
+		print "Some postconditions"
+
+	@property    
+	def inputs(self):
+		return "Some Input"
+    
+	@property
+	def outputs(self):
+		return "Some Output"
+
+	@property
+	def requirements(self):
+		return "Some Requirements"
+
+
+if __name__=='__main__':
+	rospy.init_node('Explore')
+	sm = SkillImplementation()
+	sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
+	sis.start()
+	outcome = sm.execute()
+	rospy.spin()
+	sis.stop()

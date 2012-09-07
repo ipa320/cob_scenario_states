@@ -21,10 +21,10 @@
 # \author
 # Supervised by: Florian Weisshardt, email:florian.weisshardt@ipa.fhg.de
 #
-# \date Date of creation: August 2012
+# \date Date of creation: September 2012
 #
 # \brief
-# Test Execution for the skill ApproachPose using the skills API
+# Skill state detect objects re-implementation using the skills API
 #
 #################################################################
 #
@@ -59,24 +59,65 @@
 
 import roslib
 roslib.load_manifest('cob_skill_api')
+
 import rospy
 import smach
 import smach_ros
-from actionlib import *
-from actionlib.msg import *
 
-import sys
+from math import *
+import copy
 
-import skill_approachpose
+from simple_script_server import *
+sss = simple_script_server()
 
-if __name__ == "__main__":
+from cob_object_detection_msgs.msg import *
+from cob_object_detection_msgs.srv import *
 
-	rospy.init_node('skill_template')
+from ObjectDetector import *
 
-	sm = skill_approachpose.SkillImplementation()
+from abc_state_skill import SkillsState
 
-	sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
-	sis.start()
-	outcome = sm.execute()
-	rospy.spin()
-	sis.stop()
+class skill_state_detectobjectsfront(SkillsState):
+
+	def __init__(self, object_names = [], namespace = "", detector_srv = '/object_detection/detect_object', mode='all'):
+		smach.State.__init__(			
+			self,
+			outcomes=['detected','not_detected','failed'],
+			input_keys=['object_names'],
+			output_keys=['objects'])
+
+		if mode not in ['all','one']:
+			rospy.logwarn("Invalid mode: must be 'all', or 'one', selecting default value = 'all'")
+			self.mode = 'all'	
+		else:
+			self.mode = mode
+
+		self.object_detector = ObjectDetector(object_names, namespace, detector_srv, self.mode)
+
+
+	def execute(self, userdata):
+
+		rospy.loginfo("Started executing the Detect Objects state")
+
+		sss.set_light('blue')
+
+		#Preparations for object detection
+		handle_torso = sss.move("torso","shake",False)
+		handle_head = sss.move("head","front",False)
+		handle_head.wait()
+		handle_torso.wait()
+		sss.set_light('blue')
+
+		result, userdata.objects = self.object_detector.execute(userdata)
+
+		# ... cleanup robot components
+		sss.move("torso","home")
+
+		if result == "failed":
+			sss.set_light('red')
+		else:
+			sss.set_light('green')
+
+		return result
+
+
