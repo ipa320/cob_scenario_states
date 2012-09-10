@@ -84,13 +84,13 @@ class skill_sm_explore(SkillsSM):
 		    
 
 			self.add('APPROACH_SKILL',self.mach_approach(),
-					   transitions={'success':'DETECT',
+					   transitions={'success':'DETECT_SKILL',
 						        'failed':'APPROACH_SKILL'})
 
-			self.add('DETECT',self.mach_detect(),
-					   transitions={'ended':'ANNOUNCE'})
+			self.add('DETECT_SKILL',self.mach_detect(),
+					   transitions={'ended':'ANNOUNCE_SKILL'})
 
-			self.add('ANNOUNCE',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
+			self.add('ANNOUNCE_SKILL',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
 					   transitions={'announced':'APPROACH_SKILL',
 						        'not_announced':'APPROACH_SKILL',
 						        'failed':'failed'})

@@ -72,8 +72,8 @@ class SkillImplementation(SkillsBase):
 		smach.StateMachine.__init__(self,outcomes=['success', 'failed'])
 
 		with self:
-			self.add('Explore',skill_sm_explore.skill_sm_explore(),
-		    		transitions={'success':'Explore'})
+			self.add('Explore_SKILL',skill_sm_explore.skill_sm_explore(),
+		    		transitions={'success':'Explore_SKILL'})
 
 	def pre_conditions(self):
 		
