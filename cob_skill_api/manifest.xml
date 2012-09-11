@@ -1,0 +1,16 @@
+<package>
+  <description brief="cob_skill_api">
+
+     cob_skill_api
+
+  </description>
+  <author>Alexander Bubeck</author>
+  <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_skill_api</url>
+  <depend package="rospy"/>
+  <depend package="smach"/>
+
+</package>
+
+
