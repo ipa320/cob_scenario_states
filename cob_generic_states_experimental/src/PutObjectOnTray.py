@@ -24,11 +24,14 @@ class PutObjectOnTray(smach.State):
 		self.transformer = rospy.ServiceProxy('/cob_pose_transform/get_pose_stamped_transformed', GetPoseStampedTransformed)
 
 	def execute(self, userdata):
+		return "put" #HACK
+		
+	
 		#TODO select position on tray depending on how many objects are on the tray already
 
 		req = GetPoseStampedTransformedRequest()
-		req.tip_name = rospy.get_param("/cob_arm_kinematics/arm/tip_name")
-		req.root_name = rospy.get_param("/cob_arm_kinematics/arm/root_name")
+		req.tip_name = rospy.get_param("/cob_arm_kinematics/arm/tip_name") #TODO: check for existens of parameter, if not return "failed"
+		req.root_name = rospy.get_param("/cob_arm_kinematics/arm/root_name") #TODO: check for existens of parameter, if not return "failed"
 		req.target.header.stamp=rospy.Time.now()
 		req.target.header.frame_id='base_link'
 		pos = req.target.pose.position
@@ -46,7 +49,7 @@ class PutObjectOnTray(smach.State):
 		req.origin.header.stamp=req.target.header.stamp
 
 		
-		res = self.transformer(req)
+		res = self.transformer(req) #TODO: check for existens of service with timeout, if not return "failed"
 		if not res.success:
 			print "Service call failed"
 			self.retries = 0
@@ -54,8 +57,8 @@ class PutObjectOnTray(smach.State):
 			return 'failed'
 			
 		seed_js = JointState()
-		seed_js.name = rospy.get_param("/arm_controller/joint_names")
-		seed_js.position = rospy.get_param("/script_server/arm/intermediatefront")[0]
+		seed_js.name = rospy.get_param("/arm_controller/joint_names") #TODO: check for existens of parameter, if not return "failed"
+		seed_js.position = rospy.get_param("/script_server/arm/intermediatefront")[0] #TODO: check for existens of parameter, if not return "failed"
 
 		sss.set_light('blue')
 		# calculate ik solutions for grasp configuration
