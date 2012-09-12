@@ -14,7 +14,7 @@ from geometry_msgs.msg import *
 
 from cob_arm_navigation_python.MoveHand import *
 from cob_arm_navigation_python.MoveArm import *
-from cob_arm_navigation_python.MovePlan import *
+from cob_arm_navigation_python.MotionPlan import *
 
 from pr2_python import transform_listener
 from pr2_python import world_interface
@@ -66,7 +66,7 @@ class Grasp(smach.State):
 		mp += MoveComponent('sdh','cylclosed')
 		
 		# check grasp
-		mp += CheckService('/sdh_controller/is_cylindric_grasped', Trigger, lambda res: return res.success.data)
+		mp += CheckService('/sdh_controller/is_cylindric_grasped', Trigger, lambda res: res.success.data)
 		
 		# attach object
 		mp += AttachObject('arm', "grasp_object")
