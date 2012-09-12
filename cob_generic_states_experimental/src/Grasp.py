@@ -22,6 +22,8 @@ from pr2_python import conversions
 
 from copy import deepcopy
 from tf.transformations import *
+from tf_conversions import posemath as pm
+import numpy
 
 class Grasp(smach.State):
 	def __init__(self):
@@ -37,20 +39,23 @@ class Grasp(smach.State):
 		# add table
 		# (add floor)
 		
-		#transform into base_link
-		grasp_pose = transform_listener.transform_pose_stamped('base_link', userdata.object.pose)
 		
-		obj_pose = deepcopy(grasp_pose)
+		obj_pose = deepcopy(userdata.object.pose)
 		# add object bounding box
 		with userdata.object.bounding_box_lwh:
-			obj_pose.pose.position.z += z/2.0
+                        m1 = pm.toMatrix( pm.fromMsg(obj_pose.pose.position) )
+                        m2 = pm.toMatix( pm.fromTf( ((0,0, z/2.0),(0,0,0,1)) ) )
+                        obj_pose.pose = pm.toMsg( pm.fromMatrix(numpy.dot(m1,m2)) )
 			wi.add_collision_box(obj_pose,(x,y,z) , "grasp_object")
 		
-		# calculate grasp and lift pose
+                #transform into base_link
+                grasp_pose = transform_listener.transform_pose_stamped('base_link', userdata.object.pose, use_most_recent=False)
+
+                # calculate grasp and lift pose
 		grasp_pose.pose.position.x += 0.03
 		grasp_pose.pose.position.y += 0.03
-		grasp_pose.pose.position.z += 0.03
-		grasp_pose.pose.orientation = Quaternion(*quaternion_from_euler(-1.581, -0.019, 2.379))
+		grasp_pose.pose.position.z += 0.03 + 0.05
+		grasp_pose.pose.orientation = Quaternion(*quaternion_from_euler(-1.706, 0.113, 2.278)) # orientation of sdh_grasp_link in base_link for 'grasp' joint goal
 		
 		lift_pose = deepcopy(grasp_pose)
 		lift_pose.pose.position.z += 0.03
