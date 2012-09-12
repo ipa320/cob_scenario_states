@@ -29,33 +29,37 @@ class Grasp(smach.State):
 	def __init__(self):
 		smach.State.__init__(self, 
 			outcomes=['grasped','not_grasped','failed'],
-			input_keys=['object'])
+			input_keys=['object'],output_keys=['graspdata'])
 	def execute(self, userdata):
 		
 		wi = WorldInterface()
-		table_extent = (2.0, 2.0, 0.74)
-		table_pose = conversions.create_pose_stamped([ 0.5 + table_extent[0]/2.0, 0 ,table_extent[2]/2.0 ,0,0,0,1])
-		wi.add_collision_box(table_pose, table_extent, "table")
-		# add table
-		# (add floor)
-		
-		
+		userdata.graspdata = dict()
 		obj_pose = deepcopy(userdata.object.pose)
+		
 		# add object bounding box
 		with userdata.object.bounding_box_lwh:
-                        m1 = pm.toMatrix( pm.fromMsg(obj_pose.pose.position) )
-                        m2 = pm.toMatix( pm.fromTf( ((0,0, z/2.0),(0,0,0,1)) ) )
-                        obj_pose.pose = pm.toMsg( pm.fromMatrix(numpy.dot(m1,m2)) )
+			m1 = pm.toMatrix( pm.fromMsg(obj_pose.pose.position) )
+			m2 = pm.toMatix( pm.fromTf( ((0,0, z/2.0),(0,0,0,1)) ) )
+			obj_pose.pose = pm.toMsg( pm.fromMatrix(numpy.dot(m1,m2)) )
 			wi.add_collision_box(obj_pose,(x,y,z) , "grasp_object")
-		
-                #transform into base_link
-                grasp_pose = transform_listener.transform_pose_stamped('base_link', userdata.object.pose, use_most_recent=False)
 
-                # calculate grasp and lift pose
+			
+		
+		#transform into base_link
+		grasp_pose = transform_listener.transform_pose_stamped('base_link', userdata.object.pose, use_most_recent=False)
+		
+		# add table
+		table_extent = (2.0, 2.0, grasp_pose.pose.position.z)
+		table_pose = conversions.create_pose_stamped([ 0.5 + table_extent[0]/2.0, 0 ,table_extent[2]/2.0 ,0,0,0,1], 'base_link')
+		wi.add_collision_box(table_pose, table_extent, "table")
+
+		# calculate grasp and lift pose
 		grasp_pose.pose.position.x += 0.03
 		grasp_pose.pose.position.y += 0.03
 		grasp_pose.pose.position.z += 0.03 + 0.05
 		grasp_pose.pose.orientation = Quaternion(*quaternion_from_euler(-1.706, 0.113, 2.278)) # orientation of sdh_grasp_link in base_link for 'grasp' joint goal
+		
+		userdata.graspdata['height'] =  grasp_pose.pose.position.z - table_pose.pose.position.z
 		
 		lift_pose = deepcopy(grasp_pose)
 		lift_pose.pose.position.z += 0.03
