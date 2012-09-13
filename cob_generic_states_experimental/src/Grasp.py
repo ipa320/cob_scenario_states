@@ -37,14 +37,12 @@ class Grasp(smach.State):
 		obj_pose = deepcopy(userdata.object.pose)
 		
 		# add object bounding box
-		with userdata.object.bounding_box_lwh:
-			m1 = pm.toMatrix( pm.fromMsg(obj_pose.pose.position) )
-			m2 = pm.toMatix( pm.fromTf( ((0,0, z/2.0),(0,0,0,1)) ) )
-			obj_pose.pose = pm.toMsg( pm.fromMatrix(numpy.dot(m1,m2)) )
-			wi.add_collision_box(obj_pose,(x,y,z) , "grasp_object")
+		lwh = userdata.object.bounding_box_lwh
+		m1 = pm.toMatrix( pm.fromMsg(obj_pose.pose) )
+		m2 = pm.toMatrix( pm.fromTf( ((0,0, lwh.z/2.0),(0,0,0,1)) ) )
+		obj_pose.pose = pm.toMsg( pm.fromMatrix(numpy.dot(m1,m2)) )
+		wi.add_collision_box(obj_pose,(lwh.x,lwh.y,lwh.z) , "grasp_object")
 
-			
-		
 		#transform into base_link
 		grasp_pose = transform_listener.transform_pose_stamped('base_link', userdata.object.pose, use_most_recent=False)
 		
