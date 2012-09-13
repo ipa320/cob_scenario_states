@@ -19,6 +19,7 @@ from cob_arm_navigation_python.MotionPlan import *
 from pr2_python import transform_listener
 from pr2_python import world_interface
 from pr2_python import conversions
+from pr2_python import hand_description
 
 from copy import deepcopy
 from tf.transformations import *
@@ -30,10 +31,12 @@ class Grasp(smach.State):
 		smach.State.__init__(self, 
 			outcomes=['grasped','not_grasped','failed'],
 			input_keys=['object'],output_keys=['graspdata'])
+		transform_listener.get_transform_listener()
 	def execute(self, userdata):
 		
 		wi = WorldInterface()
-		userdata.graspdata = dict()
+		wi.reset_attached_objects()
+		graspdata = dict()
 		obj_pose = deepcopy(userdata.object.pose)
 		
 		# add object bounding box
@@ -48,32 +51,47 @@ class Grasp(smach.State):
 		
 		# add table
 		table_extent = (2.0, 2.0, grasp_pose.pose.position.z)
-		table_pose = conversions.create_pose_stamped([ 0.5 + table_extent[0]/2.0, 0 ,table_extent[2]/2.0 ,0,0,0,1], 'base_link')
+		table_pose = conversions.create_pose_stamped([ -0.5 - table_extent[0]/2.0, 0 ,table_extent[2]/2.0 ,0,0,0,1], 'base_link')
 		wi.add_collision_box(table_pose, table_extent, "table")
 
 		# calculate grasp and lift pose
 		grasp_pose.pose.position.x += 0.03
 		grasp_pose.pose.position.y += 0.03
-		grasp_pose.pose.position.z += 0.03 + 0.05
+		grasp_pose.pose.position.z += 0.1 #0.03 + 0.05
 		grasp_pose.pose.orientation = Quaternion(*quaternion_from_euler(-1.706, 0.113, 2.278)) # orientation of sdh_grasp_link in base_link for 'grasp' joint goal
 		
-		userdata.graspdata['height'] =  grasp_pose.pose.position.z - table_pose.pose.position.z
+		graspdata['height'] =  grasp_pose.pose.position.z - table_extent[2]
 		
+		pregasp_pose = deepcopy(grasp_pose)
+		#pregasp_pose.pose.position.x += 0.1
+		#pregasp_pose.pose.position.y += 0.1
+		pregasp_pose.pose.position.z += 0.3
+
 		lift_pose = deepcopy(grasp_pose)
 		lift_pose.pose.position.z += 0.03
 		
 		mp = MotionPlan()
 		# open hand
+		mp += MoveComponent('sdh','home')
+		#mp += MoveArmUnplanned('arm','look_at_table-to-folded')
+		mp += MoveArm('arm',[pregasp_pose,['sdh_grasp_link']], seed = 'pregrasp')
 		mp += MoveComponent('sdh','cylopen')
-		
+
+		# allow collison hand/object
+		#for l in hand_description.HandDescription('arm').touch_links:
+		#    mp += EnableCollision("grasp_object", l)
+		#
+		# disable collison
+		#mp += ResetCollisions()
+
 		# goto grasp
-		mp += MoveArm('arm', [grasp_pose,['sdh_grasp_link']])
+		mp += MoveArmUnplanned('arm', [grasp_pose,['sdh_grasp_link']])
 		
 		# close hand
 		mp += MoveComponent('sdh','cylclosed')
 		
 		# check grasp
-		mp += CheckService('/sdh_controller/is_cylindric_grasped', Trigger, lambda res: res.success.data)
+		#mp += CheckService('/sdh_controller/is_cylindric_grasped', Trigger, lambda res: res.success.data)
 		
 		# attach object
 		mp += AttachObject('arm', "grasp_object")
@@ -82,7 +100,7 @@ class Grasp(smach.State):
 		mp += EnableCollision("grasp_object", "table")
 		
 		# lift motion
-		mp += MoveArm('arm', [lift_pose,['sdh_grasp_link']])
+		mp += MoveArmUnplanned('arm', [lift_pose,['sdh_grasp_link']])
 		
 		# disable collison
 		mp += ResetCollisions()
@@ -90,12 +108,16 @@ class Grasp(smach.State):
 		# goto hold
 		mp += MoveArm('arm', 'hold')
 		
+		userdata.graspdata = graspdata
+
 		if not mp.plan().success:
 			return "not_grasped"
 		
 		sss.say(["I am grasping " + userdata.object.label + " now."])
 		# run, handle errors
+		i = 0
 		for ex in mp.execute():
-			if not ex.wait().success:
+			if not ex.wait(30.0).success:
 				return 'failed'
+			i+=1
 		return 'grasped'
