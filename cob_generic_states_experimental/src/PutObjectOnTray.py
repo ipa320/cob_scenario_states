@@ -32,20 +32,17 @@ class PutObjectOnTray(smach.State):
 			outcomes=['put', 'not_put', 'failed'],
 			input_keys=['object','graspdata'])
 
-		self.transformer = rospy.ServiceProxy('/cob_pose_transform/get_pose_stamped_transformed', GetPoseStampedTransformed)
-
 	def execute(self, userdata):
-		#return "put" #HACK
 		
 	
 		#TODO select position on tray depending on how many objects are on the tray already
 		pos_x, pos_y, pos_z = [0.640, -0.110, 0.902] # tray_right_link in base_link		
 		pos_x -= 0.13
 		pos_y += 0.065
-		pos_z += userdata.graspdata['height'] + 0.01
+		pos_z += userdata.graspdata['height'] + 0.03
 		
 		[new_x, new_y, new_z, new_w] = tf.transformations.quaternion_from_euler(-1.5708,0,0) # rpy TODO: check orientation
-		put_pose = conversions.create_pose_stamped(pos_x, pos_y, pos_z,new_x, new_y, new_z, new_w, 'base_link')
+		put_pose = conversions.create_pose_stamped([pos_x, pos_y, pos_z,new_x, new_y, new_z, new_w], 'base_link')
 		
 		lift_pose = deepcopy(put_pose)
 		lift_pose.pose.position.y -= 0.1
@@ -56,7 +53,7 @@ class PutObjectOnTray(smach.State):
 		mp = MotionPlan()
 		
 		# move arm to lift
-		mp += MoveArm('arm', [lift_pose,['sdh_grasp_link']])
+		mp += MoveArm('arm', [lift_pose,['sdh_grasp_link']], seed = 'intermediatefront')
 		
 		# allow collison tray/object
 		mp += EnableCollision("grasp_object", "tray_link")
@@ -71,25 +68,25 @@ class PutObjectOnTray(smach.State):
 		mp += MoveComponent('sdh', 'cylopen')
 
 		# check free
-		mp += CheckService('/sdh_controller/one_pad_contact', Trigger, lambda res: not res.success.data)
+		#mp += CheckService('/sdh_controller/one_pad_contact', Trigger, lambda res: not res.success.data)
 		
 		# detach object
 		
 		mp += DetachObject('arm', "grasp_object")
  
 		# allow collison hand/object
-		for l in hand_description('arm').touch_links:
-		    mp += EnableCollision("grasp_object", l)
+		#for l in HandDescription('arm').touch_links:
+		#    mp += EnableCollision("grasp_object", l)
 		
 		
 		# move arm to lift
 		mp += MoveArm('arm', [lift_pose,['sdh_grasp_link']])
 		
 		# disable collisions
-		mp += ResetCollisions()
+		#mp += ResetCollisions()
 
 		# move arm to folded
-		mp += MoveArm('arm', 'folded')
+		mp += MoveArmUnplanned('arm', 'tray-to-folded')
 		
 
 		sss.set_light('blue')
@@ -99,7 +96,7 @@ class PutObjectOnTray(smach.State):
 
 		sss.set_light('yellow')
 		for ex in mp.execute():
-			if not ex.wait().success:
+			if not ex.wait(30.0).success:
 				return 'failed'
 		
 		return 'put'
