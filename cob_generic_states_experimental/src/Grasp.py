@@ -33,49 +33,61 @@ class Grasp(smach.State):
 			input_keys=['object'],output_keys=['graspdata'])
 		transform_listener.get_transform_listener()
 	def execute(self, userdata):
-		
+		sss.set_light('blue')
+
 		wi = WorldInterface()
 		wi.reset_attached_objects()
 		graspdata = dict()
-		obj_pose = deepcopy(userdata.object.pose)
+                print userdata.object
+
+                # add wall
+                wall_extent = [3.0,0.1,2.5]
+		wall_pose = conversions.create_pose_stamped([  0, -0.99 - wall_extent[1], wall_extent[2]/2.0 ,0,0,0,1], 'base_link') # magic numbers are cool
+		wi.add_collision_box(wall_pose, wall_extent, "wall")
+
+                # add floor
+                floor_extent = [3.0,3.0,0.1]
+		floor_pose = conversions.create_pose_stamped([  0, 0, floor_extent[2]/2.0 ,0,0,0,1], 'base_link') # magic numbers are cool
+		wi.add_collision_box(floor_pose, floor_extent, "floor")
 		
+		#transform into base_link
+		grasp_pose = transform_listener.transform_pose_stamped('base_link', userdata.object.pose, use_most_recent=False)
+
 		# add object bounding box
+		obj_pose = deepcopy(grasp_pose)
 		lwh = userdata.object.bounding_box_lwh
 		m1 = pm.toMatrix( pm.fromMsg(obj_pose.pose) )
 		m2 = pm.toMatrix( pm.fromTf( ((0,0, lwh.z/2.0),(0,0,0,1)) ) )
 		obj_pose.pose = pm.toMsg( pm.fromMatrix(numpy.dot(m1,m2)) )
-		wi.add_collision_box(obj_pose,(lwh.x,lwh.y,lwh.z) , "grasp_object")
+		wi.add_collision_box(obj_pose,(lwh.x*2.0,lwh.y*2.0,lwh.z) , "grasp_object")
 
-		#transform into base_link
-		grasp_pose = transform_listener.transform_pose_stamped('base_link', userdata.object.pose, use_most_recent=False)
-		
+		print grasp_pose
 		# add table
 		table_extent = (2.0, 2.0, grasp_pose.pose.position.z)
 		table_pose = conversions.create_pose_stamped([ -0.5 - table_extent[0]/2.0, 0 ,table_extent[2]/2.0 ,0,0,0,1], 'base_link')
 		wi.add_collision_box(table_pose, table_extent, "table")
 
 		# calculate grasp and lift pose
-		grasp_pose.pose.position.x += 0.03
-		grasp_pose.pose.position.y += 0.03
+		grasp_pose.pose.position.x += 0.02
+		grasp_pose.pose.position.y += 0.02
 		grasp_pose.pose.position.z += 0.1 #0.03 + 0.05
 		grasp_pose.pose.orientation = Quaternion(*quaternion_from_euler(-1.706, 0.113, 2.278)) # orientation of sdh_grasp_link in base_link for 'grasp' joint goal
 		
 		graspdata['height'] =  grasp_pose.pose.position.z - table_extent[2]
 		
-		pregasp_pose = deepcopy(grasp_pose)
-		#pregasp_pose.pose.position.x += 0.1
-		#pregasp_pose.pose.position.y += 0.1
-		pregasp_pose.pose.position.z += 0.3
+		pregrasp_pose = deepcopy(grasp_pose)
+		pregrasp_pose.pose.position.x += 0.20
+		pregrasp_pose.pose.position.y += 0.11
+		pregrasp_pose.pose.position.z += 0.1
 
 		lift_pose = deepcopy(grasp_pose)
 		lift_pose.pose.position.z += 0.03
 		
 		mp = MotionPlan()
 		# open hand
-		mp += MoveComponent('sdh','home')
-		#mp += MoveArmUnplanned('arm','look_at_table-to-folded')
-		mp += MoveArm('arm',[pregasp_pose,['sdh_grasp_link']], seed = 'pregrasp')
-		mp += MoveComponent('sdh','cylopen')
+                mp += CallFunction(sss.move, 'sdh','cylopen', False)
+		mp += MoveArm('arm',[pregrasp_pose,['sdh_grasp_link']], seed = 'pregrasp')
+		mp += MoveComponent('sdh','cylopen', True)
 
 		# allow collison hand/object
 		#for l in hand_description.HandDescription('arm').touch_links:
@@ -87,7 +99,7 @@ class Grasp(smach.State):
 		# goto grasp
 		mp += MoveArmUnplanned('arm', [grasp_pose,['sdh_grasp_link']])
 		
-		# close hand
+                # close hand
 		mp += MoveComponent('sdh','cylclosed')
 		
 		# check grasp
@@ -101,23 +113,30 @@ class Grasp(smach.State):
 		
 		# lift motion
 		mp += MoveArmUnplanned('arm', [lift_pose,['sdh_grasp_link']])
-		
+
 		# disable collison
 		mp += ResetCollisions()
+
+		# move away
+		mp += MoveArm('arm', [pregrasp_pose,['sdh_grasp_link']])
 		
 		# goto hold
-		mp += MoveArm('arm', 'hold')
+		#mp += MoveArm('arm', 'hold')
 		
 		userdata.graspdata = graspdata
 
-		if not mp.plan().success:
+		if not mp.plan(5).success:
+                        sss.set_light('green')
 			return "not_grasped"
 		
-		sss.say(["I am grasping " + userdata.object.label + " now."])
+                sss.set_light('yellow')
+		sss.say(["I am grasping " + userdata.object.label + " now."],False)
 		# run, handle errors
 		i = 0
 		for ex in mp.execute():
-			if not ex.wait(30.0).success:
+			if not ex.wait(80.0).success:
+                                sss.set_light('red')
 				return 'failed'
 			i+=1
+                sss.set_light('green')
 		return 'grasped'
