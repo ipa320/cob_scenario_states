@@ -76,6 +76,8 @@ from cob_object_detection_msgs.srv import *
 
 from abc_state_skill import SkillsState
 
+from ObjectDetector import *
+
 class skill_state_detectobjectsback(SkillsState):
 
     def __init__(self, object_names = [], namespace="", detector_srv = "/object_detection/detect_object", mode = "all"):

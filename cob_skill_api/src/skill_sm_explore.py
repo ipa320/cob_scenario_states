@@ -72,6 +72,7 @@ from abc_sm_skill import SkillsSM
 
 import skill_approachpose
 import skill_detectobjectsfront
+import skill_detectobjectsback
 import skill_state_announcefoundobjects
 
 class skill_sm_explore(SkillsSM):
@@ -81,7 +82,6 @@ class skill_sm_explore(SkillsSM):
 			outcomes=['success', 'failed'])
 
 		with self:
-
 
 			self.add('APPROACH_SKILL',self.mach_approach(),
                 transitions={'success':'DETECT_SKILL_FRONT',
@@ -115,7 +115,5 @@ class skill_sm_explore(SkillsSM):
 	
 	def mach_detect_back(self):
 		rospy.loginfo("Executing the Detect Skill!")
-		mach =  skill_detectobjectsfront.SkillImplementation()
+		mach =  skill_detectobjectsback.SkillImplementation()
 		return mach
-
-

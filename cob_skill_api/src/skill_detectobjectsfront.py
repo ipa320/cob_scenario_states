@@ -81,7 +81,7 @@ import skill_state_detectobjectsfront
 
 class SkillImplementation(SkillsBase):
 
-	def __init__(self, object_names = ['milk','pringles']):
+	def __init__(self, object_names = ['milk']):
 
 		rospy.loginfo("Executing the detect object fronts Machine")
                 smach.StateMachine.__init__(self,outcomes=['ended'], output_keys=['objects'])

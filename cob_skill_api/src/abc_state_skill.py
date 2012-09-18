@@ -72,8 +72,6 @@ class SkillsState(smach.State):
 
 	__metaclass__ = abc.ABCMeta
     
-
 	@abc.abstractmethod
 	def execute(self, userdata):
 		return 'State Machine needs to be executed'
-

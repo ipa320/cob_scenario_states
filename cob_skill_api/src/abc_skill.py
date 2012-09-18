@@ -72,7 +72,6 @@ class SkillsBase(smach.StateMachine):
 
 	__metaclass__ = abc.ABCMeta
 
-
 	@abc.abstractmethod
 	def pre_conditions(self):
 		return 'Restricted to Abstract Class'
@@ -92,5 +91,3 @@ class SkillsBase(smach.StateMachine):
 	@abc.abstractproperty
 	def requirements(self):
 		return 'Restricted to Abstract Class'
-
-

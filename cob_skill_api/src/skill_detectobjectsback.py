@@ -77,11 +77,11 @@ import tf
 from tf.msg import tfMessage
 from tf.transformations import euler_from_quaternion
 
-import skill_state_detectobjectsfront
+import skill_state_detectobjectsback
 
 class SkillImplementation(SkillsBase):
 
-	def __init__(self, object_names = ['milk','pringles']):
+	def __init__(self, object_names = ['milk']):
 
 		rospy.loginfo("Executing the detect object backside Machine")
                 smach.StateMachine.__init__(self,outcomes=['ended'], output_keys=['objects'])
@@ -89,7 +89,7 @@ class SkillImplementation(SkillsBase):
 
                 with self:
 			self.userdata.object_names = object_names
-                        self.add('DETECT_OBJECT_TABLE',skill_state_detectobjectsfront.skill_state_detectobjectsfront(object_names=self.userdata.object_names),
+                        self.add('DETECT_OBJECT_TABLE',skill_state_detectobjectsback.skill_state_detectobjectsback(object_names=self.userdata.object_names),
                                 transitions={'not_detected':'ended',
                                         'failed':'ended',
 					'detected':'ended'})
@@ -112,9 +112,6 @@ class SkillImplementation(SkillsBase):
 	@property
 	def requirements(self):
 		return "Some Requirements"
-
-
-
 
 if __name__=='__main__':
         rospy.init_node('detect_object_backside')
