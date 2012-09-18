@@ -80,7 +80,7 @@ from abc_state_skill import SkillsState
 class skill_state_detectobjectsfront(SkillsState):
 
 	def __init__(self, object_names = [], namespace = "", detector_srv = '/object_detection/detect_object', mode='all'):
-		smach.State.__init__(			
+		smach.State.__init__(
 			self,
 			outcomes=['detected','not_detected','failed'],
 			input_keys=['object_names'],
@@ -88,36 +88,33 @@ class skill_state_detectobjectsfront(SkillsState):
 
 		if mode not in ['all','one']:
 			rospy.logwarn("Invalid mode: must be 'all', or 'one', selecting default value = 'all'")
-			self.mode = 'all'	
+			self.mode = 'all'
 		else:
 			self.mode = mode
 
 		self.object_detector = ObjectDetector(object_names, namespace, detector_srv, self.mode)
 
-
 	def execute(self, userdata):
 
 		rospy.loginfo("Started executing the Detect Objects state")
-
+		
 		sss.set_light('blue')
-
+		
 		#Preparations for object detection
 		handle_torso = sss.move("torso","shake",False)
 		handle_head = sss.move("head","front",False)
 		handle_head.wait()
 		handle_torso.wait()
 		sss.set_light('blue')
-
+		
 		result, userdata.objects = self.object_detector.execute(userdata)
-
+		
 		# ... cleanup robot components
-		sss.move("torso","home")
-
+		sss.move("torso","front")
+		
 		if result == "failed":
 			sss.set_light('red')
 		else:
 			sss.set_light('green')
-
+		
 		return result
-
-

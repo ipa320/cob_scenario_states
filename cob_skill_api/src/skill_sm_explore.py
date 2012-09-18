@@ -66,7 +66,7 @@ import random
 from nav_msgs.msg import Odometry
 
 from simple_script_server import *
-sss = simple_script_server()	
+sss = simple_script_server()
 
 from abc_sm_skill import SkillsSM
 
@@ -81,27 +81,39 @@ class skill_sm_explore(SkillsSM):
 			outcomes=['success', 'failed'])
 
 		with self:
-		    
+
 
 			self.add('APPROACH_SKILL',self.mach_approach(),
-					   transitions={'success':'DETECT_SKILL',
-						        'failed':'APPROACH_SKILL'})
+                transitions={'success':'DETECT_SKILL_FRONT',
+                    'failed':'APPROACH_SKILL'})
 
-			self.add('DETECT_SKILL',self.mach_detect(),
-					   transitions={'ended':'ANNOUNCE_SKILL'})
+			self.add('DETECT_SKILL_FRONT',self.mach_detect(),
+                transitions={'ended':'ANNOUNCE_SKILL_FRONT'})
 
-			self.add('ANNOUNCE_SKILL',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
-					   transitions={'announced':'APPROACH_SKILL',
-						        'not_announced':'APPROACH_SKILL',
-						        'failed':'failed'})
+			self.add('ANNOUNCE_SKILL_FRONT',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
+                transitions={'announced':'DETECT_SKILL_BACK',
+                    'not_announced':'DETECT_SKILL_BACK',
+                        'failed':'failed'})
+
+			self.add('DETECT_SKILL_BACK',self.mach_detect_back(),
+                transitions={'ended':'ANNOUNCE_SKILL_BACK'})
+
+			self.add('ANNOUNCE_SKILL_BACK',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
+                transitions={'announced':'APPROACH_SKILL',
+                    'not_announced':'APPROACH_SKILL',
+                        'failed':'failed'})
 
 	def mach_approach(self):
 		rospy.loginfo("Executing the Approach pose Skill!")
 		mach =  skill_approachpose.SkillImplementation()
 		return mach
 
-	
 	def mach_detect(self):
+		rospy.loginfo("Executing the Detect Skill!")
+		mach =  skill_detectobjectsfront.SkillImplementation()
+		return mach
+	
+	def mach_detect_back(self):
 		rospy.loginfo("Executing the Detect Skill!")
 		mach =  skill_detectobjectsfront.SkillImplementation()
 		return mach

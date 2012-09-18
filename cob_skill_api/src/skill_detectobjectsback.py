@@ -24,8 +24,8 @@
 # \date Date of creation: September 2012
 #
 # \brief
-# Explore Machine implemented using the skills API
-#
+# Skill state detect objects re-implementation using the skills API
+# Detect objects at the Back Side of the Robot
 #################################################################
 #
 # Redistribution and use in source and binary forms, with or without
@@ -57,23 +57,42 @@
 #
 #################################################################
 
+import abc
+from abc_skill import SkillsBase
+import yaml
+
 import roslib
 roslib.load_manifest('cob_skill_api')
 import rospy
 import smach
 import smach_ros
+from actionlib import *
+from actionlib.msg import *
+import random
 
-import skill_sm_explore
-from abc_skill import SkillsBase
+import condition_check
+import skill_state_approachpose
+
+import tf
+from tf.msg import tfMessage
+from tf.transformations import euler_from_quaternion
+
+import skill_state_detectobjectsfront
 
 class SkillImplementation(SkillsBase):
 
-	def __init__(self):
-		smach.StateMachine.__init__(self,outcomes=['success', 'failed'])
+	def __init__(self, object_names = ['milk','pringles']):
 
-		with self:
-			self.add('Explore_SKILL',skill_sm_explore.skill_sm_explore(),
-                transitions={'success':'Explore_SKILL'})
+		rospy.loginfo("Executing the detect object backside Machine")
+                smach.StateMachine.__init__(self,outcomes=['ended'], output_keys=['objects'])
+		rospy.set_param("detect_object_table/torso_poses",['back_extreme','back_left_extreme','back_right_extreme','back','back_left','back_right'])
+
+                with self:
+			self.userdata.object_names = object_names
+                        self.add('DETECT_OBJECT_TABLE',skill_state_detectobjectsfront.skill_state_detectobjectsfront(object_names=self.userdata.object_names),
+                                transitions={'not_detected':'ended',
+                                        'failed':'ended',
+					'detected':'ended'})
 
 	def pre_conditions(self):
 
@@ -95,11 +114,12 @@ class SkillImplementation(SkillsBase):
 		return "Some Requirements"
 
 
+
+
 if __name__=='__main__':
-	rospy.init_node('Explore')
-	sm = SkillImplementation()
-	sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
-	sis.start()
-	outcome = sm.execute()
-	rospy.spin()
-	sis.stop()
+        rospy.init_node('detect_object_backside')
+        sm = SkillImplementation()
+        sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
+        sis.start()
+        outcome = sm.execute()
+        rospy.spin()

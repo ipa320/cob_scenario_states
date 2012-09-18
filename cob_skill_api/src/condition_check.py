@@ -67,7 +67,7 @@ from actionlib.msg import *
 from diagnostic_msgs.msg import DiagnosticArray
 
 import tf
-from tf.msg import tfMessage 
+from tf.msg import tfMessage
 from tf.transformations import euler_from_quaternion
 
 from simple_script_server import *
@@ -89,7 +89,7 @@ class ConditionCheck(ConditionCheck):
 		self.checkType = checkType
 		self.checks = rospy.get_param(self.checkType)
 		self.robot_name = rospy.get_param('robot_name')
-		
+
 		if rospy.has_param('required_components') and rospy.has_param('optional_components'):
 			self.required_components = rospy.get_param('required_components')
 			self.optional_components = rospy.get_param('optional_components')
@@ -127,7 +127,7 @@ class ConditionCheck(ConditionCheck):
 	# Main routine of the State Machine
 	####################################################################
 
-	def execute(self, userdata):	
+	def execute(self, userdata):
 
 		for check in self.checks:
 
@@ -154,7 +154,7 @@ class ConditionCheck(ConditionCheck):
 		rospy.loginfo("<<joint_configuration_check_js>>")
 		rospy.loginfo("This is part of the <<%s>>", self.checkType)
 
-		for item in params.values()[0]:	
+		for item in params.values()[0]:
 
 			joint_names = item['joint_names']
 			joint_states = item['joint_states']
@@ -164,7 +164,7 @@ class ConditionCheck(ConditionCheck):
 
 
 	def joint_configuration_check_ss(self, params, userdata): # get names and states from script server
-		
+
 		rospy.loginfo("<<joint_configuration_check_ss>>")
 
 		for item in params.values()[0]:
@@ -177,7 +177,7 @@ class ConditionCheck(ConditionCheck):
 
 			joint_names = rospy.get_param(ss_names_path)
 			joint_states = rospy.get_param(ss_values_path)[0]
-		
+
 			aw_error = item['allowed_error']
 
 			self.joint_configuration_check(joint_names,joint_states, aw_error)
@@ -187,12 +187,12 @@ class ConditionCheck(ConditionCheck):
 		joints = zip(joint_names, joint_states)
 
 		try:
-			
-			
+
+
 			for name, state in joints:
 
 				rospy.loginfo("Checking the <<%s>> joint"%name)
-				
+
 				jointsMsg = rospy.wait_for_message("/joint_states", sensor_msgs.msg.JointState)
 
 				while name not in jointsMsg.name:
@@ -201,7 +201,7 @@ class ConditionCheck(ConditionCheck):
 				value = jointsMsg.position[jointsMsg.name.index(name)]
 
 				assert abs(value - state) <= aw_error, "Error on the Joint Position for the <<%s>>"%name
-			
+
 		except AssertionError,e:
 			self.result = "failed"
 			rospy.logerr("<<Error Message>>:%s"%e)
@@ -220,7 +220,7 @@ class ConditionCheck(ConditionCheck):
 	def component_ready_check(self, params, userdata): #Simplified due to the current simulation possibilities
 
 		try:
-			rospy.loginfo("Started to check if all components are ready")		
+			rospy.loginfo("Started to check if all components are ready")
 
 			assert self.status == 0, "<<base>> component is not ready yet."
 
@@ -263,11 +263,11 @@ class ConditionCheck(ConditionCheck):
 
 			ac_client = actionlib.SimpleActionClient(action_name, cls)
 
-			ac_client.wait_for_server(rospy.Duration(5))	
+			ac_client.wait_for_server(rospy.Duration(5))
 
 		rospy.loginfo("Finished Checking <<actions>>")
 
-	
+
 	####################################################################
 	# function: pose_check()
 	# This function is responsible for checking if the Robot position
@@ -275,7 +275,7 @@ class ConditionCheck(ConditionCheck):
 	####################################################################
 
 	def pose_check(self, params, userdata):
-		
+
 		try:
 			rospy.loginfo("Checking the Robot <<Pose>>")
 			rospy.loginfo("This is part of the <<%s>>", self.checkType)
@@ -284,7 +284,7 @@ class ConditionCheck(ConditionCheck):
 
 				reference_frame = item['reference_frame']
 				target_frame = item['target_pose']['frame_id']
-				
+
 				mes = "Checking the " + reference_frame + " against the " + target_frame
 
 				rospy.loginfo(mes)
@@ -294,7 +294,7 @@ class ConditionCheck(ConditionCheck):
 				(trans,rot) = self.tfL.lookupTransform(target_frame, reference_frame, rospy.Time(0))
 
 				angles = euler_from_quaternion(rot)
-		
+
 				xy_goal_tolerance = item['allowed_position_error']
 				yaw_goal_tolerance = item['allowed_orientation_error']
 
@@ -305,10 +305,10 @@ class ConditionCheck(ConditionCheck):
 					assert abs(angles[2] - userdata.base_pose[2]) <= yaw_goal_tolerance, "Error on the Angle"
 
 				else:
-					
+
 					for pos in range(len(trans)):
-						
-					
+
+
 						messageX = "Position " + (str)(pos) + ":" +  " Real Position: " +  (str)(trans[pos]) + ", Target Position: " + \
 							(str)(item['target_pose']['position'][pos]) + ", Tolerance: "+ (str)(xy_goal_tolerance)
 
@@ -317,23 +317,23 @@ class ConditionCheck(ConditionCheck):
 						rospy.loginfo(messageX)
 
 					for ori in range(len(angles)):
-						
+
 						messageA = "Orientation " + (str)(ori) + ":" + " Real Orientation: " + (str)(angles[ori]) + ", Target Orientation: " + \
 							(str)(item['target_pose']['orientation'][ori]) + ", Tolerance: "+ (str)(yaw_goal_tolerance)
-						
+
 						assert abs(angles[ori] - item['target_pose']['orientation'][ori]) <= yaw_goal_tolerance, "Error on the orientation %s"%messageA
 
 						rospy.loginfo(messageA)
-		
+
 		except AssertionError,e:
 			self.result = "failed"
-			rospy.logerr("<<Error Message>>:%s"%e)		
+			rospy.logerr("<<Error Message>>:%s"%e)
 			rospy.logerr("at pose_check")
 			return
-		
-		
-		self.result = "success" 
-	
+
+
+		self.result = "success"
+
 
 	####################################################################
 	# function: init_components()

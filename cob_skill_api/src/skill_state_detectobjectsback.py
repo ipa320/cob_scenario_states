@@ -24,7 +24,8 @@
 # \date Date of creation: September 2012
 #
 # \brief
-# Explore Machine implemented using the skills API
+# Skill state detect objects re-implementation using the skills API
+# Detect Objects at the Back Side of the Robot
 #
 #################################################################
 #
@@ -58,48 +59,68 @@
 #################################################################
 
 import roslib
-roslib.load_manifest('cob_skill_api')
+roslib.load_manifest("cob_skill_api")
+
 import rospy
 import smach
 import smach_ros
 
-import skill_sm_explore
-from abc_skill import SkillsBase
+from math import *
+import copy
 
-class SkillImplementation(SkillsBase):
+from simple_script_server import *
+sss = simple_script_server()
 
-	def __init__(self):
-		smach.StateMachine.__init__(self,outcomes=['success', 'failed'])
+from cob_object_detection_msgs.msg import *
+from cob_object_detection_msgs.srv import *
 
-		with self:
-			self.add('Explore_SKILL',skill_sm_explore.skill_sm_explore(),
-                transitions={'success':'Explore_SKILL'})
+from abc_state_skill import SkillsState
 
-	def pre_conditions(self):
+class skill_state_detectobjectsback(SkillsState):
 
-		print "Some preconditions"
+    def __init__(self, object_names = [], namespace="", detector_srv = "/object_detection/detect_object", mode = "all"):
+        smach.State.__init__(
+                self,
+                outcomes = ["detected", "not_detected", "failed"],
+                input_keys=["object_names"],
+                output_keys=["objects"])
 
-	def post_conditions(self):
-		print "Some postconditions"
+        if mode not in ["all", "one"]:
+            rospy.logwarn("Invalid mode: must be 'all', or 'one', selecting the default value = 'all'")
+            self.mode = "all"
+        else:
+            self.mode = mode
 
-	@property
-	def inputs(self):
-		return "Some Input"
+        self.object_detector = ObjectDetector(object_names, namespace, detector_srv, self.mode)
 
-	@property
-	def outputs(self):
-		return "Some Output"
+    def execute(self, userdata):
 
-	@property
-	def requirements(self):
-		return "Some Requirements"
+        rospy.loginfo("Started Executing the Detect Objects State")
+        sss.set_light("blue")
 
+        handle_torso = sss.move("torso", "shake", False)
+        sss.set_light("yellow")
+        handle_arm = sss.move("arm", "folded-to-look_at_table", False)
+        handle_head = sss.move("head", "back", False)
+        handle_arm.wait()
+        handle_torso.wait()
+        handle_head.wait()
 
-if __name__=='__main__':
-	rospy.init_node('Explore')
-	sm = SkillImplementation()
-	sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
-	sis.start()
-	outcome = sm.execute()
-	rospy.spin()
-	sis.stop()
+        sss.set_light("blue")
+
+        result, userdata.objects = self.object_detector.execute(userdata)
+
+        #cleanup robot components
+        if result != "detected":
+            sss.set_light("yellow")
+            sss.move("torso", "front")
+            handle_arm = sss.move("arm", "look_at_table-to-folded")
+
+        sss.move("torso", "home")
+
+        if result == "failed":
+            sss.set_light("red")
+        else:
+            sss.set_light("green")
+
+        return result

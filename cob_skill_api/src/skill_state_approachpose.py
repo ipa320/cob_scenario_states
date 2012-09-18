@@ -66,7 +66,7 @@ import random
 from nav_msgs.msg import Odometry
 
 from simple_script_server import *
-sss = simple_script_server()	
+sss = simple_script_server()
 
 from abc_state_skill import SkillsState
 
@@ -92,11 +92,11 @@ class skill_state_approachpose(SkillsState):
 	#Callback for the /base_controller/odometry subscriber
 	def callback(self,msg):
 		r = 0.01 # error range in m/s or rad/s
-		if (abs(msg.twist.twist.linear.x) > r) or (abs(msg.twist.twist.linear.y) > r) or (abs(msg.twist.twist.angular.z) > r): 
+		if (abs(msg.twist.twist.linear.x) > r) or (abs(msg.twist.twist.linear.y) > r) or (abs(msg.twist.twist.angular.z) > r):
 			self.is_moving = True
 		else:
 			self.is_moving = False
-		return 
+		return
 
 	def execute(self, userdata):
 
@@ -122,10 +122,10 @@ class skill_state_approachpose(SkillsState):
 		announce_time = 0.0
 		freq = 2.0 # Hz
 		yellow = False
-	
+
 		# check for goal status
 		while not rospy.is_shutdown():
-		
+
 			# finished with succeeded
 			if (handle_base.get_state() == 3):
 				if ("light" in self.components):
@@ -161,7 +161,7 @@ class skill_state_approachpose(SkillsState):
 					if ("light" in self.components):
 						sss.set_light('green')
 					return 'not_reached'
-			
+
 				# announce warning after every 10 sec
 				if announce_time >= 10.0:
 					if "sound" in self.components:
@@ -179,6 +179,6 @@ class skill_state_approachpose(SkillsState):
 					if ("light" in self.components):
 						sss.set_light("yellow")
 					yellow = True
-		
+
 			# sleep
 			loop_rate.sleep()

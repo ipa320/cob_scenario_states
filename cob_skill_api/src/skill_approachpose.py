@@ -76,7 +76,7 @@ import condition_check
 import skill_state_approachpose
 
 import tf
-from tf.msg import tfMessage 
+from tf.msg import tfMessage
 from tf.transformations import euler_from_quaternion
 
 class SelectNavigationGoal(smach.State):
@@ -126,7 +126,7 @@ class SelectNavigationGoal(smach.State):
 class SkillImplementation(SkillsBase):
 	def __init__(self):
 		smach.StateMachine.__init__(self, outcomes=['success', 'failed'])
-		
+
 		rospy.loginfo("Started executing the ApproachPose State Machine")
 
 		self.full_components = ""
@@ -151,7 +151,7 @@ class SkillImplementation(SkillsBase):
 		return mach
 
 	def pre_conditions(self):
-		
+
 		self.check_pre = condition_check.ConditionCheck("pre_check", self.tfL)
 		return self.check_pre
 
@@ -160,10 +160,10 @@ class SkillImplementation(SkillsBase):
 		self.check_post = condition_check.ConditionCheck("post_check",  self.tfL)
 		return self.check_post
 
-	@property    
+	@property
 	def inputs(self):
 		return "Some Input"
-    
+
 	@property
 	def outputs(self):
 		return "Some Output"
