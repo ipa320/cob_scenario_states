@@ -84,7 +84,7 @@ import types
 class ConditionCheck(ConditionCheck):
 
 	def __init__(self, checkType, tfL):
-		smach.State.__init__(self, outcomes=['success','failed'], input_keys=['base_pose'])
+		smach.State.__init__(self, outcomes=['success','failed'], input_keys=['pose'])
 
 		self.checkType = checkType
 		self.checks = rospy.get_param(self.checkType)
@@ -294,15 +294,15 @@ class ConditionCheck(ConditionCheck):
 				(trans,rot) = self.tfL.lookupTransform(target_frame, reference_frame, rospy.Time(0))
 
 				angles = euler_from_quaternion(rot)
-
+				
 				xy_goal_tolerance = item['allowed_position_error']
 				yaw_goal_tolerance = item['allowed_orientation_error']
 
 				if (item['target_pose']['position'] == "userdata"): # kept this for analyzing user defined goals(post_check)
 
-					assert abs(trans[0] - userdata.base_pose[0]) <= xy_goal_tolerance, "Error on the X axis position"
-					assert abs(trans[1] - userdata.base_pose[1]) <= xy_goal_tolerance, "Error on the Y axis position"
-					assert abs(angles[2] - userdata.base_pose[2]) <= yaw_goal_tolerance, "Error on the Angle"
+					assert abs(trans[0] - userdata.pose[0]) <= xy_goal_tolerance, "Error on the X axis position"
+					assert abs(trans[1] - userdata.pose[1]) <= xy_goal_tolerance, "Error on the Y axis position"
+					assert abs(angles[2] - userdata.pose[2]) <= yaw_goal_tolerance, "Error on the Angle"
 
 				else:
 

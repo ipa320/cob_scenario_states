@@ -83,7 +83,7 @@ class SelectNavigationGoal(smach.State):
         def __init__(self):
                 smach.State.__init__(self,
                         outcomes=['selected','not_selected','failed'],
-                        output_keys=['base_pose'])
+                        output_keys=['pose'])
 
                 self.goals = []
 
@@ -118,7 +118,7 @@ class SelectNavigationGoal(smach.State):
                                 y = y_min
                                 th = th_min
 
-                userdata.base_pose = self.goals.pop(random.randint(0,len(self.goals)-1))
+                userdata.pose = self.goals.pop(random.randint(0,len(self.goals)-1))
 
                 return 'selected'
 
