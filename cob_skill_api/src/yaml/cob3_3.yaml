@@ -13,6 +13,11 @@ optional_components:
 
 # definition of pre condition checks
 pre_check:
+  - init_components:
+    - tray: down
+    - torso: home
+    - arm: folded
+
   - component_ready_check:
     - base_controller
 

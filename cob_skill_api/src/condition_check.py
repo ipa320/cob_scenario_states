@@ -341,43 +341,21 @@ class ConditionCheck(ConditionCheck):
 	# for the Robot
 	####################################################################
 
-	def init_components(self):
+	def init_components(self, params, userdata):
 
 		sss.sleep(2)
 
 		if "sound" in self.full_components:
 			sss.say(["Preparing."],False)
 		# bring robot into the starting state
-
-		if "tray" in self.full_components:
-			handle_tray = sss.move("tray","down",False)
-			handle_tray.wait()
-
-		if "torso" in self.full_components:
-			handle_torso = sss.move("torso","home",False)
-			handle_torso.wait()
-
-		if "arm" in self.full_components:
-			handle_arm = sss.move("arm","folded",False)
-			handle_arm.wait()
-
-		if "arm_left" in self.full_components:
-			handle_arm = sss.move("arm_left","folded",False)
-			handle_arm.wait()
-
-		if "arm_right" in self.full_components:
-			handle_arm = sss.move("arm_right","folded",False)
-			handle_arm.wait()
-
-
-		if "sdh" in self.full_components:
-			handle_sdh = sss.move("sdh","cylclosed",False)
-			handle_sdh.wait()
-
-		if "head" in self.full_components:
-			handle_head = sss.move("head","front",False)
-			handle_head.wait()
-
+		
+		for item in params.values()[0]:
+			
+			comp_name = item.keys()[0]
+			param_name = item.values()[0]
+			handler = sss.move(comp_name, param_name, False)
+			handler.wait()
+			
 		# wait for all movements to be finished
 		# announce ready
 
