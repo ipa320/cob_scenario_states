@@ -152,12 +152,12 @@ class SkillImplementation(SkillsBase):
 
 	def pre_conditions(self):
 
-		self.check_pre = condition_check.ConditionCheck("pre_check", self.tfL)
+		self.check_pre = condition_check.ConditionCheck(checkType="pre_check", tfL=self.tfL)
 		return self.check_pre
 
 	def post_conditions(self):
 
-		self.check_post = condition_check.ConditionCheck("post_check",  self.tfL)
+		self.check_post = condition_check.ConditionCheck(checkType = "post_check",  tfL=self.tfL)
 		return self.check_post
 
 	@property

@@ -81,7 +81,8 @@ from abc_conditioncheck import ConditionCheck
 
 class ConditionCheck(ConditionCheck):
 
-	def __init__(self, checkType, tfL):
+	def __init__(self, checkType = "pre_check", tfL = None):
+		
 		smach.State.__init__(self, outcomes=['success','failed'], input_keys=['pose'])
 
 		self.checkType = checkType
@@ -359,6 +360,8 @@ class ConditionCheck(ConditionCheck):
 		sss.sleep(2)
 
 		rospy.loginfo("Components successfully initialized.")
+		
+		self.result = "success"
 		
 	def diagnostics_callback(self, msg):
 

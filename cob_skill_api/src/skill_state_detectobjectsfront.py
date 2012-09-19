@@ -102,15 +102,6 @@ class skill_state_detectobjectsfront(SkillsState):
 		if ("light" in self.components):
 			sss.set_light('blue')
 		
-		#Preparations for object detection
-		handle_torso = sss.move("torso","shake",False)
-		handle_head = sss.move("head","front",False)
-		handle_head.wait()
-		handle_torso.wait()
-		
-		if ("light" in self.components):
-			sss.set_light('blue')
-		
 		result, userdata.objects = self.object_detector.execute(userdata)
 		
 		# ... cleanup robot components

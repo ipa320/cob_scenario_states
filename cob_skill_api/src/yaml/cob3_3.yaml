@@ -5,6 +5,7 @@ required_components:
   torso
   arm
   tray
+  head
   #base
   
 optional_components:
@@ -71,8 +72,26 @@ pre_check:
       allowed_position_error: 0.2 #m
       allowed_orientation_error: 0.2 #rad
 
-# --> rosrun tf tf_echo target_pose.frame_id reference_frame --> x,y,z,r,p,y compare with target_pose
- 
+pre_objF_check: # checks if the camera is facing front
+  - init_components:
+    - torso: shake
+    - head: front
+
+  - joint_configuration_check_js: #check the configuration according to the joint state message
+    - joint_names: [head_axis_joint] 
+      joint_states: [-3.14]
+      allowed_error: 0.2 # rad
+
+pre_objB_check: # checks if the camera is facing back
+  - init_components:
+    - torso: shake
+    - arm: folded-to-look_at_table
+    - head: back
+  - joint_configuration_check_js: #check the configuration according to the joint state message
+    - joint_names: [head_axis_joint] 
+      joint_states: [0.0]
+      allowed_error: 0.2 # rad
+
 post_check:
   - joint_configuration_check_js: #check the configuration according to the joint state message
     - joint_names: [arm_1_joint,arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint] 

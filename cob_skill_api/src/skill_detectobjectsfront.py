@@ -79,6 +79,8 @@ from tf.transformations import euler_from_quaternion
 
 import skill_state_detectobjectsfront
 
+import condition_check
+
 class SkillImplementation(SkillsBase):
 
 	def __init__(self, object_names = ['milk'], components =  []):
@@ -88,13 +90,15 @@ class SkillImplementation(SkillsBase):
 		rospy.set_param("detect_object_table/torso_poses",['home','front','back','left','right'])
 		with self:
 			self.userdata.object_names = object_names
-			self.add('DETECT_OBJECT_TABLE',skill_state_detectobjectsfront.skill_state_detectobjectsfront(object_names=self.userdata.object_names, components = components),
+			self.add("PRECONDITIONS_DETECT_FRONT", self.pre_conditions(), transitions={'success':'DETECT_OBJECT_FRONT', 'failed':'PRECONDITIONS_DETECT_FRONT'})
+			self.add('DETECT_OBJECT_FRONT',skill_state_detectobjectsfront.skill_state_detectobjectsfront(object_names=self.userdata.object_names, components = components),
                                 transitions={'not_detected':'ended',
                                         'failed':'ended','detected':'ended'})
 
 	def pre_conditions(self):
 		
-		print "Some preconditions"
+		self.check_pre = condition_check.ConditionCheck(checkType="pre_objF_check")
+		return self.check_pre
 
 	def post_conditions(self):
 		print "Some postconditions"

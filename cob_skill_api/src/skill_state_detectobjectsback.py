@@ -103,21 +103,6 @@ class skill_state_detectobjectsback(SkillsState):
         if ("light" in self.components):
             sss.set_light("blue")
 
-        handle_torso = sss.move("torso", "shake", False)
-        
-        if ("light" in self.components):
-            sss.set_light("yellow")
-        
-        handle_arm = sss.move("arm", "folded-to-look_at_table", False)
-        handle_head = sss.move("head", "back", False)
-        
-        handle_arm.wait()
-        handle_torso.wait()
-        handle_head.wait()
-        
-        if ("light" in self.components):
-            sss.set_light("blue")
-
         result, userdata.objects = self.object_detector.execute(userdata)
 
         #cleanup robot components
