@@ -79,8 +79,6 @@ from move_base_msgs.msg import *
 
 from abc_conditioncheck import ConditionCheck
 
-import types
-
 class ConditionCheck(ConditionCheck):
 
 	def __init__(self, checkType, tfL):
@@ -294,7 +292,7 @@ class ConditionCheck(ConditionCheck):
 				(trans,rot) = self.tfL.lookupTransform(target_frame, reference_frame, rospy.Time(0))
 
 				angles = euler_from_quaternion(rot)
-				
+
 				xy_goal_tolerance = item['allowed_position_error']
 				yaw_goal_tolerance = item['allowed_orientation_error']
 
@@ -353,9 +351,11 @@ class ConditionCheck(ConditionCheck):
 			
 			comp_name = item.keys()[0]
 			param_name = item.values()[0]
-			handler = sss.move(comp_name, param_name, False)
-			handler.wait()
 			
+			if comp_name in self.full_components:
+				handler = sss.move(comp_name, param_name, False)
+				handler.wait()
+
 		# wait for all movements to be finished
 		# announce ready
 
