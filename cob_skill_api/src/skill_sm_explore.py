@@ -81,6 +81,8 @@ class skill_sm_explore(SkillsSM):
 		smach.StateMachine.__init__(self,
 			outcomes=['success', 'failed'])
 
+		self.apose = None
+		
 		with self:
 
 			self.add('APPROACH_SKILL',self.mach_approach(),
@@ -105,15 +107,15 @@ class skill_sm_explore(SkillsSM):
 
 	def mach_approach(self):
 		rospy.loginfo("Executing the Approach pose Skill!")
-		mach =  skill_approachpose.SkillImplementation()
-		return mach
+		self.apose =  skill_approachpose.SkillImplementation()
+		return self.apose
 
 	def mach_detect(self):
 		rospy.loginfo("Executing the Detect Skill!")
-		mach =  skill_detectobjectsfront.SkillImplementation()
+		mach =  skill_detectobjectsfront.SkillImplementation(components = self.apose.check_pre.full_components)
 		return mach
 	
 	def mach_detect_back(self):
 		rospy.loginfo("Executing the Detect Skill!")
-		mach =  skill_detectobjectsback.SkillImplementation()
+		mach =  skill_detectobjectsback.SkillImplementation(components = self.apose.check_pre.full_components)
 		return mach

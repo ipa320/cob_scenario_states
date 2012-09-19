@@ -80,13 +80,14 @@ from ObjectDetector import *
 
 class skill_state_detectobjectsback(SkillsState):
 
-    def __init__(self, object_names = [], namespace="", detector_srv = "/object_detection/detect_object", mode = "all"):
+    def __init__(self, object_names = [], components = [], namespace="", detector_srv = "/object_detection/detect_object", mode = "all"):
         smach.State.__init__(
                 self,
                 outcomes = ["detected", "not_detected", "failed"],
                 input_keys=["object_names"],
                 output_keys=["objects"])
-
+        
+        self.components = components
         if mode not in ["all", "one"]:
             rospy.logwarn("Invalid mode: must be 'all', or 'one', selecting the default value = 'all'")
             self.mode = "all"
@@ -98,31 +99,43 @@ class skill_state_detectobjectsback(SkillsState):
     def execute(self, userdata):
 
         rospy.loginfo("Started Executing the Detect Objects State")
-        sss.set_light("blue")
+        
+        if ("light" in self.components):
+            sss.set_light("blue")
 
         handle_torso = sss.move("torso", "shake", False)
-        sss.set_light("yellow")
+        
+        if ("light" in self.components):
+            sss.set_light("yellow")
+        
         handle_arm = sss.move("arm", "folded-to-look_at_table", False)
         handle_head = sss.move("head", "back", False)
+        
         handle_arm.wait()
         handle_torso.wait()
         handle_head.wait()
-
-        sss.set_light("blue")
+        
+        if ("light" in self.components):
+            sss.set_light("blue")
 
         result, userdata.objects = self.object_detector.execute(userdata)
 
         #cleanup robot components
         if result != "detected":
-            sss.set_light("yellow")
+            if ("light" in self.components):
+                sss.set_light("yellow")
+            
             sss.move("torso", "front")
+            
             handle_arm = sss.move("arm", "look_at_table-to-folded")
 
         sss.move("torso", "home")
 
         if result == "failed":
-            sss.set_light("red")
+            if ("light" in self.components):
+                sss.set_light("red")
         else:
-            sss.set_light("green")
+            if ("light" in self.components):
+                sss.set_light("green")
 
         return result

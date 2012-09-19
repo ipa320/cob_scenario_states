@@ -186,7 +186,6 @@ class ConditionCheck(ConditionCheck):
 
 		try:
 
-
 			for name, state in joints:
 
 				rospy.loginfo("Checking the <<%s>> joint"%name)
@@ -223,10 +222,6 @@ class ConditionCheck(ConditionCheck):
 			assert self.status == 0, "<<base>> component is not ready yet."
 
 			rospy.loginfo("All Necessary components are present.")
-
-			self.init_components()
-
-			rospy.loginfo("Components successfully initialized.")
 
 		except AssertionError,e:
 			self.result = "failed"
@@ -306,7 +301,6 @@ class ConditionCheck(ConditionCheck):
 
 					for pos in range(len(trans)):
 
-
 						messageX = "Position " + (str)(pos) + ":" +  " Real Position: " +  (str)(trans[pos]) + ", Target Position: " + \
 							(str)(item['target_pose']['position'][pos]) + ", Tolerance: "+ (str)(xy_goal_tolerance)
 
@@ -346,12 +340,12 @@ class ConditionCheck(ConditionCheck):
 		if "sound" in self.full_components:
 			sss.say(["Preparing."],False)
 		# bring robot into the starting state
-		
+
 		for item in params.values()[0]:
-			
+
 			comp_name = item.keys()[0]
 			param_name = item.values()[0]
-			
+
 			if comp_name in self.full_components:
 				handler = sss.move(comp_name, param_name, False)
 				handler.wait()
@@ -364,6 +358,8 @@ class ConditionCheck(ConditionCheck):
 
 		sss.sleep(2)
 
+		rospy.loginfo("Components successfully initialized.")
+		
 	def diagnostics_callback(self, msg):
 
 		self.status = msg.status[0].level

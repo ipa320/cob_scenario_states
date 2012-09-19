@@ -81,19 +81,16 @@ import skill_state_detectobjectsback
 
 class SkillImplementation(SkillsBase):
 
-	def __init__(self, object_names = ['milk']):
-
+	def __init__(self, object_names = ['milk'], components = []):
+		
 		rospy.loginfo("Executing the detect object backside Machine")
-                smach.StateMachine.__init__(self,outcomes=['ended'], output_keys=['objects'])
+		smach.StateMachine.__init__(self,outcomes=['ended'], output_keys=['objects'])
 		rospy.set_param("detect_object_table/torso_poses",['back_extreme','back_left_extreme','back_right_extreme','back','back_left','back_right'])
-
-                with self:
+		with self:
 			self.userdata.object_names = object_names
-                        self.add('DETECT_OBJECT_TABLE',skill_state_detectobjectsback.skill_state_detectobjectsback(object_names=self.userdata.object_names),
+			self.add('DETECT_OBJECT_TABLE',skill_state_detectobjectsback.skill_state_detectobjectsback(object_names=self.userdata.object_names, components = components),
                                 transitions={'not_detected':'ended',
-                                        'failed':'ended',
-					'detected':'ended'})
-
+                                        'failed':'ended','detected':'ended'})
 	def pre_conditions(self):
 
 		print "Some preconditions"

@@ -12,14 +12,13 @@ required_components:
 
 # definition of pre condition checks
 pre_check:
+  - component_ready_check:
+    - base_controller
+
   - init_components:
     - tray: down
     - torso: home
-    - arm_left: folded
-    - arm_right: folded
-    
-  - component_ready_check:
-    - base_controller
+    - arm: folded
 
   - action_check: 
     - action_name: move_base_msgs.msg
