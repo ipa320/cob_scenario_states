@@ -79,25 +79,20 @@ import tf
 from tf.msg import tfMessage
 from tf.transformations import euler_from_quaternion
 
-class SelectNavigationGoal(smach.State):
-        def __init__(self):
+class SelectRandomNavigationGoal(smach.State):
+#    Needs x_min, x_max, x_increment, y_min, y_max, y_increment, th_min, th_max, th_increment
+#    that provides the characteristics of the scenario for creating a random goal
+
+        def __init__(self, conditions=[0,0,0,0,0,0,0,0,0]):
                 smach.State.__init__(self,
                         outcomes=['selected','not_selected','failed'],
                         output_keys=['pose'])
-
+                self.conditions = conditions
                 self.goals = []
 
         def execute(self, userdata):
 
-                x_min = 0
-                x_max = 4.0
-                x_increment = 2
-                y_min = -4.0
-                y_max = 0.0
-                y_increment = 2
-                th_min = -3.14
-                th_max = 3.14
-                th_increment = 2*3.1414926/4
+                x_min, x_max, x_increment, y_min, y_max, y_increment, th_min, th_max, th_increment = self.conditions
 
                 if len(self.goals) == 0:
                         x = x_min
@@ -141,7 +136,7 @@ class SkillImplementation(SkillsBase):
 		with self:
 
 			self.add('PRECONDITION_CHECK', self.pre_conditions(), transitions={'success':'SELECT_GOAL', 'failed':'PRECONDITION_CHECK'})
-			self.add('SELECT_GOAL',SelectNavigationGoal(),transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
+			self.add('SELECT_GOAL',SelectRandomNavigationGoal(conditions=[0.0, 4.0, 2.0, -4.0, 0.0, 2.0, -3.14, 3.14, 2*3.1414926/4 ]),transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
 			self.add('APPROACH_POSE',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_GOAL', 'not_reached': 'SELECT_GOAL'})
 			self.add('POSTCONDITION_CHECK',self.post_conditions(), transitions={'success':'success'})
 
