@@ -24,8 +24,7 @@
 # \date Date of creation: September 2012
 #
 # \brief
-# Skill state announce found objects using the skills API
-#
+# Skill state grasp objects Re-Implementation using skills API
 #################################################################
 #
 # Redistribution and use in source and binary forms, with or without
@@ -57,37 +56,76 @@
 #
 #################################################################
 
+import abc
+from abc_skill import SkillsBase
+import yaml
+
 import roslib
 roslib.load_manifest('cob_skill_api')
 import rospy
 import smach
 import smach_ros
+from actionlib import *
+from actionlib.msg import *
+import random
+
+import condition_check
+import skill_state_grasp
+
+import tf
+from tf.msg import tfMessage
+from tf.transformations import euler_from_quaternion
+
+import skill_state_grasp
 
 from simple_script_server import *
 sss = simple_script_server()
 
-from abc_state_skill import SkillsState
+class SkillImplementation(SkillsBase):
 
-class skill_state_announcefoundobjects(SkillsState):
-	def __init__(self):
-		rospy.loginfo("Initializing Announce objects skill")
-
-		smach.State.__init__(self,
-			outcomes=['announced','not_announced','failed'],
-			input_keys=['objects'],
-			output_keys=['objects'])
-
-	def execute(self, userdata):
-		rospy.loginfo("Executing Announce Objects Skill")
-		object_names = ""
-		for obj in userdata.objects:
-			object_names += obj.label + ", "
-
-		if object_names != "":
-			sss.say(["I found: " + object_names])
-		else:
-			sss.say(["I found: nothing"])
-            
-		#userdata.objects = []
+    def __init__(self):
         
-		return 'announced'
+        rospy.loginfo("Executing the grasp machine")
+        
+        smach.StateMachine.__init__(self,outcomes=['grasped','not_grasped', 'failed', 'success'],
+            input_keys=['objects'])
+                
+        with self:
+            
+            self.add("PRECONDITIONS_GRASP", skill_state_grasp.skill_state_grasp(), transitions={'side':'GRASP_SIDE', 'top':'GRASP_TOP','failed':'failed'})
+            
+            self.add('GRASP_SIDE',skill_state_grasp.grasp_side(),
+                                transitions={'not_grasped':'failed',
+                                        'failed':'failed','grasped':'success'})
+            self.add('GRASP_TOP',skill_state_grasp.grasp_side(),
+                                transitions={'not_grasped':'failed',
+                                        'failed':'failed','grasped':'success'})
+    def pre_conditions(self):
+
+        self.check_pre = skill_state_grasp.skill_state_grasp()
+        return self.check_pre
+
+    def post_conditions(self):
+        print "Some postconditions"
+
+    @property
+    def inputs(self):
+        return "Some Input"
+
+    @property
+    def outputs(self):
+        return "Some Output"
+
+    @property
+    def requirements(self):
+        return "Some Requirements"
+
+if __name__=='__main__':
+    
+        rospy.init_node('grasp_object')
+        
+        sm = SkillImplementation()
+        sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
+        sis.start()
+        outcome = sm.execute()
+        rospy.spin()
