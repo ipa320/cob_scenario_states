@@ -124,7 +124,7 @@ class grasp_side(smach.State):
         
         self.max_retries = max_retries
         self.retries = 0
-        self.iks = rospy.ServiceProxy('arm_kinematics/get_ik', GetPositionIK) # /cob_arm_kinematics/get_ik ?
+        self.iks = rospy.ServiceProxy('cob3_arm_kinematics/get_ik', GetPositionIK) # /cob_arm_kinematics/get_ik ?
         self.listener = tf.TransformListener()
         self.stiffness = rospy.ServiceProxy('/arm_controller/set_joint_stiffness', SetJointStiffness)
 
@@ -380,7 +380,7 @@ class grasp_top(smach.State):
         
         self.max_retries = max_retries
         self.retries = 0
-        self.iks = rospy.ServiceProxy('/arm_kinematics/get_ik', GetPositionIK)
+        self.iks = rospy.ServiceProxy('/cob3_arm_kinematics/get_ik', GetPositionIK)
         self.listener = tf.TransformListener()
         self.stiffness = rospy.ServiceProxy('/arm_controller/set_joint_stiffness', SetJointStiffness)
 
@@ -490,7 +490,7 @@ class open_door(smach.State):
 
         self.max_retries = max_retries
         self.retries = 0
-        self.iks = rospy.ServiceProxy('/arm_kinematics/get_ik', GetPositionIK)
+        self.iks = rospy.ServiceProxy('/cob3_arm_kinematics/get_ik', GetPositionIK)
         self.listener = tf.TransformListener()
         self.mmstart = rospy.ServiceProxy('/mm/start', Trigger)
         self.mmstop = rospy.ServiceProxy('/mm/stop', Trigger)
