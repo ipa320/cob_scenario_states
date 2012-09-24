@@ -117,65 +117,84 @@ class SelectRandomNavigationGoal(smach.State):
 
                 return 'selected'
 
+class SelectNavigationGoal(smach.State):
+#    Needs x, y, theta
+
+        def __init__(self, positions=[0,0,0]):
+                smach.State.__init__(self,
+                        outcomes=['selected','not_selected','failed'],
+                        output_keys=['pose'])
+
+                self.positions = positions
+
+        def execute(self, userdata):
+
+                userdata.pose = self.positions
+
+                return 'selected'
+
 
 class SkillImplementation(SkillsBase):
-	def __init__(self):
-		smach.StateMachine.__init__(self, outcomes=['success', 'failed'])
+    def __init__(self, navTo = None):
+        smach.StateMachine.__init__(self, outcomes=['success', 'failed'])
 
-		rospy.loginfo("Started executing the ApproachPose State Machine")
+        rospy.loginfo("Started executing the ApproachPose State Machine")
 
-		self.full_components = ""
-		self.required_components = ""
-		self.optional_components = ""
+        self.full_components = ""
+        self.required_components = ""
+        self.optional_components = ""
+        self.navTo = navTo
+        self.check_pre = None
+        self.check_post = None
+        self.tfL = tf.TransformListener()
+        
+        with self:
 
-		self.check_pre = None
-		self.check_post = None
+            self.add('PRECONDITION_CHECK', self.pre_conditions(), transitions={'success':'SELECT_GOAL', 'failed':'PRECONDITION_CHECK'})
+            if (self.navTo == None):
+                self.add('SELECT_GOAL',SelectRandomNavigationGoal(conditions=[0.0, 4.0, 2.0, -4.0, 0.0, 2.0, -3.14, 3.14, 2*3.1414926/4 ]),transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
+            else:
+                self.add('SELECT_GOAL',SelectNavigationGoal(positions=self.navTo),transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
+            self.add('APPROACH_POSE',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_GOAL', 'not_reached': 'SELECT_GOAL'})
+            self.add('POSTCONDITION_CHECK',self.post_conditions(), transitions={'success':'success'})
 
-		self.tfL = tf.TransformListener()
+    def execute_machine(self):
+        rospy.loginfo("Executing the Approach pose Skill!")
+        mach =  skill_state_approachpose.skill_state_approachpose(components = self.check_pre.full_components)
+        return mach
 
-		with self:
+    def pre_conditions(self):
 
-			self.add('PRECONDITION_CHECK', self.pre_conditions(), transitions={'success':'SELECT_GOAL', 'failed':'PRECONDITION_CHECK'})
-			self.add('SELECT_GOAL',SelectRandomNavigationGoal(conditions=[0.0, 4.0, 2.0, -4.0, 0.0, 2.0, -3.14, 3.14, 2*3.1414926/4 ]),transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
-			self.add('APPROACH_POSE',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_GOAL', 'not_reached': 'SELECT_GOAL'})
-			self.add('POSTCONDITION_CHECK',self.post_conditions(), transitions={'success':'success'})
+        self.check_pre = condition_check.ConditionCheck(checkType="pre_check", tfL=self.tfL)
+        return self.check_pre
 
-	def execute_machine(self):
-		rospy.loginfo("Executing the Approach pose Skill!")
-		mach =  skill_state_approachpose.skill_state_approachpose(components = self.check_pre.full_components)
-		return mach
+    def post_conditions(self):
 
-	def pre_conditions(self):
+        self.check_post = condition_check.ConditionCheck(checkType = "post_check",  tfL=self.tfL)
+        return self.check_post
 
-		self.check_pre = condition_check.ConditionCheck(checkType="pre_check", tfL=self.tfL)
-		return self.check_pre
+    @property
+    def inputs(self):
+        return "Some Input"
 
-	def post_conditions(self):
+    @property
+    def outputs(self):
+        return "Some Output"
 
-		self.check_post = condition_check.ConditionCheck(checkType = "post_check",  tfL=self.tfL)
-		return self.check_post
-
-	@property
-	def inputs(self):
-		return "Some Input"
-
-	@property
-	def outputs(self):
-		return "Some Output"
-
-	@property
-	def requirements(self):
-		return "Some Requirements"
+    @property
+    def requirements(self):
+        return "Some Requirements"
 
 
 if __name__ == "__main__":
 
-	rospy.init_node('skill_template')
+    rospy.init_node('skill_template')
 
-	sm = SkillImplementation()
+# for pre-defined navigation Goals
+    sm = SkillImplementation(navTo=[-0.6, -0.24, 0.2])
 
-	sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
-	sis.start()
-	outcome = sm.execute()
-	rospy.spin()
-	sis.stop()
+    sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
+    sis.start()
+    outcome = sm.execute()
+    rospy.spin()
+    sis.stop()

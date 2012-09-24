@@ -107,7 +107,7 @@ class skill_sm_explore(SkillsSM):
 
 	def mach_approach(self):
 		rospy.loginfo("Executing the Approach pose Skill!")
-		self.apose =  skill_approachpose.SkillImplementation()
+		self.apose =  skill_approachpose.SkillImplementation(navTo=[-0.6, -0.24, 0.2])
 		return self.apose
 
 	def mach_detect(self):
