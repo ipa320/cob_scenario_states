@@ -191,7 +191,7 @@ if __name__ == "__main__":
     rospy.init_node('skill_template')
 
 # for pre-defined navigation Goals
-    sm = SkillImplementation(navTo=[-1.0, -0.15, 0.0])
+    sm = SkillImplementation(navTo=[-0.47, -0.6, 0.0])
 
     sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
     sis.start()
