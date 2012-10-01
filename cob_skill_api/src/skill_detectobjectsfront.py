@@ -86,14 +86,14 @@ class SkillImplementation(SkillsBase):
 	def __init__(self, object_names = ['milk'], components =  []):
 
 		rospy.loginfo("Executing the detect object fronts Machine")
-		smach.StateMachine.__init__(self,outcomes=['ended'], output_keys=['objects'])
+		smach.StateMachine.__init__(self,outcomes=['success', 'failed'], output_keys=['objects'])
 		rospy.set_param("detect_object_table/torso_poses",['home','front','back','left','right'])
 		with self:
 			self.userdata.object_names = object_names
 			self.add("PRECONDITIONS_DETECT_FRONT", self.pre_conditions(), transitions={'success':'DETECT_OBJECT_FRONT', 'failed':'PRECONDITIONS_DETECT_FRONT'})
 			self.add('DETECT_OBJECT_FRONT',skill_state_detectobjectsfront.skill_state_detectobjectsfront(object_names=self.userdata.object_names, components = components),
-                                transitions={'not_detected':'ended',
-                                        'failed':'ended','detected':'ended'})
+                                transitions={'not_detected':'failed',
+                                        'failed':'failed','detected':'success'})
 
 	def pre_conditions(self):
 		
