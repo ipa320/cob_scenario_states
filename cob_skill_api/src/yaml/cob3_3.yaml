@@ -92,6 +92,18 @@ pre_objB_check: # checks if the camera is facing back
       joint_states: [0.0]
       allowed_error: 0.2 # rad
 
+pre_getmilk_check: 
+  - init_components:
+    - torso: home
+    - tray: down
+    - arm: folded
+    - sdh: cylclosed
+    - head: back
+  - joint_configuration_check_js: #check the configuration according to the joint state message
+    - joint_names: [head_axis_joint] 
+      joint_states: [0.0]
+      allowed_error: 0.2 # rad
+
 post_check:
   - joint_configuration_check_js: #check the configuration according to the joint state message
     - joint_names: [arm_1_joint,arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint] 

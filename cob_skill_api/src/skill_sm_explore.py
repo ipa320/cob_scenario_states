@@ -80,7 +80,7 @@ class skill_sm_explore(SkillsSM):
     
     def mach_approach(self):
         rospy.loginfo("Executing the Approach pose Skill!")
-        self.apose =  skill_approachpose.SkillImplementation(navTo=[-1.0, -0.3, 0.0])
+        self.apose =  skill_approachpose.SkillImplementation(navTo=[-0.47, -0.6, 0.0])
         return self.apose
 
     def mach_detect(self):
@@ -103,16 +103,16 @@ class skill_sm_explore(SkillsSM):
         with self:
 
             self.add('APPROACH_SKILL',self.mach_approach(),
-                     transitions={'success':'DETECT_SKILL_FRONT',
+                     transitions={'success':'DETECT_SKILL_BACK',
                                   'failed':'APPROACH_SKILL'})
 
-            self.add('DETECT_SKILL_FRONT',self.mach_detect(),
-                     transitions={'ended':'ANNOUNCE_SKILL_FRONT'})
+            #self.add('DETECT_SKILL_FRONT',self.mach_detect(),
+             #        transitions={'ended':'ANNOUNCE_SKILL_FRONT'})
 
-            self.add('ANNOUNCE_SKILL_FRONT',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
-                     transitions={'announced':'DETECT_SKILL_BACK',
-                                  'not_announced':'DETECT_SKILL_BACK',
-                                  'failed':'failed'})
+            #self.add('ANNOUNCE_SKILL_FRONT',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
+             #        transitions={'announced':'DETECT_SKILL_BACK',
+              #                    'not_announced':'DETECT_SKILL_BACK',
+               #                   'failed':'failed'})
 
             self.add('DETECT_SKILL_BACK',self.mach_detect_back(),
                      transitions={'ended':'ANNOUNCE_SKILL_BACK'})
