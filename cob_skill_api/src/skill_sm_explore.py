@@ -111,7 +111,7 @@ class skill_sm_explore(SkillsSM):
                                   'success':'ANNOUNCE_SKILL_FRONT'})
 
             self.add('ANNOUNCE_SKILL_FRONT',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
-                     transitions={'announced':'GRASP',
+                     transitions={'announced':'GRASP_SKILL',
                                   'not_announced':'DETECT_SKILL_FRONT',
                                   'failed':'failed'})
 
@@ -120,11 +120,11 @@ class skill_sm_explore(SkillsSM):
                                   'failed':'APPROACH_SKILL'})
 
             self.add('ANNOUNCE_SKILL_BACK',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
-                     transitions={'announced':'GRASP',
+                     transitions={'announced':'GRASP_SKILL',
                                   'not_announced':'DETECT_SKILL_BACK',
                                   'failed':'failed'})
 
-            self.add('GRASP',skill_grasp.SkillImplementation(),
+            self.add('GRASP_SKILL',skill_grasp.SkillImplementation(),
                      transitions={'grasped':'APPROACH_SKILL',
                                   'not_grasped':'APPROACH_SKILL',
                                   'failed':'failed'})               
