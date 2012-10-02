@@ -74,89 +74,30 @@ import random
 
 import condition_check
 import skill_state_approachpose
+import skill_selectnavgoal
 
 import tf
 from tf.msg import tfMessage
 from tf.transformations import euler_from_quaternion
 
-class SelectRandomNavigationGoal(smach.State):
-#    Needs x_min, x_max, x_increment, y_min, y_max, y_increment, th_min, th_max, th_increment
-#    that provides the characteristics of the scenario for creating a random goal
-
-        def __init__(self, conditions=[0,0,0,0,0,0,0,0,0]):
-                smach.State.__init__(self,
-                        outcomes=['selected','not_selected','failed'],
-                        output_keys=['pose'])
-                self.conditions = conditions
-                self.goals = []
-
-        def execute(self, userdata):
-
-                x_min, x_max, x_increment, y_min, y_max, y_increment, th_min, th_max, th_increment = self.conditions
-
-                if len(self.goals) == 0:
-                        x = x_min
-                        y = y_min
-                        th = th_min
-                        while x <= x_max:
-                                while y <= y_max:
-                                        while th <= th_max:
-                                                pose = []
-                                                pose.append(x) # x
-                                                pose.append(y) # y
-                                                pose.append(th) # th
-                                                self.goals.append(pose)
-                                                th += th_increment
-                                        y += y_increment
-                                        th = th_min
-                                x += x_increment
-                                y = y_min
-                                th = th_min
-
-                userdata.pose = self.goals.pop(random.randint(0,len(self.goals)-1))
-
-                return 'selected'
-
-class SelectNavigationGoal(smach.State):
-#    Needs x, y, theta
-
-        def __init__(self, positions=[0,0,0]):
-                smach.State.__init__(self,
-                        outcomes=['selected','not_selected','failed'],
-                        output_keys=['pose'])
-
-                self.positions = positions
-
-        def execute(self, userdata):
-
-                userdata.pose = self.positions
-
-                return 'selected'
-
-
 class SkillImplementation(SkillsBase):
-    def __init__(self, navTo = None):
+    def __init__(self, defined_goal=None,):
         smach.StateMachine.__init__(self, outcomes=['success', 'failed'])
 
         rospy.loginfo("Started executing the ApproachPose State Machine")
-
+        self.defined_goal = defined_goal
         self.full_components = ""
         self.required_components = ""
         self.optional_components = ""
-        self.navTo = navTo
-        self.check_pre = None
-        self.check_post = None
-        self.tfL = tf.TransformListener()
+        self.check_pre = self.pre_conditions()
+        self.check_post = self.post_conditions()
         
         with self:
 
-            self.add('PRECONDITION_CHECK', self.pre_conditions(), transitions={'success':'SELECT_GOAL', 'failed':'PRECONDITION_CHECK'})
-            if (self.navTo == None):
-                self.add('SELECT_GOAL',SelectRandomNavigationGoal(conditions=[0.0, 4.0, 2.0, -4.0, 0.0, 2.0, -3.14, 3.14, 2*3.1414926/4 ]),transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
-            else:
-                self.add('SELECT_GOAL',SelectNavigationGoal(positions=self.navTo),transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
-            self.add('APPROACH_POSE',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_GOAL', 'not_reached': 'SELECT_GOAL'})
-            self.add('POSTCONDITION_CHECK',self.post_conditions(), transitions={'success':'success'})
+            self.add('PRECONDITION_CHECK',self.check_pre , transitions={'success':'SELECT_NAVIGATION_GOAL', 'failed':'PRECONDITION_CHECK'})
+            self.add('SELECT_NAVIGATION_GOAL',skill_selectnavgoal.SkillImplementation(defined_goal=self.defined_goal), transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
+            self.add('APPROACH_POSE',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_NAVIGATION_GOAL', 'not_reached': 'SELECT_NAVIGATION_GOAL'})
+            self.add('POSTCONDITION_CHECK',self.check_post, transitions={'success':'success'})
 
     def execute_machine(self):
         rospy.loginfo("Executing the Approach pose Skill!")
@@ -165,13 +106,13 @@ class SkillImplementation(SkillsBase):
 
     def pre_conditions(self):
 
-        self.check_pre = condition_check.ConditionCheck(checkType="pre_check", tfL=self.tfL)
-        return self.check_pre
+        check_pre = condition_check.ConditionCheck(checkType="pre_approach_pose_check")
+        return check_pre
 
     def post_conditions(self):
 
-        self.check_post = condition_check.ConditionCheck(checkType = "post_check",  tfL=self.tfL)
-        return self.check_post
+        check_post = condition_check.ConditionCheck(checkType = "post_approach_pose_check")
+        return check_post
 
     @property
     def inputs(self):
@@ -191,7 +132,7 @@ if __name__ == "__main__":
     rospy.init_node('skill_template')
 
 # for pre-defined navigation Goals
-    sm = SkillImplementation(navTo=[-0.47, -0.6, 0.0])
+    sm = SkillImplementation()
 
     sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
     sis.start()

@@ -81,7 +81,7 @@ from abc_conditioncheck import ConditionCheck
 
 class ConditionCheck(ConditionCheck):
 
-    def __init__(self, checkType = "pre_check", tfL = None):
+    def __init__(self, checkType = "pre_check"):
     
         smach.State.__init__(self, outcomes=['success','failed'], input_keys=['pose'])
         
@@ -113,7 +113,7 @@ class ConditionCheck(ConditionCheck):
         self.optional_components = self.optional_components.split()
         self.full_components = self.full_components.split()
         
-        self.tfL = tfL
+        self.tfL = tf.TransformListener()
         
         self.result = "failed"
         
@@ -305,10 +305,10 @@ class ConditionCheck(ConditionCheck):
                 
                     for pos in range(len(trans)):
                         
-                        #WARNING: HACK FOR PRE_CHECK USING THE CURRENT POSITION
+                        ########## TODO HACK FIXME: WARNING: HACK FOR PRE_CHECK USING THE CURRENT POSITION
                         if(rospy.has_param("position_exists") and target_frame == "/map"):
                             item['target_pose']['position'][pos] = rospy.get_param("position_exists")[pos]
-                        # 
+                        ########## HACK END
                         
                         messageX = "Position " + (str)(pos) + ":" +  " Real Position: " +  (str)(trans[pos]) + ", Target Position: " + \
                             (str)(item['target_pose']['position'][pos]) + ", Tolerance: "+ (str)(xy_goal_tolerance)
@@ -320,10 +320,10 @@ class ConditionCheck(ConditionCheck):
                     
                     for ori in range(len(angles)):
                         
-                        #WARNING: HACK FOR PRE_CHECK USING THE CURRENT ORIENTATION
+                        ########## TODO HACK FIXME: WARNING: HACK FOR PRE_CHECK USING THE CURRENT ORIENATION
                         if(rospy.has_param("orientation_exists") and target_frame == "/map" ):
                             item['target_pose']['orientation'][ori] = rospy.get_param("orientation_exists")[ori]
-                        #
+                        ########## HACK END
                         messageA = "Orientation " + (str)(ori) + ":" + " Real Orientation: " + (str)(angles[ori]) + ", Target Orientation: " + \
                             (str)(item['target_pose']['orientation'][ori]) + ", Tolerance: "+ (str)(yaw_goal_tolerance)
                         

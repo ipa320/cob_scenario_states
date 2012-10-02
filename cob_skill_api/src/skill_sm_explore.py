@@ -76,56 +76,39 @@ import skill_detectobjectsback
 import skill_state_announcefoundobjects
 import skill_grasp
 
-class skill_sm_explore(SkillsSM):
-    
-    def mach_approach(self):
-        rospy.loginfo("Executing the Approach pose Skill!")
-        self.apose =  skill_approachpose.SkillImplementation() #navTo=[-0.47, -0.6, 0.0])
-        return self.apose
 
-    def mach_detect(self):
-        rospy.loginfo("Executing the Detect Skill!")
-        mach =  skill_detectobjectsfront.SkillImplementation(components = self.apose.check_pre.full_components)
-        return mach
-    
-    def mach_detect_back(self):
-        rospy.loginfo("Executing the Detect Skill!")
-        mach =  skill_detectobjectsback.SkillImplementation(components = self.apose.check_pre.full_components)
-        return mach
+class skill_sm_explore(SkillsSM):
     
     def __init__(self):
         
         smach.StateMachine.__init__(self,
                                     outcomes=['success', 'failed'])
-
-        self.apose = None
-
+        
         with self:
 
-            self.add('APPROACH_SKILL',self.mach_approach(),
-                     transitions={'success':'DETECT_SKILL_FRONT',
-                                  'failed':'APPROACH_SKILL'})
+            self.add('APPROACH_POSE_SKILL',skill_approachpose.SkillImplementation(),
+                     transitions={'success':'DETECT_FRONT_SKILL',
+                                  'failed':'APPROACH_POSE_SKILL'})
 
-            self.add('DETECT_SKILL_FRONT',self.mach_detect(),
-                     transitions={'failed':'DETECT_SKILL_BACK',
-                                  'success':'ANNOUNCE_SKILL_FRONT'})
+            self.add('DETECT_FRONT_SKILL',skill_detectobjectsfront.SkillImplementation(),
+                     transitions={'failed':'DETECT_BACK_SKILL',
+                                  'success':'ANNOUNCE_FRONT_SKILL'})
 
-            self.add('ANNOUNCE_SKILL_FRONT',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
+            self.add('ANNOUNCE_FRONT_SKILL',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
                      transitions={'announced':'GRASP_SKILL',
-                                  'not_announced':'DETECT_SKILL_FRONT',
+                                  'not_announced':'DETECT_FRONT_SKILL',
                                   'failed':'failed'})
 
-            self.add('DETECT_SKILL_BACK',self.mach_detect_back(),
-                     transitions={'success':'ANNOUNCE_SKILL_BACK',
-                                  'failed':'APPROACH_SKILL'})
+            self.add('DETECT_BACK_SKILL', skill_detectobjectsback.SkillImplementation(),
+                     transitions={'success':'ANNOUNCE_BACK_SKILL',
+                                  'failed':'APPROACH_POSE_SKILL'})
 
-            self.add('ANNOUNCE_SKILL_BACK',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
+            self.add('ANNOUNCE_BACK_SKILL',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
                      transitions={'announced':'GRASP_SKILL',
-                                  'not_announced':'DETECT_SKILL_BACK',
+                                  'not_announced':'DETECT_BACK_SKILL',
                                   'failed':'failed'})
 
             self.add('GRASP_SKILL',skill_grasp.SkillImplementation(),
-                     transitions={'grasped':'APPROACH_SKILL',
-                                  'not_grasped':'APPROACH_SKILL',
-                                  'failed':'failed'})               
-
+                     transitions={'grasped':'APPROACH_POSE_SKILL',
+                                  'not_grasped':'APPROACH_POSE_SKILL',
+                                  'failed':'APPROACH_POSE_SKILL'})

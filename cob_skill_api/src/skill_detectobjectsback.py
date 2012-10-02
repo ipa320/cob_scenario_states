@@ -84,42 +84,46 @@ sss = simple_script_server()
 
 class SkillImplementation(SkillsBase):
 
-	def __init__(self, object_names = ['milk'], components = []):
-		
-		rospy.loginfo("Executing the detect object backside Machine")
-		smach.StateMachine.__init__(self,outcomes=['success', 'failed'], output_keys=['objects'])
-		rospy.set_param("detect_object_table/torso_poses",['back_extreme','back_left_extreme','back_right_extreme','back','back_left','back_right'])
-		
-		with self:
-			self.userdata.object_names = object_names
-			self.add("PRECONDITIONS_DETECT_BACK", self.pre_conditions(), transitions={'success':'DETECT_OBJECT_BACK', 'failed':'PRECONDITIONS_DETECT_BACK'})
-			self.add('DETECT_OBJECT_BACK',skill_state_detectobjectsback.skill_state_detectobjectsback(object_names=self.userdata.object_names, components = components),
-                                transitions={'not_detected':'failed',
-                                        'failed':'failed','detected':'success'})
-	def pre_conditions(self):
-
-		self.check_pre = condition_check.ConditionCheck(checkType="pre_objB_check")
-		return self.check_pre
-
-	def post_conditions(self):
-		print "Some postconditions"
-
-	@property
-	def inputs(self):
-		return "Some Input"
-
-	@property
-	def outputs(self):
-		return "Some Output"
-
-	@property
-	def requirements(self):
-		return "Some Requirements"
+    def __init__(self, object_names = ['milk']):
+    
+        rospy.loginfo("Executing the detect object backside Machine")
+        smach.StateMachine.__init__(self,outcomes=['success', 'failed'], output_keys=['objects'])
+        rospy.set_param("detect_object_table/torso_poses",['back_extreme','back_left_extreme','back_right_extreme','back','back_left','back_right'])
+        
+        self.check_pre = self.pre_conditions()
+        self.check_post = self.post_conditions()
+        
+        with self:
+            self.userdata.object_names = object_names
+            self.add("PRECONDITIONS_DETECT_BACK", self.check_pre, transitions={'success':'DETECT_OBJECT_BACK', 'failed':'PRECONDITIONS_DETECT_BACK'})
+            self.add('DETECT_OBJECT_BACK',skill_state_detectobjectsback.skill_state_detectobjectsback(object_names=self.userdata.object_names, components = self.check_pre.full_components),
+                     transitions={'not_detected':'failed',
+                                  'failed':'failed','detected':'success'})
+    
+    def pre_conditions(self):
+    
+        check_pre = condition_check.ConditionCheck(checkType="pre_detect_object_back_check")
+        return check_pre
+    
+    def post_conditions(self):
+        print "Some postconditions"
+    
+    @property
+    def inputs(self):
+        return "Some Input"
+    
+    @property
+    def outputs(self):
+        return "Some Output"
+    
+    @property
+    def requirements(self):
+        return "Some Requirements"
 
 if __name__=='__main__':
-        rospy.init_node('detect_object_backside')
-        sm = SkillImplementation()
-        sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
-        sis.start()
-        outcome = sm.execute()
-        rospy.spin()
+    rospy.init_node('detect_object_backside')
+    sm = SkillImplementation()
+    sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
+    sis.start()
+    outcome = sm.execute()
+    rospy.spin()
