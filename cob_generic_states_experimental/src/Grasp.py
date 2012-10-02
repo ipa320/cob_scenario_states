@@ -47,7 +47,7 @@ class Grasp(smach.State):
 
                 # add floor
                 floor_extent = [3.0,3.0,0.1]
-		floor_pose = conversions.create_pose_stamped([  0, 0, floor_extent[2]/2.0 ,0,0,0,1], 'base_link') # magic numbers are cool
+		floor_pose = conversions.create_pose_stamped([  0, 0, floor_extent[2]/2.0 ,0,0,0,1], '/base_link') # magic numbers are cool
 		wi.add_collision_box(floor_pose, floor_extent, "floor")
 		
 		#transform into base_link
@@ -121,7 +121,7 @@ class Grasp(smach.State):
 		mp += MoveArm('arm', [pregrasp_pose,['sdh_grasp_link']])
 		
 		# goto hold
-		#mp += MoveArm('arm', 'hold')
+		mp += MoveArm('arm', 'hold')
 		
 		userdata.graspdata = graspdata
 

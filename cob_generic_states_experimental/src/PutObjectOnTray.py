@@ -34,18 +34,20 @@ class PutObjectOnTray(smach.State):
 
 	def execute(self, userdata):
 		sss.set_light('blue')
-                sss.move("head","front", False)
+		sss.move("head","front", False)
 		#TODO select position on tray depending on how many objects are on the tray already
 
-                # add tray block
-                block_extent = [0.27,0.38,0.892]
+		""" wi = WorldInterface()
+
+		# add tray block
+		block_extent = [0.27,0.38,0.892]
 		block_pose = conversions.create_pose_stamped([ 0.601 - block_extent[0]/2.0, -0.120 + block_extent[1]/2.0, 0.892/2.0 ,0,0,0,1], 'base_link') # magic numbers are cool
 		wi.add_collision_box(block_pose, block_extent, "block")
 
 		pos_x, pos_y, pos_z = [0.601, -0.120, 0.892] # tray_right_link in base_link		
 		pos_x -= 0.13
 		pos_y += 0.065
-		pos_z += userdata.graspdata['height'] + 0.03
+		pos_z += userdata.graspdata['height'] + 0.04
 		
 		[new_x, new_y, new_z, new_w] = tf.transformations.quaternion_from_euler(-1.5708,0,0) # rpy TODO: check orientation
 		put_pose = conversions.create_pose_stamped([pos_x, pos_y, pos_z,new_x, new_y, new_z, new_w], 'base_link')
@@ -57,7 +59,8 @@ class PutObjectOnTray(smach.State):
 		mp = MotionPlan()
 		
 		# move arm to lift
-                mp += CallFunction(sss.move, 'tray','up', False)
+		mp += CallFunction(sss.move, 'tray','up', False)
+		mp += MoveArmUnplanned('arm', 'intermediateback')
 		mp += MoveArm('arm', [lift_pose,['sdh_grasp_link']], seed = 'overtray')
 		
 		# allow collison tray/object
@@ -95,15 +98,27 @@ class PutObjectOnTray(smach.State):
 		# move arm to folded
 		mp += MoveArmUnplanned('arm', 'tray-to-folded')
 
-		if not mp.plan().success:
+		if not mp.plan(5).success:
 			sss.set_light('green')
 			return "not_put"
 
 		sss.set_light('yellow')
 		for ex in mp.execute():
-			if not ex.wait().success:
+			if not ex.wait(80.0).success:
 				sss.set_light('red')
-				return 'failed'
-		
+				return 'failed'  """
+
+		# quick fix: non planned movements without ik
+		sss.set_light('yellow')
+		handle_arm = sss.move("arm","grasp-to-tray",False)
+		sss.move("tray","up")
+		handle_arm.wait()
+		sss.move("sdh","cylopen")
+		handle_arm = sss.move("arm","tray-to-folded",False)
+		rospy.sleep(3)
+		sss.move("sdh","cylclosed")
+		handle_arm.wait()
+		# end fix
+
 		sss.set_light('green')
 		return 'put'
