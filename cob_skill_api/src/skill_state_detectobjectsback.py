@@ -76,11 +76,11 @@ from cob_object_detection_msgs.srv import *
 
 from abc_state_skill import SkillsState
 
-from ObjectDetector import *
+import skill_objectdetector
 
 class skill_state_detectobjectsback(SkillsState):
 
-    def __init__(self, object_names = [], components = [], namespace="", detector_srv = "/object_detection/detect_object", mode = "all"):
+    def __init__(self, object_names = [], components = []):
         smach.State.__init__(
                 self,
                 outcomes = ["detected", "not_detected", "failed"],
@@ -88,13 +88,8 @@ class skill_state_detectobjectsback(SkillsState):
                 output_keys=["objects"])
         
         self.components = components
-        if mode not in ["all", "one"]:
-            rospy.logwarn("Invalid mode: must be 'all', or 'one', selecting the default value = 'all'")
-            self.mode = "all"
-        else:
-            self.mode = mode
 
-        self.object_detector = ObjectDetector(object_names, namespace, detector_srv, self.mode)
+        self.object_detector = skill_objectdetector.SkillImplementation(object_names)
 
     def execute(self, userdata):
 
@@ -102,9 +97,8 @@ class skill_state_detectobjectsback(SkillsState):
         
         if ("light" in self.components):
             sss.set_light("blue")
-
-        result, userdata.objects = self.object_detector.execute(userdata)
-
+            
+        result, userdata.objects = self.object_detector.execute(userdata)    
         #cleanup robot components
         if result != "detected":
             if ("light" in self.components):
