@@ -224,8 +224,13 @@ class ConditionCheck(ConditionCheck):
             
             try:
 
-                while (item not in self.component_check):
-                    rospy.loginfo("Waiting for component to be present on diagnostics messages")
+                iters = 5 # tentatives for getting the component ready
+                
+                while (item not in self.component_check and iters >0):
+                    rospy.loginfo(item + " not found")
+                    iters-=1
+                    
+                assert iters > 0, "Checking failed due to inexistence of the component"    
                     
                 rospy.loginfo("Started to check if all components are ready")
                     
@@ -254,30 +259,36 @@ class ConditionCheck(ConditionCheck):
     def action_check(self, params, userdata):
     
         rospy.loginfo("Checking <<actions>>")
+        result_summary = {}
         
         for item in params.values()[0]:
         
             action_type = item['action_type']
             action_name = item['action_name']
-           #TODO: make generic 
+            
             rospy.loginfo("Now checking <<%s>>", action_name)
             rospy.loginfo("Of type <<%s>>", action_type)
 
             imp_action = rostopic.get_topic_type("/"+action_name+"/goal", blocking=True)
             imp_action = imp_action[0].split("/")[0]
             imp_action += ".msg"
+            
             mod = __import__(imp_action, fromlist=[action_type]) # from move_base_msg.msg
             cls = getattr(mod, action_type) # import MoveBaseAction
             
             ac_client = actionlib.SimpleActionClient(action_name, cls)
             
             result = ac_client.wait_for_server(rospy.Duration(5))
-# TODO: make a summary for the lists and then return               
-        if (result == True):
-            self.result = "success"
+            result_summary[action_name] = result
+            
+# DONE: make a summary for the lists and then return               
+        if (False in result_summary):
+            self.result = "failed"
         else:
-            self.result ="failed"  
+            self.result ="success"  
 
+        rospy.loginfo("Result of the Actions Check")
+        rospy.loginfo(result_summary)    
         rospy.loginfo("Finished Checking <<actions>>")
     
     

@@ -21,7 +21,7 @@ optional_components:
 pre_approach_pose_check:
   - component_ready_check:
     - //base_controller
-   # - /torso_controller
+    - /torso_controller
 
   - action_check: 
     - action_name: move_base
