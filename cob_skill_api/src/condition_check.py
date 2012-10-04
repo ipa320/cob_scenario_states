@@ -248,17 +248,21 @@ class ConditionCheck(ConditionCheck):
         
             action_type = item['action_type']
             action_name = item['action_name']
-            
+           #TODO: make generic 
             rospy.loginfo("Now checking <<%s>>", action_name)
             rospy.loginfo("Of type <<%s>>", action_type)
-            
-            mod = __import__(action_name, fromlist=[action_type])
-            cls = getattr(mod, action_type)
+
+            mod = __import__("move_base_msgs.msg", fromlist=[action_type]) # from move_base_msg.msg
+            cls = getattr(mod, action_type) # import MoveBaseAction
             
             ac_client = actionlib.SimpleActionClient(action_name, cls)
             
-            ac_client.wait_for_server(rospy.Duration(5))
-        
+            result = ac_client.wait_for_server(rospy.Duration(5))
+# TODO: make a summary for the lists and then return               
+        if (result == True):
+          self.result = "success"
+        else:
+	  self.result ="failed"  
         rospy.loginfo("Finished Checking <<actions>>")
     
     

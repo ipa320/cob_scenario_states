@@ -82,7 +82,7 @@ from tf.transformations import euler_from_quaternion
 
 class SkillImplementation(SkillsBase):
     def __init__(self, defined_goal=None,):
-        smach.StateMachine.__init__(self, outcomes=['success', 'failed'])
+        smach.StateMachine.__init__(self, outcomes=['reached', 'not_reached', 'failed', 'failed_pre_condition_check', 'failed_post_condition_check'])
 
         rospy.loginfo("Started executing the ApproachPose State Machine")
         self.defined_goal = defined_goal
@@ -94,10 +94,10 @@ class SkillImplementation(SkillsBase):
         
         with self:
 
-            self.add('PRECONDITION_CHECK',self.check_pre , transitions={'success':'SELECT_NAVIGATION_GOAL', 'failed':'PRECONDITION_CHECK'})
-            self.add('SELECT_NAVIGATION_GOAL',skill_selectnavgoal.SkillImplementation(defined_goal=self.defined_goal), transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
-            self.add('APPROACH_POSE',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'SELECT_NAVIGATION_GOAL', 'not_reached': 'SELECT_NAVIGATION_GOAL'})
-            self.add('POSTCONDITION_CHECK',self.check_post, transitions={'success':'success'})
+            self.add('PRECONDITION_CHECK',self.check_pre , transitions={'success':'APPROACH_POSE', 'failed':'failed_pre_condition_check'})
+#            self.add('SELECT_NAVIGATION_GOAL',skill_selectnavgoal.SkillImplementation(defined_goal=self.defined_goal), transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
+            self.add('APPROACH_POSE',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'failed', 'not_reached': 'not_reached'})
+            self.add('POSTCONDITION_CHECK',self.check_post, transitions={'success':'reached', 'failed':'failed_post_condition_check'})
 
     def execute_machine(self):
         rospy.loginfo("Executing the Approach pose Skill!")
@@ -136,6 +136,7 @@ if __name__ == "__main__":
 
     sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
     sis.start()
+    sm.userdata.pose = [1,-3,0]
     outcome = sm.execute()
     rospy.spin()
     sis.stop()
