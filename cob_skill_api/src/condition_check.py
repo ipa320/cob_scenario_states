@@ -227,7 +227,6 @@ class ConditionCheck(ConditionCheck):
                 iters = 5 # tentatives for getting the component ready
                 
                 while (item not in self.component_check and iters >0):
-                    rospy.loginfo(item + " not found")
                     iters-=1
                     
                 assert iters > 0, "Checking failed due to inexistence of the component"    
@@ -242,6 +241,7 @@ class ConditionCheck(ConditionCheck):
             
             except AssertionError,e:
                 self.result = "failed"
+                rospy.loginfo(item + " not found")
                 rospy.logerr("<<Error Message>>:%s"%e)
                 rospy.logerr("at:%s"%params)
                 return
