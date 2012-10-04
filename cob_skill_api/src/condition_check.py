@@ -236,16 +236,15 @@ class ConditionCheck(ConditionCheck):
                 status = self.component_check[item]["status"]
 
                 assert status == 0, "<<" + item +">>" + " component is not ready yet."
-                    
-                rospy.loginfo("All Necessary components are present.")
-            
+   
             except AssertionError,e:
                 self.result = "failed"
                 rospy.loginfo(item + " not found")
                 rospy.logerr("<<Error Message>>:%s"%e)
                 rospy.logerr("at:%s"%params)
                 return
-            
+
+        rospy.loginfo("All Necessary components are present.") 
         self.result = "success"
     
     
