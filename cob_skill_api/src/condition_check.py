@@ -79,6 +79,8 @@ from move_base_msgs.msg import *
 
 from abc_conditioncheck import ConditionCheck
 
+import rostopic
+
 class ConditionCheck(ConditionCheck):
 
     def __init__(self, checkType = "pre_check"):
@@ -117,10 +119,11 @@ class ConditionCheck(ConditionCheck):
         
         self.result = "failed"
         
-        self.status = 0
+        self.component_check = {}
+                
+        self.diagnostics_subscriber = rospy.Subscriber('diagnostics', DiagnosticArray, self.diagnostics_callback)
         
-        rospy.Subscriber('diagnostics', DiagnosticArray, self.diagnostics_callback)
-
+        rospy.wait_for_message('diagnostics', DiagnosticArray, timeout=10)
     ####################################################################
     # function: execute()
     # Main routine of the State Machine
@@ -185,16 +188,16 @@ class ConditionCheck(ConditionCheck):
     
         joints = zip(joint_names, joint_states)
         
+        jointsMsg = rospy.wait_for_message("/joint_states", sensor_msgs.msg.JointState)
+
+        while joint_names[0] not in jointsMsg.name:
+            jointsMsg = rospy.wait_for_message("/joint_states", sensor_msgs.msg.JointState)
+
         try:
         
             for name, state in joints:
             
-                rospy.loginfo("Checking the <<%s>> joint"%name)
-                
-                jointsMsg = rospy.wait_for_message("/joint_states", sensor_msgs.msg.JointState)
-                
-                while name not in jointsMsg.name:
-                    jointsMsg = rospy.wait_for_message("/joint_states", sensor_msgs.msg.JointState)
+                rospy.loginfo("Checking the <<%s>> joint"%name)              
                 
                 value = jointsMsg.position[jointsMsg.name.index(name)]
                 
@@ -216,20 +219,28 @@ class ConditionCheck(ConditionCheck):
     #####################################################################
     
     def component_ready_check(self, params, userdata): #Simplified due to the current simulation possibilities
-    
-        try:
-            rospy.loginfo("Started to check if all components are ready")
-            
-            assert self.status == 0, "<<base>> component is not ready yet."
-            
-            rospy.loginfo("All Necessary components are present.")
         
-        except AssertionError,e:
-            self.result = "failed"
-            rospy.logerr("<<Error Message>>:%s"%e)
-            rospy.logerr("at:%s"%params)
-            return
-        
+        for item in params.values()[0]:  
+            
+            try:
+
+                while (item not in self.component_check):
+                    rospy.loginfo("Waiting for component to be present on diagnostics messages")
+                    
+                rospy.loginfo("Started to check if all components are ready")
+                    
+                status = self.component_check[item]["status"]
+
+                assert status == 0, "<<" + item +">>" + " component is not ready yet."
+                    
+                rospy.loginfo("All Necessary components are present.")
+            
+            except AssertionError,e:
+                self.result = "failed"
+                rospy.logerr("<<Error Message>>:%s"%e)
+                rospy.logerr("at:%s"%params)
+                return
+            
         self.result = "success"
     
     
@@ -252,7 +263,10 @@ class ConditionCheck(ConditionCheck):
             rospy.loginfo("Now checking <<%s>>", action_name)
             rospy.loginfo("Of type <<%s>>", action_type)
 
-            mod = __import__("move_base_msgs.msg", fromlist=[action_type]) # from move_base_msg.msg
+            imp_action = rostopic.get_topic_type("/"+action_name+"/goal", blocking=True)
+            imp_action = imp_action[0].split("/")[0]
+            imp_action += ".msg"
+            mod = __import__(imp_action, fromlist=[action_type]) # from move_base_msg.msg
             cls = getattr(mod, action_type) # import MoveBaseAction
             
             ac_client = actionlib.SimpleActionClient(action_name, cls)
@@ -260,9 +274,10 @@ class ConditionCheck(ConditionCheck):
             result = ac_client.wait_for_server(rospy.Duration(5))
 # TODO: make a summary for the lists and then return               
         if (result == True):
-          self.result = "success"
+            self.result = "success"
         else:
-	  self.result ="failed"  
+            self.result ="failed"  
+
         rospy.loginfo("Finished Checking <<actions>>")
     
     
@@ -353,7 +368,6 @@ class ConditionCheck(ConditionCheck):
     
     def init_components(self, params, userdata):
     
-        sss.sleep(2)
         
         if "sound" in self.full_components:
             sss.say(["Preparing."],False)
@@ -374,12 +388,13 @@ class ConditionCheck(ConditionCheck):
         if "sound" in self.full_components:
             sss.say(["Ready."])
         
-        sss.sleep(2)
+        sss.sleep(1)
         
         rospy.loginfo("Components successfully initialized.")
         
         self.result = "success"
     
     def diagnostics_callback(self, msg):
-    
-        self.status = msg.status[0].level
+         
+        self.component_check[msg.status[0].name] = {"status": -1}   
+        self.component_check[msg.status[0].name]["status"] = msg.status[0].level
