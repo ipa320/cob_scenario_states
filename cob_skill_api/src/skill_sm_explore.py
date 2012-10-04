@@ -78,12 +78,12 @@ import skill_grasp
 
 
 class skill_sm_explore(SkillsSM):
-    
+
     def __init__(self):
-        
+
         smach.StateMachine.__init__(self,
                                     outcomes=['success', 'failed'])
-        
+
         with self:
 
             self.add('APPROACH_POSE_SKILL',skill_approachpose.SkillImplementation(),
