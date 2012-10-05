@@ -1,12 +1,9 @@
 # Definition of skills for the Explore State Machine
 
-robot_name: cob3-3
+robot_name: raw3-2
 #comment to disable components
 required_components: 
-  head
   base
-  arm_left
-  arm_right
   
 #optional_components:
 #  light
@@ -20,15 +17,10 @@ required_components:
 pre_approach_pose_check:
   - component_ready_check:
     - //base_controller
-#    - /torso_controller
 
   - action_check: 
     - action_name: move_base
       action_type: MoveBaseAction
-      
-  - init_components:
-    - arm_left: folded
-    - arm_right: folded
 
 post_approach_pose_check:
 
