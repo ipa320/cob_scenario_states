@@ -348,6 +348,19 @@ class ConditionCheck(ConditionCheck):
                 reference_frame = item['reference_frame']
                 target_frame = item['target_pose']['frame_id']
                 
+                ##################
+                # This is for avoiding the need for redefining the yaml file all time
+                comp_name = reference_frame.strip("/")
+                comp_name = comp_name[:comp_name.index("_")]
+                
+                if (comp_name not in self.full_components):
+                    rospy.loginfo("TEST SKIPPED...") 
+                    rospy.loginfo("There is a definition to check the pose of the component <<" + comp_name + ">>, but it is not listed as required")
+                    rospy.loginfo("Please remove this check from the configuration file, if testing a new skill.")
+                    continue
+                
+                ###################
+                
                 mes = "Checking the " + reference_frame + " against the " + target_frame
                 
                 rospy.loginfo(mes)

@@ -82,7 +82,7 @@ from tf.transformations import euler_from_quaternion
 
 class SkillImplementation(SkillsBase):
     def __init__(self, defined_goal=None,):
-        smach.StateMachine.__init__(self, outcomes=['reached', 'not_reached', 'failed', 'failed_pre_condition_check', 'failed_post_condition_check'], input_keys=['pose'])
+        smach.StateMachine.__init__(self, outcomes=['reached', 'not_reached', 'failed', 'failed_pre_condition_check', 'failed_post_condition_check'])
 
         rospy.loginfo("Started executing the ApproachPose State Machine")
         self.defined_goal = defined_goal
