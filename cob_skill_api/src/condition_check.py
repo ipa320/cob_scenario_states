@@ -120,7 +120,7 @@ class ConditionCheck(ConditionCheck):
         self.result = "failed"
         
         self.component_check = {}
-                
+    	self.iters = 20 # trials to get component on diagnostics message
         self.diagnostics_subscriber = rospy.Subscriber('diagnostics', DiagnosticArray, self.diagnostics_callback)
         
         rospy.wait_for_message('diagnostics', DiagnosticArray, timeout=10)
@@ -223,13 +223,11 @@ class ConditionCheck(ConditionCheck):
         for item in params.values()[0]:  
             
             try:
-
-                iters = 5 # tentatives for getting the component ready
-                
-                while (item not in self.component_check and iters >0):
-                    iters-=1
-                    
-                assert iters > 0, "Checking failed due to inexistence of the component"    
+		print "COMPONENT STATUS", self.component_check
+                while (self.iters>0):
+                    pass
+                component_present = item in self.component_check    
+                assert component_present == True, "Component not found on scans on the diagnostics message"    
                     
                 rospy.loginfo("Started to check if all components are ready")
                     
@@ -259,7 +257,7 @@ class ConditionCheck(ConditionCheck):
     
         rospy.loginfo("Checking <<actions>>")
         result_summary = {}
-        
+	self.result = "success"        
         for item in params.values()[0]:
         
             action_type = item['action_type']
@@ -279,12 +277,11 @@ class ConditionCheck(ConditionCheck):
             
             result = ac_client.wait_for_server(rospy.Duration(5))
             result_summary[action_name] = result
+	    if result == False:
+		self.result = "failed"
+		
             
-# DONE: make a summary for the lists and then return               
-        if (False in result_summary):
-            self.result = "failed"
-        else:
-            self.result ="success"  
+# DONE: make a summary for the lists and then return
 
         rospy.loginfo("Result of the Actions Check")
         rospy.loginfo(result_summary)    
@@ -405,6 +402,8 @@ class ConditionCheck(ConditionCheck):
         self.result = "success"
     
     def diagnostics_callback(self, msg):
-         
+	if(self.iters >0):
+		self.iters -= 1
+		
         self.component_check[msg.status[0].name] = {"status": -1}   
         self.component_check[msg.status[0].name]["status"] = msg.status[0].level

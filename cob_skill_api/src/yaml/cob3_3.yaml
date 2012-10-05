@@ -4,14 +4,13 @@ robot_name: cob3-3
 #comment to disable components
 required_components: 
   torso
-  arm
   tray
   head
   #base
-  
+  #arm
 optional_components:
   light
-  sound
+#  sound
      
 #############################################
 # Definitions for the approach pose skill
@@ -28,11 +27,11 @@ pre_approach_pose_check:
       action_type: MoveBaseAction
 
   - joint_configuration_check_js: #check the configuration according to the joint state message
-    - joint_names: [arm_1_joint,arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint] 
-      joint_states: [-1.1572567240035734, -1.9104664691761568, -2.5334780195730255, -1.7853311980377056, -0.072798739390243047, 0.91767934923272776, -1.8876618005378798] # 7-DOF arm
-      allowed_error: 0.2 # rad
     - joint_names: [torso_lower_neck_tilt_joint, torso_pan_joint, torso_upper_neck_tilt_joint] 
       joint_states: [0.0, 0.0, 0.0] 
+      allowed_error: 0.2 # rad
+    - joint_names: [arm_1_joint,arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint, arm_6_joint, arm_7_joint]
+      joint_states: [-1.1572567240035734, -1.9104664691761568, -2.5334780195730255, -1.7853311980377056, -0.072798739390243047, 0.91767934923272776, -1.8876618005378798] # 7-DOF arm
       allowed_error: 0.2 # rad
 
   - joint_configuration_check_ss:

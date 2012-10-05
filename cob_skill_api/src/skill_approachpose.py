@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
     sis.start()
-    sm.userdata.pose = [1,-3,0]
+    sm.userdata.pose = [4.3,-4.3,0.0]#[1,-3,0]
     outcome = sm.execute()
     rospy.spin()
     sis.stop()
