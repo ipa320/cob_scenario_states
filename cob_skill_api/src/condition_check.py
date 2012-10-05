@@ -132,13 +132,15 @@ class ConditionCheck(ConditionCheck):
     def execute(self, userdata):
     
         for check in self.checks:
-        
+            
+            
             getattr(self, check.keys()[0])(check, userdata)
             
             if (self.result == "failed"):
                 rospy.logerr("Check failure on <<%s>>"%check)
                 return self.result
-        
+           
+            
         # announce ready
         if ("sound" in self.full_components) and (self.result == "success"):
             sss.say(["Ready."])
@@ -157,12 +159,15 @@ class ConditionCheck(ConditionCheck):
         rospy.loginfo("This is part of the <<%s>>", self.checkType)
         
         for item in params.values()[0]:
-        
+            
             joint_names = item['joint_names']
             joint_states = item['joint_states']
             aw_error = item['allowed_error']
             
             self.joint_configuration_check(joint_names,joint_states, aw_error)
+            
+            if(self.result=="failed"):
+                return
     
     
     def joint_configuration_check_ss(self, params, userdata): # get names and states from script server
@@ -176,8 +181,19 @@ class ConditionCheck(ConditionCheck):
             ss_names_path = "/script_server/" + component + "/joint_names"
             ss_values_path = "/script_server/" + component + "/" + configuration
             
-            joint_names = rospy.get_param(ss_names_path)
-            joint_states = rospy.get_param(ss_values_path)[0]
+            if rospy.has_param(ss_names_path):
+                joint_names = rospy.get_param(ss_names_path)
+            else:
+                self.result ="failed"
+                rospy.logerr("There is no " + ss_names_path + " on parameters server." )
+                return
+            
+            if rospy.has_param(ss_values_path):
+                joint_states = rospy.get_param(ss_values_path)[0]
+            else:
+                self.result = "failed"
+                rospy.logerr("There is no " + ss_values_path + " on parameters server." )
+                return
             
             aw_error = item['allowed_error']
             
@@ -187,9 +203,37 @@ class ConditionCheck(ConditionCheck):
     
         joints = zip(joint_names, joint_states)
         
+         ##################
+         # This is for avoiding the need for redefining the yaml file all time
+        comp_names = []
+        for m in joint_names:
+
+            comp_names.append(m[:m.index("_")])
+
+        for c in comp_names:
+            if (c not in self.full_components):
+                rospy.loginfo("TEST SKIPPED...") 
+                rospy.loginfo("There is a definition to check the component <<" + c + ">> that was not defined as required")
+                rospy.loginfo("Please remove this check from the configuration file.")
+                self.result = "success"
+                return
+            
+        ###################
+        
         jointsMsg = rospy.wait_for_message("/joint_states", sensor_msgs.msg.JointState)
 
+        #TODO: Try to ellaborate a better approach to this:
+        # Description: this avoids that the state machine hangs on the robot when the joint states is not available
+        trials = 20
         while joint_names[0] not in jointsMsg.name:
+            if (trials==0):
+                rospy.logerr("Exceeded maximum amount of trials for waiting for <<" + joint_names[0] + ">> on /joint_states messages")
+                rospy.loginfo("Please remove it from the configuration file, if not necessary for running the robot skill.")
+                self.result = "failed"
+                return
+            trials-=1
+         # END   
+
             jointsMsg = rospy.wait_for_message("/joint_states", sensor_msgs.msg.JointState)
 
         try:
@@ -222,11 +266,11 @@ class ConditionCheck(ConditionCheck):
         for item in params.values()[0]:  
             
             try:
-		print "COMPONENT STATUS", self.component_check
+                print "COMPONENT STATUS", self.component_check
                 while (self.iters>0):
                     pass
                 component_present = item in self.component_check    
-                assert component_present == True, "Component not found on scans on the diagnostics message"    
+                assert component_present == True, "Component not found on scan trials on the diagnostics message"    
                     
                 rospy.loginfo("Started to check if all components are ready")
                     
@@ -264,23 +308,23 @@ class ConditionCheck(ConditionCheck):
             
             rospy.loginfo("Now checking <<%s>>", action_name)
             rospy.loginfo("Of type <<%s>>", action_type)
-
+            
+            #************
+            # Description: Get topic type and uses that for dynamically importing the required modules
             imp_action = rostopic.get_topic_type("/"+action_name+"/goal", blocking=True)
             imp_action = imp_action[0].split("/")[0]
             imp_action += ".msg"
             
             mod = __import__(imp_action, fromlist=[action_type]) # from move_base_msg.msg
             cls = getattr(mod, action_type) # import MoveBaseAction
-            
+            #****************************
             ac_client = actionlib.SimpleActionClient(action_name, cls)
             
             result = ac_client.wait_for_server(rospy.Duration(5))
-            result_summary[action_name] = result
+            result_summary[action_name] = result # this make a summary for the results for all the actions checked
             
         if result == False:
             self.result = "failed"
-    
-# DONE: make a summary for the lists and then return
 
         rospy.loginfo("Result of the Actions Check")
         rospy.loginfo(result_summary)    
@@ -331,6 +375,7 @@ class ConditionCheck(ConditionCheck):
                     for pos in range(len(trans)):
                         
                         ########## TODO HACK FIXME: WARNING: HACK FOR PRE_CHECK USING THE CURRENT POSITION
+                        # Description: Sets the current translation using the last received goal
                         if(rospy.has_param("position_exists") and target_frame == "/map"):
                             item['target_pose']['position'][pos] = rospy.get_param("position_exists")[pos]
                         ########## HACK END
@@ -346,9 +391,11 @@ class ConditionCheck(ConditionCheck):
                     for ori in range(len(angles)):
                         
                         ########## TODO HACK FIXME: WARNING: HACK FOR PRE_CHECK USING THE CURRENT ORIENATION
+                        # Description: Sets the current orientation using the last received goal 
                         if(rospy.has_param("orientation_exists") and target_frame == "/map" ):
                             item['target_pose']['orientation'][ori] = rospy.get_param("orientation_exists")[ori]
                         ########## HACK END
+                        
                         messageA = "Orientation " + (str)(ori) + ":" + " Real Orientation: " + (str)(angles[ori]) + ", Target Orientation: " + \
                             (str)(item['target_pose']['orientation'][ori]) + ", Tolerance: "+ (str)(yaw_goal_tolerance)
                         
