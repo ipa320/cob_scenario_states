@@ -73,8 +73,6 @@ sss = simple_script_server()
 from cob_object_detection_msgs.msg import *
 from cob_object_detection_msgs.srv import *
 
-from ObjectDetector import *
-
 from abc_state_skill import SkillsState
 
 import skill_objectdetector

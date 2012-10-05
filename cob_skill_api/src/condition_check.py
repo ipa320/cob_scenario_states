@@ -170,7 +170,6 @@ class ConditionCheck(ConditionCheck):
         rospy.loginfo("<<joint_configuration_check_ss>>")
         
         for item in params.values()[0]:
-        
             component = item['component']
             configuration = item['configuration']
             
@@ -257,7 +256,7 @@ class ConditionCheck(ConditionCheck):
     
         rospy.loginfo("Checking <<actions>>")
         result_summary = {}
-	self.result = "success"        
+        self.result = "success"        
         for item in params.values()[0]:
         
             action_type = item['action_type']
@@ -277,10 +276,10 @@ class ConditionCheck(ConditionCheck):
             
             result = ac_client.wait_for_server(rospy.Duration(5))
             result_summary[action_name] = result
-	    if result == False:
-		self.result = "failed"
-		
             
+        if result == False:
+            self.result = "failed"
+    
 # DONE: make a summary for the lists and then return
 
         rospy.loginfo("Result of the Actions Check")
@@ -402,8 +401,8 @@ class ConditionCheck(ConditionCheck):
         self.result = "success"
     
     def diagnostics_callback(self, msg):
-	if(self.iters >0):
-		self.iters -= 1
+        if(self.iters >0):
+            self.iters -= 1
 		
         self.component_check[msg.status[0].name] = {"status": -1}   
         self.component_check[msg.status[0].name]["status"] = msg.status[0].level
