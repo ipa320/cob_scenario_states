@@ -70,9 +70,10 @@ class SkillImplementation(SkillsBase):
     
     def __init__(self):
         self.machine = self.create_machine()
+        self.explore = skill_sm_explore.skill_sm_explore()
         
         with self.machine:
-            self.machine.add('Explore_SKILL',skill_sm_explore.skill_sm_explore(),
+            self.machine.add('Explore_SKILL',self.explore.machine,
                      transitions={'success':'Explore_SKILL'})
         
     ####################################################################

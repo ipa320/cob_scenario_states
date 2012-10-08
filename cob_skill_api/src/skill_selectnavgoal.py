@@ -77,7 +77,6 @@ class SkillImplementation(SkillsBase):
         rospy.loginfo("Executing the select navigation goal")
         self.machine = self.create_machine()
         
-        smach.StateMachine.__init__(self,)
         self.defined_goal = defined_goal
         self.random_conditions = random_conditions
         
@@ -89,7 +88,7 @@ class SkillImplementation(SkillsBase):
                 
                 self.machine.add('SELECT_NAV_GOAL',SelectRandomNavigationGoal(conditions=self.random_conditions),transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
             else: 
-                self.machien.add('SELECT_NAV_GOAL',SelectNavigationGoal(positions=self.defined_goal),transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
+                self.machine.add('SELECT_NAV_GOAL',SelectNavigationGoal(positions=self.defined_goal),transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
     
        ####################################################################
     # function: create_machine()

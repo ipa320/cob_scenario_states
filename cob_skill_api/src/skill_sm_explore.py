@@ -82,41 +82,57 @@ class skill_sm_explore(SkillsSM):
 
     def __init__(self):
 
-        smach.StateMachine.__init__(self,
-                                    outcomes=['success', 'failed'])
+        self.machine = self.create_machine()
+        
+        self.nav_goal = skill_selectnavgoal.SkillImplementation()
+        self.approach_pose = skill_approachpose.SkillImplementation()
+        self.detect_front = skill_detectobjectsfront.SkillImplementation()
+        self.announce_front = skill_state_announcefoundobjects.skill_state_announcefoundobjects()
+        self.detect_back = skill_detectobjectsback.SkillImplementation()
+        self.announce_back = skill_state_announcefoundobjects.skill_state_announcefoundobjects()
+        self.grasp = skill_grasp.SkillImplementation()
 
-        with self:
+        with self.machine:
             
-            self.add('SELECT_NAVIGATION_GOAL',skill_selectnavgoal.SkillImplementation(), transitions={'selected':'APPROACH_POSE_SKILL','not_selected':'failed','failed':'failed'})
+            self.machine.add('SELECT_NAVIGATION_GOAL', self.nav_goal.machine, transitions={'selected':'APPROACH_POSE_SKILL','not_selected':'failed','failed':'failed'})
 
-            self.add('APPROACH_POSE_SKILL',skill_approachpose.SkillImplementation(),
+            self.machine.add('APPROACH_POSE_SKILL',self.approach_pose.machine,
                      transitions={'reached':'DETECT_FRONT_SKILL',
                                   'not_reached': 'SELECT_NAVIGATION_GOAL',
                                   'failed_pre_condition_check': 'failed',
                                   'failed_post_condition_check': 'failed',
                                   'failed':'failed'})
 
-            self.add('DETECT_FRONT_SKILL',skill_detectobjectsfront.SkillImplementation(),
+            self.machine.add('DETECT_FRONT_SKILL',self.detect_front.machine,
                      transitions={'detected':'ANNOUNCE_FRONT_SKILL',
                                   'not_detected':'ANNOUNCE_FRONT_SKILL',
                                   'failed':'failed'})
 
-            self.add('ANNOUNCE_FRONT_SKILL',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
+            self.machine.add('ANNOUNCE_FRONT_SKILL',self.announce_front.state,
                      transitions={'announced':'GRASP_SKILL',
                                   'not_announced':'DETECT_BACK_SKILL',
                                   'failed':'failed'})
 
-            self.add('DETECT_BACK_SKILL', skill_detectobjectsback.SkillImplementation(),
+            self.machine.add('DETECT_BACK_SKILL', self.detect_back.machine,
                      transitions={'detected':'ANNOUNCE_BACK_SKILL',
                                   'not_detected':'ANNOUNCE_BACK_SKILL',
                                   'failed':'failed'})
 
-            self.add('ANNOUNCE_BACK_SKILL',skill_state_announcefoundobjects.skill_state_announcefoundobjects(),
+            self.machine.add('ANNOUNCE_BACK_SKILL',self.announce_back.state,
                      transitions={'announced':'GRASP_SKILL',
                                   'not_announced':'SELECT_NAVIGATION_GOAL',
                                   'failed':'failed'})
 
-            self.add('GRASP_SKILL',skill_grasp.SkillImplementation(),
+            self.machine.add('GRASP_SKILL',self.grasp.machine,
                      transitions={'grasped':'SELECT_NAVIGATION_GOAL',
                                   'not_grasped':'SELECT_NAVIGATION_GOAL',
                                   'failed':'failed'})
+
+    ####################################################################
+    # function: create_machine()
+    # Creates the Machine
+    ####################################################################
+    
+    def create_machine(self, outcomes=['success', 'failed']):
+    
+        return smach.StateMachine(outcomes)

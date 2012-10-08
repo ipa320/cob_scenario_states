@@ -88,10 +88,11 @@ class SkillImplementation(SkillsBase):
         rospy.loginfo("Executing the grasp machine")
         
         self.machine = self.create_machine()
+        self.grasp = skill_state_grasp.skill_state_grasp()
                 
         with self.machine:
             
-            self.machine.add("PRECONDITIONS_GRASP", skill_state_grasp.skill_state_grasp(), transitions={'side':'GRASP_SIDE', 'top':'GRASP_TOP','failed':'failed'})
+            self.machine.add("PRECONDITIONS_GRASP", self.grasp.state, transitions={'side':'GRASP_SIDE', 'top':'GRASP_TOP','failed':'failed'})
             
             self.machine.add('GRASP_SIDE',skill_state_grasp.grasp_side(),
                                 transitions={'not_grasped':'failed',

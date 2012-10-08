@@ -90,11 +90,12 @@ class SkillImplementation(SkillsBase):
         
         self.check_pre = self.pre_conditions()
         self.check_post = self.post_conditions()
+        self.machine.userdata.object_names = object_names
+        self.detect_front = self.execute_machine()
         
         with self.machine:
-            self.machine.userdata.object_names = object_names
             self.machine.add("PRECONDITIONS_DETECT_FRONT", self.check_pre.state, transitions={'success':'DETECT_OBJECT_FRONT', 'failed':'PRECONDITIONS_DETECT_FRONT'})
-            self.machine.add('DETECT_OBJECT_FRONT',skill_state_detectobjectsfront.skill_state_detectobjectsfront(object_names=self.machine.userdata.object_names, components = self.check_pre.full_components),
+            self.machine.add('DETECT_OBJECT_FRONT',self.detect_front.state,
                              transitions={'not_detected':'not_detected','failed':'failed','detected':'detected'})
     
       ####################################################################
@@ -104,6 +105,11 @@ class SkillImplementation(SkillsBase):
     def create_machine(self, outcomes=['detected', 'not_detected', 'failed'], output_keys=['objects']):
     
         return smach.StateMachine(outcomes, output_keys)
+    
+    def execute_machine(self):
+        rospy.loginfo("Executing the detect objects front Skill!")
+        mach =  skill_state_detectobjectsfront.skill_state_detectobjectsfront(object_names=self.machine.userdata.object_names, components = self.check_pre.full_components)
+        return mach
     
     def pre_conditions(self):
     

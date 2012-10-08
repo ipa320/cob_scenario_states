@@ -131,9 +131,9 @@ class ConditionCheck(ConditionCheck):
     # Main routine of the State Machine
     ####################################################################
     
-    def create_state(self, outcomes=['success','failed'], input_keys=['pose']):
+    def create_state(self, outcomes=['success','failed'], input_keys=['pose'], output_keys = ['pose']):
              
-        return smach.State(outcomes, input_keys)
+        return smach.State(outcomes, input_keys, output_keys)
     
     ####################################################################
     # function: execute()
