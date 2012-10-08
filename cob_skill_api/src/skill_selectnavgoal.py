@@ -80,16 +80,17 @@ class SkillImplementation(SkillsBase):
         self.defined_goal = defined_goal
         self.random_conditions = random_conditions
         
+        if (self.defined_goal == None):
+            self.nav_goal = SelectRandomNavigationGoal(conditions=self.random_conditions)
+        else:
+            self.nav_goal = SelectNavigationGoal(positions=self.defined_goal) 
+        
         with self.machine:
             
-        #    self.add("PRECONDITIONS_SELECT_NAV_GOAL", self.pre_conditions(), transitions={'success':'SELECT_NAV_GOAL', 'failed':'PRECONDITIONS_SELECT_NAV_GOAL'})
-            
-            if (self.defined_goal == None):
-                
-                self.machine.add('SELECT_NAV_GOAL',SelectRandomNavigationGoal(conditions=self.random_conditions),transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
-            else: 
-                self.machine.add('SELECT_NAV_GOAL',SelectNavigationGoal(positions=self.defined_goal),transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
+#    self.add("PRECONDITIONS_SELECT_NAV_GOAL", self.pre_conditions(), transitions={'success':'SELECT_NAV_GOAL', 'failed':'PRECONDITIONS_SELECT_NAV_GOAL'})    
+            self.machine.add('SELECT_NAV_GOAL', self.nav_goal,transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
     
+
        ####################################################################
     # function: create_machine()
     # Creates the Machine
