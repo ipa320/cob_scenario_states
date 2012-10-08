@@ -120,7 +120,7 @@ class ConditionCheck(ConditionCheck):
         self.result = "failed"
         
         self.component_check = {}
-    	self.iters = 20 # trials to get component on diagnostics message
+    	self.iters = 30 # trials to get component on diagnostics message
         self.diagnostics_subscriber = rospy.Subscriber('diagnostics', DiagnosticArray, self.diagnostics_callback)
         
         rospy.wait_for_message('diagnostics', DiagnosticArray, timeout=10)
@@ -224,7 +224,7 @@ class ConditionCheck(ConditionCheck):
 
         #TODO: Try to ellaborate a better approach to this:
         # Description: this avoids that the state machine hangs on the robot when the joint states is not available
-        trials = 20
+        trials = 30
         while joint_names[0] not in jointsMsg.name:
             if (trials==0):
                 rospy.logerr("Exceeded maximum amount of trials for waiting for <<" + joint_names[0] + ">> on /joint_states messages")
@@ -447,6 +447,9 @@ class ConditionCheck(ConditionCheck):
             if comp_name in self.full_components:
                 handler = sss.move(comp_name, param_name, False)
                 handler.wait()
+            else:
+                rospy.loginfo("Tried to initialize the component <<" + comp_name + ">> that is not declared as required.")
+                rospy.loginfo("Please, to avoid this message, remove the component from this test definition.")
             
         # wait for all movements to be finished
         # announce ready
