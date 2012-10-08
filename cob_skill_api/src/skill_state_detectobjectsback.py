@@ -81,16 +81,26 @@ import skill_objectdetector
 class skill_state_detectobjectsback(SkillsState):
 
     def __init__(self, object_names = [], components = []):
-        smach.State.__init__(
-                self,
-                outcomes = ["detected", "not_detected", "failed"],
-                input_keys=["object_names"],
-                output_keys=["objects"])
+       
+        self.state = self.create_state()
+        
+        self.state.execute = self.execute
         
         self.components = components
 
         self.object_detector = skill_objectdetector.SkillImplementation(object_names)
 
+    ####################################################################
+    # function: create_state()
+    # Creates the State
+    ####################################################################
+    
+    def create_state(self, outcomes=['detected','not_detected','failed'],
+                     input_keys=['object_names'],
+                     output_keys=['objects']):
+    
+        return smach.State(outcomes, input_keys, output_keys)
+    
     def execute(self, userdata):
 
         rospy.loginfo("Started Executing the Detect Objects State")

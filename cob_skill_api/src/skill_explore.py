@@ -67,39 +67,49 @@ import skill_sm_explore
 from abc_skill import SkillsBase
 
 class SkillImplementation(SkillsBase):
-
-	def __init__(self):
-		smach.StateMachine.__init__(self,outcomes=['success', 'failed'])
-
-		with self:
-			self.add('Explore_SKILL',skill_sm_explore.skill_sm_explore(),
-                transitions={'success':'Explore_SKILL'})
-
-	def pre_conditions(self):
-
-		print "Some preconditions"
-
-	def post_conditions(self):
-		print "Some postconditions"
-
-	@property
-	def inputs(self):
-		return "Some Input"
-
-	@property
-	def outputs(self):
-		return "Some Output"
-
-	@property
-	def requirements(self):
-		return "Some Requirements"
+    
+    def __init__(self):
+        self.machine = self.create_machine()
+        
+        with self.machine:
+            self.machine.add('Explore_SKILL',skill_sm_explore.skill_sm_explore(),
+                     transitions={'success':'Explore_SKILL'})
+        
+    ####################################################################
+    # function: create_machine()
+    # Creates the Machine
+    ####################################################################
+    def create_machine(self, outcomes=['success', 'failed']):
+    
+        return smach.StateMachine(outcomes)
+    
+    def pre_conditions(self):
+    
+        print "Some preconditions"
+    
+    def post_conditions(self):
+        print "Some postconditions"
+    
+    @property
+    def inputs(self):
+        return "Some Input"
+    
+    @property
+    def outputs(self):
+        return "Some Output"
+    
+    @property
+    def requirements(self):
+        return "Some Requirements"
 
 
 if __name__=='__main__':
-	rospy.init_node('Explore')
-	sm = SkillImplementation()
-	sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
-	sis.start()
-	outcome = sm.execute()
-	rospy.spin()
-	sis.stop()
+    rospy.init_node('Explore')
+    sm = SkillImplementation()
+    sm = sm.machine
+    
+    sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
+    sis.start()
+    outcome = sm.execute()
+    rospy.spin()
+    sis.stop()

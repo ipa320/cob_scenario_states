@@ -58,20 +58,14 @@
 #################################################################
 import abc
 
-import roslib
-roslib.load_manifest('cob_skill_api')
-import rospy
-import smach
-import smach_ros
-from actionlib import *
-from actionlib.msg import *
-
-import smach
-
-class SkillsState(smach.State):
-
-	__metaclass__ = abc.ABCMeta
+class SkillsState():
+   
+    __metaclass__ = abc.ABCMeta
     
-	@abc.abstractmethod
-	def execute(self, userdata):
-		return 'State Machine needs to be executed'
+    @abc.abstractmethod
+    def execute(self, userdata):
+        return "State needs an Execute Method"
+    
+    @abc.abstractmethod
+    def create_state(self, outcomes, input_keys, output_keys):
+        return "State needs an Create_State Method"

@@ -102,7 +102,8 @@ class SkillImplementation(SkillsBase):
         self.torso_poses = []
         torso_poses = []
         
-        smach.StateMachine.__init__(self,outcomes=['detected','not_detected','failed'])
+        self.machine = self.create_machine()
+        
     
         # get torso poses that should be used for the detection from Parameter Server
         if namespace != "" and rospy.has_param(namespace):
@@ -137,6 +138,8 @@ class SkillImplementation(SkillsBase):
             return 'failed', self.detected_objects
         else:
             self.mode = mode
+            
+        self.machine.execute = self.execute
     
     def execute(self, userdata):
         # empty former detection results
@@ -217,6 +220,13 @@ class SkillImplementation(SkillsBase):
         rospy.loginfo("No objects found")
         return 'not_detected', self.detected_objects
     
+     ####################################################################
+    # function: create_machine()
+    # Creates the Machine
+    ####################################################################
+    def create_machine(self, outcomes=['detected','not_detected','failed']):
+    
+        return smach.StateMachine(outcomes)
     
     def pre_conditions(self):
 

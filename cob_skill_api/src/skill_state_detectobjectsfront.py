@@ -78,35 +78,44 @@ from abc_state_skill import SkillsState
 import skill_objectdetector
 
 class skill_state_detectobjectsfront(SkillsState):
-
-	def __init__(self, object_names = [], components = []):
-		smach.State.__init__(
-			self,
-			outcomes=['detected','not_detected','failed'],
-			input_keys=['object_names'],
-			output_keys=['objects'])
-
-		self.components = components
-
-		self.object_detector = skill_objectdetector.SkillImplementation(object_names)
-
-	def execute(self, userdata):
-
-		rospy.loginfo("Started executing the Detect Objects state")
-		
-		if ("light" in self.components):
-			sss.set_light('blue')
-		
-		result, userdata.objects = self.object_detector.execute(userdata)
-		
-		# ... cleanup robot components
-		sss.move("torso","front")
-		
-		if result == "failed":
-			if ("light" in self.components):
-				sss.set_light('red')
-		else:
-			if ("light" in self.components):
-				sss.set_light('green')
-		
-		return result
+    
+    def __init__(self, object_names = [], components = []):
+    
+        self.state = self.create_state()
+        self.state.execute = self.execute
+        
+        self.components = components
+        
+        self.object_detector = skill_objectdetector.SkillImplementation(object_names)
+    
+    ####################################################################
+    # function: create_state()
+    # Creates the State
+    ####################################################################
+    
+    def create_state(self, outcomes=['detected','not_detected','failed'],
+                     input_keys=['object_names'],
+                     output_keys=['objects']):
+    
+        return smach.State(outcomes, input_keys, output_keys)
+    
+    def execute(self, userdata):
+    
+        rospy.loginfo("Started executing the Detect Objects state")
+        
+        if ("light" in self.components):
+            sss.set_light('blue')
+        
+        result, userdata.objects = self.object_detector.execute(userdata)
+        
+        # ... cleanup robot components
+        sss.move("torso","front")
+        
+        if result == "failed":
+            if ("light" in self.components):
+                sss.set_light('red')
+        else:
+            if ("light" in self.components):
+                sss.set_light('green')
+        
+        return result

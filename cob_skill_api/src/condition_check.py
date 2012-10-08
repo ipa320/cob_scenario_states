@@ -84,8 +84,9 @@ import rostopic
 class ConditionCheck(ConditionCheck):
 
     def __init__(self, checkType = "pre_check"):
-    
-        smach.State.__init__(self, outcomes=['success','failed'], input_keys=['pose'])
+        
+        self.state = self.create_state()
+        self.state.execute = self.execute
         
         self.checkType = checkType
         self.checks = rospy.get_param(self.checkType)
@@ -124,6 +125,16 @@ class ConditionCheck(ConditionCheck):
         self.diagnostics_subscriber = rospy.Subscriber('diagnostics', DiagnosticArray, self.diagnostics_callback)
         
         rospy.wait_for_message('diagnostics', DiagnosticArray, timeout=10)
+        
+    ####################################################################
+    # function: create_state()
+    # Main routine of the State Machine
+    ####################################################################
+    
+    def create_state(self, outcomes=['success','failed'], input_keys=['pose']):
+             
+        return smach.State(outcomes, input_keys)
+    
     ####################################################################
     # function: execute()
     # Main routine of the State Machine

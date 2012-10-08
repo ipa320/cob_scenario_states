@@ -69,13 +69,23 @@ sss = simple_script_server()
 from abc_state_skill import SkillsState
 
 class skill_state_announcefoundobjects(SkillsState):
+    
     def __init__(self):
         rospy.loginfo("Initializing Announce objects skill")
         
-        smach.State.__init__(self,
-                             outcomes=['announced','not_announced','failed'],
+        self.state = self.create_state()
+        self.state.execute = self.execute
+        
+    ####################################################################
+    # function: create_state()
+    # Creates the State
+    ####################################################################
+    
+    def create_state(self, outcomes=['announced','not_announced','failed'],
                              input_keys=['objects'],
-                             output_keys=['objects'])
+                             output_keys=['objects']):
+    
+        return smach.State(outcomes, input_keys, output_keys)
     
     def execute(self, userdata):
         rospy.loginfo("Executing Announce Objects Skill")

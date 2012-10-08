@@ -56,20 +56,16 @@
 # If not, see < http://www.gnu.org/licenses/>.
 #
 #################################################################
-
-import roslib
-roslib.load_manifest('cob_skill_api')
-import rospy
-import smach
-import smach_ros
-from actionlib import *
-from actionlib.msg import *
 import abc
 
-class ConditionCheck(smach.State):
-
-	__metaclass__ = abc.ABCMeta
-
-	@abc.abstractmethod
-	def execute(self, userdata):
-		return "Condition Check needs an Execute Method"
+class ConditionCheck():
+    
+    __metaclass__ = abc.ABCMeta
+    
+    @abc.abstractmethod
+    def execute(self, userdata):
+        return "Condition Check needs an Execute Method"
+    
+    @abc.abstractmethod
+    def create_state(self, outcomes, input_keys):
+        return "Condition Check needs an Create_State Method"

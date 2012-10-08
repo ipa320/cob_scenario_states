@@ -82,8 +82,9 @@ from tf.transformations import euler_from_quaternion
 
 class SkillImplementation(SkillsBase):
     def __init__(self, defined_goal=None,):
-        smach.StateMachine.__init__(self, outcomes=['reached', 'not_reached', 'failed', 'failed_pre_condition_check', 'failed_post_condition_check'])
 
+        self.machine = self.create_machine()
+        
         rospy.loginfo("Started executing the ApproachPose State Machine")
         self.defined_goal = defined_goal
         self.full_components = ""
@@ -91,14 +92,23 @@ class SkillImplementation(SkillsBase):
         self.optional_components = ""
         self.check_pre = self.pre_conditions()
         self.check_post = self.post_conditions()
+        self.approach_pose = self.execute_machine()
         
-        with self:
+        with self.machine:
 
-            self.add('PRECONDITION_CHECK',self.check_pre , transitions={'success':'APPROACH_POSE', 'failed':'failed_pre_condition_check'})
-#            self.add('SELECT_NAVIGATION_GOAL',skill_selectnavgoal.SkillImplementation(defined_goal=self.defined_goal), transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
-            self.add('APPROACH_POSE',self.execute_machine(), transitions={'reached':'POSTCONDITION_CHECK', 'failed':'failed', 'not_reached': 'not_reached'})
-            self.add('POSTCONDITION_CHECK',self.check_post, transitions={'success':'reached', 'failed':'failed_post_condition_check'})
+            self.machine.add('PRECONDITION_CHECK',self.check_pre.state , transitions={'success':'APPROACH_POSE', 'failed':'failed_pre_condition_check'})
+#            self.machine.add('SELECT_NAVIGATION_GOAL',skill_selectnavgoal.SkillImplementation(defined_goal=self.defined_goal), transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
+            self.machine.add('APPROACH_POSE',self.approach_pose.state, transitions={'reached':'POSTCONDITION_CHECK', 'failed':'failed', 'not_reached': 'not_reached'})
+            self.machine.add('POSTCONDITION_CHECK',self.check_post.state, transitions={'success':'reached', 'failed':'failed_post_condition_check'})
 
+      ####################################################################
+    # function: create_state()
+    # Creates the State
+    ####################################################################
+    def create_machine(self, outcomes=['reached', 'not_reached', 'failed', 'failed_pre_condition_check', 'failed_post_condition_check']):
+    
+        return smach.StateMachine(outcomes)
+    
     def execute_machine(self):
         rospy.loginfo("Executing the Approach pose Skill!")
         mach =  skill_state_approachpose.skill_state_approachpose(components = self.check_pre.full_components)
@@ -133,7 +143,8 @@ if __name__ == "__main__":
 
 # for pre-defined navigation Goals
     sm = SkillImplementation()
-
+    sm = sm.machine
+    
     sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
     sis.start()
     sm.userdata.pose = [4.3,-4.3,0.0]#[1,-3,0]

@@ -58,16 +58,10 @@
 #################################################################
 import abc
 
-import roslib
-roslib.load_manifest('cob_skill_api')
-import rospy
-import smach
-import smach_ros
-from actionlib import *
-from actionlib.msg import *
-
-import smach
-
-class SkillsSM(smach.StateMachine):
-
-	__metaclass__ = abc.ABCMeta
+class SkillsSM():
+    
+    __metaclass__ = abc.ABCMeta
+    
+    @abc.abstractmethod
+    def create_machine(self, outcomes):
+        return 'This needs a machine to run properly'

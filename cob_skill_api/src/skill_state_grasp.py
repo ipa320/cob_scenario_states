@@ -84,14 +84,23 @@ from cob_srvs.srv import *
 class skill_state_grasp(SkillsState):
 
     def __init__(self):
-        smach.State.__init__(
-            self,
-            outcomes=['top', 'side', 'failed'],
-            input_keys=['objects'])
+        
+        self.state = self.create_state()
+        self.state.execute = self.execute
         
         self.height_switch = 0.5 # Switch to select top or side grasp using the height of the object over the ground in [m].
         
         self.listener = tf.TransformListener()
+        
+    ####################################################################
+    # function: create_state()
+    # Creates the State
+    ####################################################################
+    
+    def create_state(self, outcomes=['top', 'side', 'failed'],
+            input_keys=['objects'], output_keys=[]):
+             
+        return smach.State(outcomes, input_keys, output_keys)
 
     def execute(self, userdata):
         try:

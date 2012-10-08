@@ -75,20 +75,30 @@ class SkillImplementation(SkillsBase):
     def __init__(self, defined_goal=None, random_conditions=[0.0, 4.0, 2.0, -4.0, 0.0, 2.0, -3.14, 3.14, 2*3.1414926/4]):
         
         rospy.loginfo("Executing the select navigation goal")
-        smach.StateMachine.__init__(self,outcomes=['selected','not_selected','failed'], output_keys=['pose'])
+        self.machine = self.create_machine()
+        
+        smach.StateMachine.__init__(self,)
         self.defined_goal = defined_goal
         self.random_conditions = random_conditions
         
-        with self:
+        with self.machine:
             
         #    self.add("PRECONDITIONS_SELECT_NAV_GOAL", self.pre_conditions(), transitions={'success':'SELECT_NAV_GOAL', 'failed':'PRECONDITIONS_SELECT_NAV_GOAL'})
             
             if (self.defined_goal == None):
                 
-                self.add('SELECT_NAV_GOAL',SelectRandomNavigationGoal(conditions=self.random_conditions),transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
+                self.machine.add('SELECT_NAV_GOAL',SelectRandomNavigationGoal(conditions=self.random_conditions),transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
             else: 
-                self.add('SELECT_NAV_GOAL',SelectNavigationGoal(positions=self.defined_goal),transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
-                
+                self.machien.add('SELECT_NAV_GOAL',SelectNavigationGoal(positions=self.defined_goal),transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
+    
+       ####################################################################
+    # function: create_machine()
+    # Creates the Machine
+    ####################################################################
+    def create_machine(self, outcomes=['selected','not_selected','failed'], output_keys=['pose']):
+    
+        return smach.StateMachine(outcomes, output_keys)
+    
     def pre_conditions(self):
 
         print "Some precondition"

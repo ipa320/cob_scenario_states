@@ -87,19 +87,28 @@ class SkillImplementation(SkillsBase):
         
         rospy.loginfo("Executing the grasp machine")
         
-        smach.StateMachine.__init__(self,outcomes=['grasped','not_grasped', 'failed', 'success'],
-            input_keys=['objects'])
+        self.machine = self.create_machine()
                 
-        with self:
+        with self.machine:
             
-            self.add("PRECONDITIONS_GRASP", skill_state_grasp.skill_state_grasp(), transitions={'side':'GRASP_SIDE', 'top':'GRASP_TOP','failed':'failed'})
+            self.machine.add("PRECONDITIONS_GRASP", skill_state_grasp.skill_state_grasp(), transitions={'side':'GRASP_SIDE', 'top':'GRASP_TOP','failed':'failed'})
             
-            self.add('GRASP_SIDE',skill_state_grasp.grasp_side(),
+            self.machine.add('GRASP_SIDE',skill_state_grasp.grasp_side(),
                                 transitions={'not_grasped':'failed',
                                         'failed':'failed','grasped':'success'})
-            self.add('GRASP_TOP',skill_state_grasp.grasp_side(),
+            self.machine.add('GRASP_TOP',skill_state_grasp.grasp_side(),
                                 transitions={'not_grasped':'failed',
                                         'failed':'failed','grasped':'success'})
+            
+      ####################################################################
+    # function: create_machine()
+    # Creates the Machine
+    ####################################################################
+    def create_machine(self, outcomes=['grasped','not_grasped', 'failed', 'success'],
+            input_keys=['objects']):
+    
+        return smach.StateMachine(outcomes,input_keys)
+    
     def pre_conditions(self):
 
         self.check_pre = skill_state_grasp.skill_state_grasp()
@@ -125,6 +134,8 @@ if __name__=='__main__':
         rospy.init_node('grasp_object')
         
         sm = SkillImplementation()
+        sm = sm.machine
+        
         sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
         sis.start()
         outcome = sm.execute()
