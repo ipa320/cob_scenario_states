@@ -224,9 +224,9 @@ class SkillImplementation(SkillsBase):
     # function: create_machine()
     # Creates the Machine
     ####################################################################
-    def create_machine(self, outcomes=['detected','not_detected','failed']):
+    def create_machine(self, outcomes=['detected','not_detected','failed'], output_keys=["objects"], input_keys=["object_names"]):
     
-        return smach.StateMachine(outcomes)
+        return smach.StateMachine(outcomes, output_keys)
     
     def pre_conditions(self):
 

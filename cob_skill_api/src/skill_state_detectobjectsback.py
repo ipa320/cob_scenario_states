@@ -99,7 +99,9 @@ class skill_state_detectobjectsback(SkillsState):
                      input_keys=['object_names'],
                      output_keys=['objects']):
     
-        return smach.State(outcomes, input_keys, output_keys)
+        state = smach.State()
+        state.__init__(outcomes, input_keys, output_keys) 
+        return state
     
     def execute(self, userdata):
 

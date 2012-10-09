@@ -90,15 +90,16 @@ class SkillImplementation(SkillsBase):
         
         with self.machine:
                 
-            self.machine.add('SELECT_NAV_GOAL', self.nav_goal.state ,transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
-
+            self.machine.add('SELECT_NAV_GOAL', self.nav_goal.state ,
+                             transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'},
+                             remapping={'pose':'pose'})
        ####################################################################
     # function: create_machine()
     # Creates the Machine
     ####################################################################
-    def create_machine(self, outcomes=['selected','not_selected','failed'], output_keys=['pose']):
+    def create_machine(self, outcomes=['selected','not_selected','failed'], output_keys=['pose'], input_keys=["pose"]):
     
-        return smach.StateMachine(outcomes, output_keys)
+        return smach.StateMachine(outcomes, input_keys, output_keys)
     
     def pre_conditions(self):
 

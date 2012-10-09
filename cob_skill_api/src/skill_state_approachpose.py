@@ -179,9 +179,11 @@ class skill_state_approachpose(SkillsState):
     # Creates the State
     ####################################################################
     def create_state(self, outcomes=['reached', 'not_reached', 'failed'],
-                             input_keys=['pose'],output_keys=[]):
+                             input_keys=['pose'],output_keys=["pose"]):
     
-        return smach.State(outcomes, input_keys, output_keys)
+        state = smach.State()
+        state.__init__(outcomes, input_keys, output_keys)
+        return state
     
     #Callback for the /base_controller/odometry subscriber
     def callback(self,msg):

@@ -133,8 +133,10 @@ class ConditionCheck(ConditionCheck):
     ####################################################################
     
     def create_state(self, outcomes=['success','failed'], input_keys=['pose'], output_keys = ['pose']):
-             
-        return smach.State(outcomes, input_keys, output_keys)
+        
+        state = smach.State()
+        state.__init__(outcomes, input_keys, output_keys)
+        return state
     
     ####################################################################
     # function: execute()
@@ -372,7 +374,7 @@ class ConditionCheck(ConditionCheck):
                 self.result = "failed"
                 return
             
-        rospy.loginfo("Finished Checking <<actions>>")
+        rospy.loginfo("Finished Checking <<services>>")
     
     
     ####################################################################

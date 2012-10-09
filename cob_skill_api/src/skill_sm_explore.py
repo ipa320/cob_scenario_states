@@ -97,36 +97,36 @@ class skill_sm_explore(SkillsSM):
             self.machine.add('SELECT_NAVIGATION_GOAL', self.nav_goal.machine, transitions={'selected':'APPROACH_POSE_SKILL','not_selected':'failed','failed':'failed'})
 
             self.machine.add('APPROACH_POSE_SKILL',self.approach_pose.machine,
-                     transitions={'reached':'SELECT_NAVIGATION_GOAL',
+                     transitions={'reached':'DETECT_FRONT_SKILL',
                                   'not_reached': 'SELECT_NAVIGATION_GOAL',
                                   'failed_pre_condition_check': 'failed',
                                   'failed_post_condition_check': 'failed',
                                   'failed':'failed'})
-#
-#            self.machine.add('DETECT_FRONT_SKILL',self.detect_front.machine,
-#                     transitions={'detected':'ANNOUNCE_FRONT_SKILL',
-#                                  'not_detected':'ANNOUNCE_FRONT_SKILL',
-#                                  'failed':'failed'})
-#
-#            self.machine.add('ANNOUNCE_FRONT_SKILL',self.announce_front.state,
-#                     transitions={'announced':'GRASP_SKILL',
-#                                  'not_announced':'DETECT_BACK_SKILL',
-#                                  'failed':'failed'})
-#
-#            self.machine.add('DETECT_BACK_SKILL', self.detect_back.machine,
-#                     transitions={'detected':'ANNOUNCE_BACK_SKILL',
-#                                  'not_detected':'ANNOUNCE_BACK_SKILL',
-#                                  'failed':'failed'})
-#
-#            self.machine.add('ANNOUNCE_BACK_SKILL',self.announce_back.state,
-#                     transitions={'announced':'GRASP_SKILL',
-#                                  'not_announced':'SELECT_NAVIGATION_GOAL',
-#                                  'failed':'failed'})
-#
-#            self.machine.add('GRASP_SKILL',self.grasp.machine,
-#                     transitions={'grasped':'SELECT_NAVIGATION_GOAL',
-#                                  'not_grasped':'SELECT_NAVIGATION_GOAL',
-#                                  'failed':'failed'})
+
+            self.machine.add('DETECT_FRONT_SKILL',self.detect_front.machine,
+                     transitions={'detected':'ANNOUNCE_FRONT_SKILL',
+                                  'not_detected':'ANNOUNCE_FRONT_SKILL',
+                                  'failed':'failed'})
+
+            self.machine.add('ANNOUNCE_FRONT_SKILL',self.announce_front.state,
+                     transitions={'announced':'GRASP_SKILL',
+                                  'not_announced':'DETECT_BACK_SKILL',
+                                  'failed':'failed'})
+
+            self.machine.add('DETECT_BACK_SKILL', self.detect_back.machine,
+                     transitions={'detected':'ANNOUNCE_BACK_SKILL',
+                                  'not_detected':'ANNOUNCE_BACK_SKILL',
+                                  'failed':'failed'})
+
+            self.machine.add('ANNOUNCE_BACK_SKILL',self.announce_back.state,
+                     transitions={'announced':'GRASP_SKILL',
+                                  'not_announced':'SELECT_NAVIGATION_GOAL',
+                                  'failed':'failed'})
+
+            self.machine.add('GRASP_SKILL',self.grasp.machine,
+                     transitions={'grasped':'SELECT_NAVIGATION_GOAL',
+                                  'not_grasped':'SELECT_NAVIGATION_GOAL',
+                                  'failed':'failed'})
 
     ####################################################################
     # function: create_machine()

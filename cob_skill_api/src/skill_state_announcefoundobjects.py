@@ -85,7 +85,9 @@ class skill_state_announcefoundobjects(SkillsState):
                              input_keys=['objects'],
                              output_keys=['objects']):
     
-        return smach.State(outcomes, input_keys, output_keys)
+        state = smach.State()
+        state.__init__(outcomes, input_keys, output_keys) 
+        return state
     
     def execute(self, userdata):
         rospy.loginfo("Executing Announce Objects Skill")

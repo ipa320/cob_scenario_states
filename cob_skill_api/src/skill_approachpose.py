@@ -96,15 +96,21 @@ class SkillImplementation(SkillsBase):
         
         with self.machine:
 
-            self.machine.add('PRECONDITION_CHECK',self.check_pre.state , transitions={'success':'APPROACH_POSE', 'failed':'failed_pre_condition_check'})
-            self.machine.add('APPROACH_POSE',self.approach_pose.state, transitions={'reached':'POSTCONDITION_CHECK', 'failed':'failed', 'not_reached': 'not_reached'})
-            self.machine.add('POSTCONDITION_CHECK',self.check_post.state, transitions={'success':'reached', 'failed':'failed_post_condition_check'})
+            self.machine.add('PRECONDITION_CHECK',self.check_pre.state , 
+                             transitions={'success':'APPROACH_POSE', 'failed':'failed_pre_condition_check'},
+                             remapping={'pose':'pose'})
+            self.machine.add('APPROACH_POSE',self.approach_pose.state, 
+                             transitions={'reached':'POSTCONDITION_CHECK', 'failed':'failed', 'not_reached': 'not_reached'},
+                             remapping={'pose':'pose'})
+            self.machine.add('POSTCONDITION_CHECK',self.check_post.state, 
+                             transitions={'success':'reached', 'failed':'failed_post_condition_check'},
+                             remapping={'pose':'pose'})
       ####################################################################
     # function: create_state()
     # Creates the State
     ####################################################################
     def create_machine(self, outcomes=['reached', 'not_reached', 'failed', 'failed_pre_condition_check', 'failed_post_condition_check'], output_keys = ["pose"], input_keys = ["pose"]):
-    
+
         return smach.StateMachine(outcomes, input_keys, output_keys)
     
     def execute_machine(self):

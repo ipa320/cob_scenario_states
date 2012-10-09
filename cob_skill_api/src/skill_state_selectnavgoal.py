@@ -75,15 +75,18 @@ class skill_state_selectrandomnav(SkillsState):
 #    that provides the characteristics of the scenario for creating a random goal
 
     def __init__(self, conditions=[0,0,0,0,0,0,0,0,0]):
-            self.state = self.create_state()
-            
+        
+            self.state = self.create_state(outcomes=['selected','not_selected','failed'],output_keys=['pose'], input_keys=["pose"])
             
             self.state.execute = self.execute
             
             self.conditions = conditions
             self.goals = []
+            
 
     def execute(self, userdata):
+            
+
             rospy.loginfo("executing random goal selection")
             x_min, x_max, x_increment, y_min, y_max, y_increment, th_min, th_max, th_increment = self.conditions
 
@@ -106,17 +109,20 @@ class skill_state_selectrandomnav(SkillsState):
                             y = y_min
                             th = th_min
 
+            
             userdata.pose = self.goals.pop(random.randint(0,len(self.goals)-1))
+            print userdata.pose
 
             return 'selected'
       ####################################################################
     # function: create_state()
     # Creates the State
     ####################################################################
-    def create_state(self, outcomes=['selected','not_selected','failed'],output_keys=['pose']):
+    def create_state(self, outcomes, output_keys, input_keys):
     
-            return smach.State(outcomes, output_keys)
-    
+            state = smach.State()
+            state.__init__(outcomes, input_keys, output_keys)
+            return state
     
 class skill_state_definednav(SkillsState):
     #    Needs x, y, theta
@@ -124,6 +130,7 @@ class skill_state_definednav(SkillsState):
     def __init__(self, positions=[0,0,0]):
         
             self.state = self.create_state()
+            
             self.state.execute = self.execute
             self.positions = positions
 
@@ -137,6 +144,9 @@ class skill_state_definednav(SkillsState):
     # function: create_state()
     # Creates the State
     ####################################################################
-    def create_state(self, outcomes=['selected','not_selected','failed'], output_keys=['pose']):
+    def create_state(self, outcomes, output_keys, input_keys):
+
+        state = smach.State()
+        state.__init__(outcomes, input_keys, output_keys)
+        return state
     
-            return smach.State(outcomes, output_keys)

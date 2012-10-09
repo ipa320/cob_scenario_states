@@ -108,7 +108,7 @@ class SkillImplementation(SkillsBase):
     # function: create_machine()
     # Creates the Machine
     ####################################################################
-    def create_machine(self, outcomes=['detected', 'not_detected', 'failed'], output_keys=['objects']):
+    def create_machine(self, outcomes=['detected', 'not_detected', 'failed'], output_keys=['objects'], input_keys=["objects"]):
     
         return smach.StateMachine(outcomes, output_keys)
     

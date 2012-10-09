@@ -99,8 +99,10 @@ class skill_state_grasp(SkillsState):
     
     def create_state(self, outcomes=['top', 'side', 'failed'],
             input_keys=['objects'], output_keys=[]):
-             
-        return smach.State(outcomes, input_keys, output_keys)
+        
+        state = smach.State()
+        state.__init__(outcomes, input_keys, output_keys) 
+        return state
 
     def execute(self, userdata):
         try:
