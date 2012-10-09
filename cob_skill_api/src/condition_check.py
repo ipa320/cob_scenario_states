@@ -58,6 +58,7 @@
 #################################################################
 
 import roslib
+import rosservice
 roslib.load_manifest('cob_skill_api')
 import rospy
 import smach
@@ -326,6 +327,8 @@ class ConditionCheck(ConditionCheck):
             imp_action = imp_action[0].split("/")[0]
             imp_action += ".msg"
             
+            rospy.loginfo("Trying to import " +  action_type + " from" +imp_action)
+            
             mod = __import__(imp_action, fromlist=[action_type]) # from move_base_msg.msg
             cls = getattr(mod, action_type) # import MoveBaseAction
             #****************************
@@ -339,6 +342,36 @@ class ConditionCheck(ConditionCheck):
 
         rospy.loginfo("Result of the Actions Check")
         rospy.loginfo(result_summary)    
+        rospy.loginfo("Finished Checking <<actions>>")
+        
+    ####################################################################
+    # function: service_check()
+    # This function is responsible for checking the availability of an 
+    # service
+    #####################################################################
+    
+    
+    def service_check(self, params, userdata):
+    
+        rospy.loginfo("Checking <<services>>")
+        result_summary = {}
+        self.result = "success"        
+        for item in params.values()[0]:
+        
+            service_type = item['service_type']
+            service_name = item['service_name']
+            
+            rospy.loginfo("Now checking <<%s>>", service_name)
+            rospy.loginfo("Of type <<%s>>", service_type)
+
+            try:
+                rospy.wait_for_service(service_name, 5)
+                
+            except rospy.ROSException:
+                rospy.logerr("The service <<"+ service_name+ ">> is not available. Can not continue to perform the skill.")
+                self.result = "failed"
+                return
+            
         rospy.loginfo("Finished Checking <<actions>>")
     
     

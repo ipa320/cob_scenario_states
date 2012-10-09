@@ -6,8 +6,8 @@ required_components:
   tray
   head
   base
-  #torso
-  #arm
+  torso
+  arm
 optional_components:
   light
 #  sound
@@ -128,6 +128,10 @@ pre_detect_object_front_check: # checks if the camera is facing front
     - torso: shake
     - head: front
 
+  - service_check: 
+    - service_name: object_detection/detect_object
+      service_type: DetectObjects
+
   - joint_configuration_check_js: #check the configuration according to the joint state message
     - joint_names: [head_axis_joint] 
       joint_states: [-3.14]
@@ -146,6 +150,9 @@ pre_detect_object_back_check: # checks if the camera is facing back
     - torso: shake
     - arm: folded-to-look_at_table
     - head: back
+  - service_check: 
+    - service_name: object_detection/detect_object
+      service_type: DetectObjects
   - joint_configuration_check_js: #check the configuration according to the joint state message
     - joint_names: [head_axis_joint] 
       joint_states: [0.0]
