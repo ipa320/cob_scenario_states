@@ -97,17 +97,15 @@ class SkillImplementation(SkillsBase):
         with self.machine:
 
             self.machine.add('PRECONDITION_CHECK',self.check_pre.state , transitions={'success':'APPROACH_POSE', 'failed':'failed_pre_condition_check'})
-#            self.machine.add('SELECT_NAVIGATION_GOAL',skill_selectnavgoal.SkillImplementation(defined_goal=self.defined_goal), transitions={'selected':'APPROACH_POSE','not_selected':'failed','failed':'failed'})
             self.machine.add('APPROACH_POSE',self.approach_pose.state, transitions={'reached':'POSTCONDITION_CHECK', 'failed':'failed', 'not_reached': 'not_reached'})
             self.machine.add('POSTCONDITION_CHECK',self.check_post.state, transitions={'success':'reached', 'failed':'failed_post_condition_check'})
-
       ####################################################################
     # function: create_state()
     # Creates the State
     ####################################################################
-    def create_machine(self, outcomes=['reached', 'not_reached', 'failed', 'failed_pre_condition_check', 'failed_post_condition_check']):
+    def create_machine(self, outcomes=['reached', 'not_reached', 'failed', 'failed_pre_condition_check', 'failed_post_condition_check'], output_keys = ["pose"], input_keys = ["pose"]):
     
-        return smach.StateMachine(outcomes)
+        return smach.StateMachine(outcomes, input_keys, output_keys)
     
     def execute_machine(self):
         rospy.loginfo("Executing the Approach pose Skill!")

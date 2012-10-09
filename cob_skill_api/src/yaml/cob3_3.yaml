@@ -5,8 +5,8 @@ robot_name: cob3-3
 required_components: 
   tray
   head
-  torso
   base
+  #torso
   #arm
 optional_components:
   light

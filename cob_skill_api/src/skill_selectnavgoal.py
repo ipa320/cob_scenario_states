@@ -67,6 +67,7 @@ from simple_script_server import *
 sss = simple_script_server()
 
 from abc_skill import SkillsBase
+import skill_state_selectnavgoal
 
 import random
 
@@ -75,21 +76,21 @@ class SkillImplementation(SkillsBase):
     def __init__(self, defined_goal=None, random_conditions=[0.0, 4.0, 2.0, -4.0, 0.0, 2.0, -3.14, 3.14, 2*3.1414926/4]):
         
         rospy.loginfo("Executing the select navigation goal")
-        self.machine = self.create_machine()
+        
         
         self.defined_goal = defined_goal
         self.random_conditions = random_conditions
         
         if (self.defined_goal == None):
-            self.nav_goal = SelectRandomNavigationGoal(conditions=self.random_conditions)
+            self.nav_goal = skill_state_selectnavgoal.skill_state_selectrandomnav(conditions=self.random_conditions)
         else:
-            self.nav_goal = SelectNavigationGoal(positions=self.defined_goal) 
+            self.nav_goal = skill_state_selectnavgoal.skill_state_definednav(positions=self.defined_goal)
+        
+        self.machine = self.create_machine() 
         
         with self.machine:
-            
-#    self.add("PRECONDITIONS_SELECT_NAV_GOAL", self.pre_conditions(), transitions={'success':'SELECT_NAV_GOAL', 'failed':'PRECONDITIONS_SELECT_NAV_GOAL'})    
-            self.machine.add('SELECT_NAV_GOAL', self.nav_goal,transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
-    
+                
+            self.machine.add('SELECT_NAV_GOAL', self.nav_goal.state ,transitions={'selected':'selected','not_selected':'not_selected','failed':'failed'})
 
        ####################################################################
     # function: create_machine()
@@ -101,10 +102,10 @@ class SkillImplementation(SkillsBase):
     
     def pre_conditions(self):
 
-        print "Some precondition"
+        print "Some pre conditions"
 
     def post_conditions(self):
-        print "Some postconditions"
+        print "Some post conditions"
 
     @property
     def inputs(self):
@@ -119,56 +120,16 @@ class SkillImplementation(SkillsBase):
         return "Some Requirements"
     
     
-class SelectRandomNavigationGoal(smach.State):
-#    Needs x_min, x_max, x_increment, y_min, y_max, y_increment, th_min, th_max, th_increment
-#    that provides the characteristics of the scenario for creating a random goal
+if __name__ == "__main__":
 
-        def __init__(self, conditions=[0,0,0,0,0,0,0,0,0]):
-                smach.State.__init__(self,
-                        outcomes=['selected','not_selected','failed'],
-                        output_keys=['pose'])
-                self.conditions = conditions
-                self.goals = []
+    rospy.init_node('skill_select_nav')
 
-        def execute(self, userdata):
-
-                x_min, x_max, x_increment, y_min, y_max, y_increment, th_min, th_max, th_increment = self.conditions
-
-                if len(self.goals) == 0:
-                        x = x_min
-                        y = y_min
-                        th = th_min
-                        while x <= x_max:
-                                while y <= y_max:
-                                        while th <= th_max:
-                                                pose = []
-                                                pose.append(x) # x
-                                                pose.append(y) # y
-                                                pose.append(th) # th
-                                                self.goals.append(pose)
-                                                th += th_increment
-                                        y += y_increment
-                                        th = th_min
-                                x += x_increment
-                                y = y_min
-                                th = th_min
-
-                userdata.pose = self.goals.pop(random.randint(0,len(self.goals)-1))
-
-                return 'selected'
-
-class SelectNavigationGoal(smach.State):
-#    Needs x, y, theta
-
-        def __init__(self, positions=[0,0,0]):
-                smach.State.__init__(self,
-                        outcomes=['selected','not_selected','failed'],
-                        output_keys=['pose'])
-
-                self.positions = positions
-
-        def execute(self, userdata):
-
-                userdata.pose = self.positions
-
-                return 'selected'
+# for pre-defined navigation Goals
+    sm = SkillImplementation()
+    sm = sm.machine
+    
+    sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
+    sis.start()
+    outcome = sm.execute()
+    rospy.spin()
+    sis.stop()
