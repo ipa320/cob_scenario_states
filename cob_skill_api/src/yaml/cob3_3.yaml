@@ -6,8 +6,8 @@ required_components:
   tray
   head
   base
-  torso
-  arm
+ # torso
+  #arm
 optional_components:
   light
 #  sound
@@ -161,3 +161,12 @@ pre_detect_object_back_check: # checks if the camera is facing back
     - component: head 
       configuration: back
       allowed_error: 0.2 # rad
+
+#############################################
+# Definitions for the grasp Skill
+#############################################
+
+pre_grasp:
+  - service_check: 
+    - service_name: /arm_kinematics/get_ik
+      service_type: GetPositionIK

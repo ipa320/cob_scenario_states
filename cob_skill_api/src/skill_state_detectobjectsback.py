@@ -116,11 +116,14 @@ class skill_state_detectobjectsback(SkillsState):
             if ("light" in self.components):
                 sss.set_light("yellow")
             
-            sss.move("torso", "front")
+            if("torso" in self.components):
+                sss.move("torso", "front")
             
-            handle_arm = sss.move("arm", "look_at_table-to-folded")
-
-        sss.move("torso", "home")
+            if("arm" in self.components):
+                handle_arm = sss.move("arm", "look_at_table-to-folded")
+                
+        if ("torso" in self.components):
+            sss.move("torso", "home")
 
         if result == "failed":
             if ("light" in self.components):

@@ -110,8 +110,9 @@ class skill_state_detectobjectsfront(SkillsState):
         
         result, userdata.objects = self.object_detector.execute(userdata)
         
+        if ("torso" in self.components):
         # ... cleanup robot components
-        sss.move("torso","front")
+            sss.move("torso","front")
         
         if result == "failed":
             if ("light" in self.components):
