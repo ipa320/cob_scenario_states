@@ -84,7 +84,7 @@ class skill_sm_explore(SkillsSM):
 
         self.machine = self.create_machine()
         
-        self.nav_goal = skill_selectnavgoal.SkillImplementation()
+        self.nav_goal = skill_selectnavgoal.SkillImplementation(defined_goal=[2.0, -1.2, 0.0])
         self.approach_pose = skill_approachpose.SkillImplementation()
         self.detect_front = skill_detectobjectsfront.SkillImplementation()
         self.announce_front = skill_state_announcefoundobjects.skill_state_announcefoundobjects()

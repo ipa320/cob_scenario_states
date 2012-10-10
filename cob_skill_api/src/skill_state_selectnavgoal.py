@@ -129,7 +129,7 @@ class skill_state_definednav(SkillsState):
     
     def __init__(self, positions=[0,0,0]):
         
-            self.state = self.create_state()
+            self.state = self.create_state(outcomes=['selected','not_selected','failed'],output_keys=['pose'], input_keys=["pose"])
             
             self.state.execute = self.execute
             self.positions = positions
