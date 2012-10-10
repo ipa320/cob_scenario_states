@@ -86,7 +86,7 @@ class skill_state_detectobjectsfront(SkillsState):
         
         self.components = components
         
-        self.object_detector = skill_objectdetector.SkillImplementation(object_names)
+        self.object_detector = skill_objectdetector.SkillImplementation(object_names=object_names, components=self.components)
     
     ####################################################################
     # function: create_state()

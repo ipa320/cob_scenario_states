@@ -67,6 +67,7 @@ import smach
 import smach_ros
 from actionlib import *
 from actionlib.msg import *
+import geometry_msgs
 import random
 
 import condition_check
@@ -77,6 +78,9 @@ from tf.msg import tfMessage
 from tf.transformations import euler_from_quaternion
 
 import skill_state_grasp
+from cob_object_detection_msgs.msg import * # for defining the main
+from cob_object_detection_msgs.srv import *  # for defining the main
+
 
 from simple_script_server import *
 sss = simple_script_server()
@@ -89,17 +93,18 @@ class SkillImplementation(SkillsBase):
         
         self.machine = self.create_machine()
         self.grasp = skill_state_grasp.skill_state_grasp()
+        self.check_pre = self.pre_conditions()
                 
         with self.machine:
             
-            self.machine.add("PRECONDITIONS_GRASP", self.grasp.state, transitions={'side':'GRASP_SIDE', 'top':'GRASP_TOP','failed':'failed'})
+            self.machine.add("PRECONDITIONS_GRASP", self.check_pre.state, transitions={'success' : "GRASP_SIDE",'failed':'failed'})
             
             self.machine.add('GRASP_SIDE',skill_state_grasp.grasp_side(),
                                 transitions={'not_grasped':'failed',
                                         'failed':'failed','grasped':'success'})
-            self.machine.add('GRASP_TOP',skill_state_grasp.grasp_side(),
-                                transitions={'not_grasped':'failed',
-                                        'failed':'failed','grasped':'success'})
+           # self.machine.add('GRASP_TOP',skill_state_grasp.grasp_top(),
+           #                     transitions={'not_grasped':'failed',
+           #                             'failed':'failed','grasped':'success'})
             
       ####################################################################
     # function: create_machine()
@@ -112,7 +117,7 @@ class SkillImplementation(SkillsBase):
     
     def pre_conditions(self):
 
-        self.check_pre = skill_state_grasp.skill_state_grasp()
+        self.check_pre = condition_check.ConditionCheck(checkType="pre_grasp_check")
         return self.check_pre
 
     def post_conditions(self):
@@ -139,5 +144,26 @@ if __name__=='__main__':
         
         sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
         sis.start()
+            
+        obj1 = cob_object_detection_msgs.msg.Detection()
+        obj1.header.frame_id = "/head_color_camera_l_link"
+        obj1.header.stamp = rospy.Time.now()
+        obj1.label = "milk"
+        obj1.detector = "Testingthegrasp"
+        
+        #obj1.pose.pose.position = [-0.0548130202307,-0.333948243415,0.914694305204]
+        obj1.pose.pose.position.x = -0.0548130202307
+        obj1.pose.pose.position.y = -0.333948243415
+        obj1.pose.pose.position.z = 0.914694305204
+
+        obj1.pose.pose.orientation.x = -0.0232504826646
+        obj1.pose.pose.orientation.y = 0.726799172609
+        obj1.pose.pose.orientation.z = 0.686439171832
+        obj1.pose.pose.orientation.w = -0.00486221397491
+        obj1.pose.header.frame_id = "/head_color_camera_l_link"
+        obj1.pose.header.stamp = rospy.Time.now()
+        #obj1.pose.stamp = rospy.Time.now()
+        sm.userdata.objects = [obj1]
+        
         outcome = sm.execute()
         rospy.spin()

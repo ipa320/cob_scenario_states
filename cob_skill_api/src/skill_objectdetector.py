@@ -94,13 +94,15 @@ from abc_skill import SkillsBase
 
 class SkillImplementation(SkillsBase):
     
-    def __init__(self, object_names, namespace= "", detector_srv = "/object_detection/detect_object", mode = "all"):
+    def __init__(self, object_names="", namespace= "", detector_srv = "/object_detection/detect_object", mode = "all", components = []):
     
         self.detector_srv = detector_srv 
         self.object_names = object_names
         self.detected_objects = []
         self.torso_poses = []
         torso_poses = []
+        
+        self.components = components
         
         self.machine = self.create_machine()
         
@@ -166,12 +168,16 @@ class SkillImplementation(SkillsBase):
             print "Service not available: %s"%e
             return 'failed', self.detected_objects
         
-        sss.say(["I am now looking for objects"],False)
+        if ("sound" in self.components):
+            sss.say(["I am now looking for objects"],False)
         
         #iterate through torso poses until objects have been detected according to the mode	
         for pose in self.torso_poses:
             # have an other viewing point for each retry
-            handle_torso = sss.move("torso",pose)
+            if("torso" in self.components):
+                handle_torso = sss.move("torso",pose)
+            else:
+                rospy.loginfo("Consider including the component <<torso>> for better executing this skill.")
             
             
             ########## TODO HACK FIXME: should be "req.object_names.data = object_names" --> adapt in object detection component

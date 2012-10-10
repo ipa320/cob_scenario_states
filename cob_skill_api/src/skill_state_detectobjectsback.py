@@ -88,7 +88,7 @@ class skill_state_detectobjectsback(SkillsState):
         
         self.components = components
 
-        self.object_detector = skill_objectdetector.SkillImplementation(object_names)
+        self.object_detector = skill_objectdetector.SkillImplementation(object_names=object_names, components=self.components)
 
     ####################################################################
     # function: create_state()
@@ -110,7 +110,8 @@ class skill_state_detectobjectsback(SkillsState):
         if ("light" in self.components):
             sss.set_light("blue")
             
-        result, userdata.objects = self.object_detector.execute(userdata)    
+        result, userdata.objects = self.object_detector.execute(userdata)
+            
         #cleanup robot components
         if result != "detected":
             if ("light" in self.components):

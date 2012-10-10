@@ -166,7 +166,7 @@ pre_detect_object_back_check: # checks if the camera is facing back
 # Definitions for the grasp Skill
 #############################################
 
-pre_grasp:
+pre_grasp_check:
   - service_check: 
     - service_name: /arm_kinematics/get_ik
       service_type: GetPositionIK
