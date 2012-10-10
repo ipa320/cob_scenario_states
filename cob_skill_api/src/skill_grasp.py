@@ -72,6 +72,7 @@ import random
 
 import condition_check
 import skill_state_grasp
+import skill_state_grasp_cph
 
 import tf
 from tf.msg import tfMessage
@@ -97,11 +98,15 @@ class SkillImplementation(SkillsBase):
                 
         with self.machine:
             
-            self.machine.add("PRECONDITIONS_GRASP", self.check_pre.state, transitions={'success' : "GRASP_SIDE",'failed':'failed'})
+            self.machine.add("PRECONDITIONS_GRASP", self.check_pre.state, transitions={'success' : "GRASP_CPH",'failed':'failed'})
             
-            self.machine.add('GRASP_SIDE',skill_state_grasp.grasp_side(),
+            self.machine.add('GRASP_CPH',skill_state_grasp.grasp_side(),
                                 transitions={'not_grasped':'failed',
                                         'failed':'failed','grasped':'success'})
+            
+            #self.machine.add('GRASP_SIDE',skill_state_grasp.grasp_side(),
+             #                   transitions={'not_grasped':'failed',
+              #                          'failed':'failed','grasped':'success'})
            # self.machine.add('GRASP_TOP',skill_state_grasp.grasp_top(),
            #                     transitions={'not_grasped':'failed',
            #                             'failed':'failed','grasped':'success'})
