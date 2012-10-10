@@ -10,6 +10,17 @@ sss = simple_script_server()
 from kinematics_msgs.srv import *
 from sensor_msgs.msg import *
 
+from cob_arm_navigation_python.MoveHand import *
+from cob_arm_navigation_python.MoveArm import *
+from cob_arm_navigation_python.MotionPlan import *
+
+from pr2_python import transform_listener
+from pr2_python import world_interface
+from pr2_python import hand_description
+from pr2_python import conversions
+
+from copy import deepcopy
+
 ## Put object on tray side state
 #
 # This state puts a side grasped object on the tray
@@ -19,67 +30,95 @@ class PutObjectOnTray(smach.State):
 		smach.State.__init__(
 			self,
 			outcomes=['put', 'not_put', 'failed'],
-			input_keys=['object'])
-
-		self.transformer = rospy.ServiceProxy('/cob_pose_transform/get_pose_stamped_transformed', GetPoseStampedTransformed)
+			input_keys=['object','graspdata'])
 
 	def execute(self, userdata):
+		sss.set_light('blue')
+		sss.move("head","front", False)
 		#TODO select position on tray depending on how many objects are on the tray already
 
-		req = GetPoseStampedTransformedRequest()
-		req.tip_name = rospy.get_param("/cob_arm_kinematics/arm/tip_name")
-		req.root_name = rospy.get_param("/cob_arm_kinematics/arm/root_name")
-		req.target.header.stamp=rospy.Time.now()
-		req.target.header.frame_id='base_link'
-		pos = req.target.pose.position
-		pos.x, pos.y, pos.z = [0.640, -0.110, 0.902] # tray_right_link in base_link
-		pos.x -= 0.13
-		pos.y += 0.065
-		pos.z += userdata.object.bounding_box_lwh.z/2.0 + 0.08 # saftety margin 8cm
-		req.orientation_override.w = 1 # align hand to baselink
-		[new_x, new_y, new_z, new_w] = tf.transformations.quaternion_from_euler(-1.5708,0,0) # rpy
-		req.orientation_override.x = new_x
-		req.orientation_override.y = new_y
-		req.orientation_override.z = new_z
-		req.orientation_override.w = new_w
-		req.origin.header.frame_id='sdh_grasp_link'
-		req.origin.header.stamp=req.target.header.stamp
+		""" wi = WorldInterface()
 
+		# add tray block
+		block_extent = [0.27,0.38,0.892]
+		block_pose = conversions.create_pose_stamped([ 0.601 - block_extent[0]/2.0, -0.120 + block_extent[1]/2.0, 0.892/2.0 ,0,0,0,1], 'base_link') # magic numbers are cool
+		wi.add_collision_box(block_pose, block_extent, "block")
+
+		pos_x, pos_y, pos_z = [0.601, -0.120, 0.892] # tray_right_link in base_link		
+		pos_x -= 0.13
+		pos_y += 0.065
+		pos_z += userdata.graspdata['height'] + 0.04
 		
-		res = self.transformer(req)
-		if not res.success:
-			print "Service call failed"
-			self.retries = 0
-			sss.set_light('red')
-			return 'failed'
-			
-		seed_js = JointState()
-		seed_js.name = rospy.get_param("/arm_controller/joint_names")
-		seed_js.position = rospy.get_param("/script_server/arm/intermediatefront")[0]
+		[new_x, new_y, new_z, new_w] = tf.transformations.quaternion_from_euler(-1.5708,0,0) # rpy TODO: check orientation
+		put_pose = conversions.create_pose_stamped([pos_x, pos_y, pos_z,new_x, new_y, new_z, new_w], 'base_link')
+		
+		lift_pose = deepcopy(put_pose)
+		lift_pose.pose.position.y -= 0.2
+		lift_pose.pose.position.z += 0.1
+		
+		mp = MotionPlan()
+		
+		# move arm to lift
+		mp += CallFunction(sss.move, 'tray','up', False)
+		mp += MoveArmUnplanned('arm', 'intermediateback')
+		mp += MoveArm('arm', [lift_pose,['sdh_grasp_link']], seed = 'overtray')
+		
+		# allow collison tray/object
+		# mp += EnableCollision("grasp_object", "tray_link")
 
-		sss.set_light('blue')
-		# calculate ik solutions for grasp configuration
-		pos_js, error_code = sss.calculate_ik(res.result, seed_js)
-		if(error_code.val != error_code.SUCCESS):
-			if error_code.val != error_code.NO_IK_SOLUTION:
-				sss.set_light('red')
-			rospy.logerr("Ik Failed")
-			return 'failed'
+		# tray up
+		mp += MoveComponent('tray', 'up', True)
+
+		# move to put
+		mp += MoveArmUnplanned('arm', [put_pose,['sdh_grasp_link']])
+		
+		# disable collisions
+		# mp += ResetCollisions()
+
+		# open hand
+		mp += MoveComponent('sdh', 'cylopen')
+
+		# check free
+		#mp += CheckService('/sdh_controller/one_pad_contact', Trigger, lambda res: not res.success.data)
+		
+		# allow collison hand/object
+		#for l in HandDescription('arm').touch_links:
+		#    mp += EnableCollision("grasp_object", l)
+		
+		# move arm to lift
+		mp += MoveArm('arm', [lift_pose,['sdh_grasp_link']])
+
+		# disable collisions
+		#mp += ResetCollisions()
+
+		# detach object
+		mp += DetachObject('arm', "grasp_object")
+
+		mp += CallFunction(sss.move, 'sdh','home', False)
+		# move arm to folded
+		mp += MoveArmUnplanned('arm', 'tray-to-folded')
+
+		if not mp.plan(5).success:
+			sss.set_light('green')
+			return "not_put"
 
 		sss.set_light('yellow')
-		sss.move("head","front",False)
-		handle_arm = sss.move("arm", ['intermediateback', 'intermediatefront',list(pos_js.position)],False)
+		for ex in mp.execute():
+			if not ex.wait(80.0).success:
+				sss.set_light('red')
+				return 'failed'  """
 
-		sss.sleep(2)
+		# quick fix: non planned movements without ik
+		sss.set_light('yellow')
+		handle_arm = sss.move("arm","grasp-to-tray",False)
 		sss.move("tray","up")
 		handle_arm.wait()
-
-		# release object
 		sss.move("sdh","cylopen")
-
-		## move arm to backside again
 		handle_arm = sss.move("arm","tray-to-folded",False)
-		sss.sleep(3)
-		sss.move("sdh","home")
+		rospy.sleep(3)
+		sss.move("sdh","cylclosed")
 		handle_arm.wait()
+		# end fix
+
+		sss.set_light('green')
 		return 'put'
