@@ -238,7 +238,7 @@ class ConditionCheck(ConditionCheck):
 
         #TODO: Try to ellaborate a better approach to this:
         # Description: this avoids that the state machine hangs on the robot when the joint states is not available
-        trials = 30
+        trials = 50
         while joint_names[0] not in jointsMsg.name:
             if (trials==0):
                 rospy.logerr("Exceeded maximum amount of trials for waiting for <<" + joint_names[0] + ">> on /joint_states messages")
@@ -497,12 +497,6 @@ class ConditionCheck(ConditionCheck):
                 rospy.loginfo("Tried to initialize the component <<" + comp_name + ">> that is not declared as required.")
                 rospy.loginfo("Please, to avoid this message, remove the component from this test definition.")
             
-        # wait for all movements to be finished
-        # announce ready
-        
-        if "sound" in self.full_components:
-            sss.say(["Ready."])
-        
         sss.sleep(1)
         
         rospy.loginfo("Components successfully initialized.")

@@ -70,9 +70,10 @@ from abc_state_skill import SkillsState
 
 class skill_state_announcefoundobjects(SkillsState):
     
-    def __init__(self):
+    def __init__(self, components =["sound"]):
         rospy.loginfo("Initializing Announce objects skill")
         
+	self.components = components
         self.state = self.create_state()
         self.state.execute = self.execute
         
@@ -90,15 +91,18 @@ class skill_state_announcefoundobjects(SkillsState):
         return state
     
     def execute(self, userdata):
+	print "USERDATA TO ANNOUNCE", userdata
         rospy.loginfo("Executing Announce Objects Skill")
         object_names = ""
         for obj in userdata.objects:
             object_names += obj.label + ", "
         
         if object_names != "":
-            sss.say(["I found: " + object_names])
+	    if ("sound" in self.components):
+            	sss.say(["I found: " + object_names])
         else:
-            sss.say(["I found: nothing"])
+	    if("sound" in self.components):
+            	sss.say(["I found: nothing"])
             return "not_announced"
         #userdata.objects = []
         

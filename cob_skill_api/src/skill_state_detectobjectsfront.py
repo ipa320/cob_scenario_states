@@ -94,7 +94,7 @@ class skill_state_detectobjectsfront(SkillsState):
     ####################################################################
     
     def create_state(self, outcomes=['detected','not_detected','failed'],
-                     input_keys=['object_names'],
+                     input_keys=['object_names', 'objects'],
                      output_keys=['objects']):
     
         state = smach.State()
@@ -109,7 +109,7 @@ class skill_state_detectobjectsfront(SkillsState):
             sss.set_light('blue')
         
         result, userdata.objects = self.object_detector.execute(userdata)
-        
+        print "USERDATA IN OBJECTS", userdata.objects
         if ("torso" in self.components):
         # ... cleanup robot components
             sss.move("torso","front")

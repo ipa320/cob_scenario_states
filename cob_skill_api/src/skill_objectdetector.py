@@ -154,10 +154,12 @@ class SkillImplementation(SkillsBase):
             for name in userdata.object_names:
                 if type(name) is not str:
                     rospy.logerr("Invalid userdata: must be list of strings")
+		    userdata.objects = self.detected_objects
                     return 'failed', self.detected_objects
             object_names = userdata.object_names
         else: # this should never happen
             rospy.logerr("Invalid userdata 'object_names'")
+            userdata.objects = self.detected_objects
             return 'failed', self.detected_objects
         
         # check if object detection service is available
@@ -166,6 +168,7 @@ class SkillImplementation(SkillsBase):
             rospy.wait_for_service(self.detector_srv,10)
         except rospy.ROSException, e:
             print "Service not available: %s"%e
+            userdata.objects = self.detected_objects
             return 'failed', self.detected_objects
         
         if ("sound" in self.components):
@@ -207,6 +210,7 @@ class SkillImplementation(SkillsBase):
                 for _searched_object in object_names:
                     for _object in self.detected_objects:
                         if _object.label == _searched_object:
+                            userdata.objects = self.detected_objects
                             return 'detected', self.detected_objects
             elif self.mode == 'all':
                 detected_all = True
@@ -221,16 +225,18 @@ class SkillImplementation(SkillsBase):
                         break		
                 
                 if detected_all == True:
+                    userdata.objects = self.detected_objects
                     return 'detected', self.detected_objects
             
         rospy.loginfo("No objects found")
+        userdata.objects = self.detected_objects
         return 'not_detected', self.detected_objects
     
      ####################################################################
     # function: create_machine()
     # Creates the Machine
     ####################################################################
-    def create_machine(self, outcomes=['detected','not_detected','failed'], output_keys=["objects"], input_keys=["object_names"]):
+    def create_machine(self, outcomes=['detected','not_detected','failed'], output_keys=["objects"], input_keys=["object_names", 'objects']):
     
         return smach.StateMachine(outcomes, output_keys)
     

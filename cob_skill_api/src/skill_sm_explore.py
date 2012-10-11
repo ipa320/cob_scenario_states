@@ -74,7 +74,7 @@ import skill_approachpose
 import skill_detectobjectsfront
 import skill_detectobjectsback
 import skill_state_announcefoundobjects
-import skill_grasp
+#import skill_grasp
 import skill_selectnavgoal
 
 
@@ -84,13 +84,13 @@ class skill_sm_explore(SkillsSM):
 
         self.machine = self.create_machine()
         
-        self.nav_goal = skill_selectnavgoal.SkillImplementation()
+        self.nav_goal = skill_selectnavgoal.SkillImplementation(defined_goal=[-0.61, -0.27, 0.0])
         self.approach_pose = skill_approachpose.SkillImplementation()
         self.detect_front = skill_detectobjectsfront.SkillImplementation()
         self.announce_front = skill_state_announcefoundobjects.skill_state_announcefoundobjects()
         self.detect_back = skill_detectobjectsback.SkillImplementation()
         self.announce_back = skill_state_announcefoundobjects.skill_state_announcefoundobjects()
-        self.grasp = skill_grasp.SkillImplementation()
+#        self.grasp = skill_grasp.SkillImplementation()
 
         with self.machine:
             
@@ -109,7 +109,7 @@ class skill_sm_explore(SkillsSM):
                                   'failed':'failed'})
 
             self.machine.add('ANNOUNCE_FRONT_SKILL',self.announce_front.state,
-                     transitions={'announced':'GRASP_SKILL',
+                     transitions={'announced':'DETECT_BACK_SKILL',
                                   'not_announced':'DETECT_BACK_SKILL',
                                   'failed':'failed'})
 
@@ -119,14 +119,14 @@ class skill_sm_explore(SkillsSM):
                                   'failed':'failed'})
 
             self.machine.add('ANNOUNCE_BACK_SKILL',self.announce_back.state,
-                     transitions={'announced':'GRASP_SKILL',
+                     transitions={'announced':'SELECT_NAVIGATION_GOAL',
                                   'not_announced':'SELECT_NAVIGATION_GOAL',
                                   'failed':'failed'})
 
-            self.machine.add('GRASP_SKILL',self.grasp.machine,
-                     transitions={'grasped':'SELECT_NAVIGATION_GOAL',
-                                  'not_grasped':'SELECT_NAVIGATION_GOAL',
-                                  'failed':'failed'})
+ #           self.machine.add('GRASP_SKILL',self.grasp.machine,
+ #                    transitions={'grasped':'SELECT_NAVIGATION_GOAL',
+ #                                 'not_grasped':'SELECT_NAVIGATION_GOAL',
+ #                                 'failed':'failed'})
 
     ####################################################################
     # function: create_machine()
