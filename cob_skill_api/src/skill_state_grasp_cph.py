@@ -36,7 +36,7 @@ class skill_state_grasp_cph(SkillsState):
         transform_listener.get_transform_listener()
     
     def create_state(self, outcomes=['grasped','not_grasped','failed'],
-            input_keys=['object'],output_keys=['graspdata']):
+            input_keys=['objects'],output_keys=['graspdata']):
         
         state = smach.State()
         state.__init__(outcomes, input_keys, output_keys)
@@ -48,7 +48,7 @@ class skill_state_grasp_cph(SkillsState):
         wi = WorldInterface()
         wi.reset_attached_objects()
         graspdata = dict()
-        print userdata.object
+        print userdata.objects
 
         # add wall
         wall_extent = [3.0,0.1,2.5]
@@ -61,11 +61,11 @@ class skill_state_grasp_cph(SkillsState):
         wi.add_collision_box(floor_pose, floor_extent, "floor")
         
         #transform into base_link
-        grasp_pose = transform_listener.transform_pose_stamped('base_link', userdata.object.pose, use_most_recent=False)
+        grasp_pose = transform_listener.transform_pose_stamped('base_link', userdata.objects[0].pose, use_most_recent=False)
 
         # add object bounding box
         obj_pose = deepcopy(grasp_pose)
-        lwh = userdata.object.bounding_box_lwh
+        lwh = userdata.objects[0].bounding_box_lwh
         m1 = pm.toMatrix( pm.fromMsg(obj_pose.pose) )
         m2 = pm.toMatrix( pm.fromTf( ((0,0, lwh.z/2.0),(0,0,0,1)) ) )
         obj_pose.pose = pm.toMsg( pm.fromMatrix(numpy.dot(m1,m2)) )
@@ -97,7 +97,7 @@ class skill_state_grasp_cph(SkillsState):
         # open hand
         mp += CallFunction(sss.move, 'sdh','cylopen', False)
         mp += MoveArm('arm',[pregrasp_pose,['sdh_grasp_link']], seed = 'pregrasp')
-        mp += MoveComponent('sdh','cylopen', True)
+        mp += MoveComponent('sdh','cylopen')
 
         # allow collison hand/object
         #for l in hand_description.HandDescription('arm').touch_links:
@@ -140,7 +140,7 @@ class skill_state_grasp_cph(SkillsState):
                         return "not_grasped"
         
         sss.set_light('yellow')
-        sss.say(["I am grasping " + userdata.object.label + " now."],False)
+        sss.say(["I am grasping " + userdata.objects[0].label + " now."],False)
         # run, handle errors
         i = 0
         for ex in mp.execute():
