@@ -93,9 +93,9 @@ class SkillImplementation(SkillsBase):
         rospy.loginfo("Executing the grasp machine")
         
         self.machine = self.create_machine()
-        self.grasp = skill_state_grasp_cph.skill_state_grasp_cph()
+        
         self.check_pre = self.pre_conditions()
-                
+        self.grasp = self.execute_machine()
         with self.machine:
             
             self.machine.add("PRECONDITIONS_GRASP", self.check_pre.state, transitions={'success' : "GRASP_CPH",'failed':'failed'})
@@ -111,6 +111,11 @@ class SkillImplementation(SkillsBase):
             input_keys=['objects']):
     
         return smach.StateMachine(outcomes,input_keys)
+    
+    def execute_machine(self):
+        rospy.loginfo("Executing the Grasp Skill!")
+        mach =  skill_state_grasp_cph.skill_state_grasp_cph(components = self.check_pre.full_components)
+        return mach
     
     def pre_conditions(self):
 
@@ -148,15 +153,15 @@ if __name__=='__main__':
         obj1.header.stamp = rospy.Time.now()
         obj1.label = "milk"
         obj1.detector = "Testingthegrasp"
-        
-        obj1.pose.pose.position.x = -0.0548130202307
-        obj1.pose.pose.position.y = -0.333948243415
-        obj1.pose.pose.position.z = 0.914694305204
 
-        obj1.pose.pose.orientation.x = -0.0232504826646
-        obj1.pose.pose.orientation.y = 0.726799172609
-        obj1.pose.pose.orientation.z = 0.686439171832
-        obj1.pose.pose.orientation.w = -0.00486221397491
+        obj1.pose.pose.position.x = 0.0401807911268
+        obj1.pose.pose.position.y = -0.340016497634
+        obj1.pose.pose.position.z = 0.837299415591
+
+        obj1.pose.pose.orientation.x = -0.0436038094931
+        obj1.pose.pose.orientation.y = 0.724638866364
+        obj1.pose.pose.orientation.z = 0.687506062372
+        obj1.pose.pose.orientation.w = 0.0182382936292
         
         obj1.pose.header.frame_id = "/head_color_camera_l_link"
         obj1.pose.header.stamp = rospy.Time.now()+rospy.Duration(1)

@@ -29,8 +29,9 @@ import numpy
 from abc_state_skill import SkillsState
 
 class skill_state_grasp_cph(SkillsState):
-    def __init__(self):
+    def __init__(self, components = []):
         
+        self.components = components
         self.state = self.create_state()
         self.state.execute = self.execute
         transform_listener.get_transform_listener()
@@ -43,7 +44,9 @@ class skill_state_grasp_cph(SkillsState):
         return state
     
     def execute(self, userdata):
-        sss.set_light('blue')
+        
+        if ("light" in self.components):
+            sss.set_light('blue')
 
         wi = WorldInterface()
         wi.reset_attached_objects()
@@ -136,17 +139,23 @@ class skill_state_grasp_cph(SkillsState):
         userdata.graspdata = graspdata
 
         if not mp.plan(5).success:
-                        sss.set_light('green')
+                        if ("light" in self.components):
+                            sss.set_light('green')
                         return "not_grasped"
         
-        sss.set_light('yellow')
-        sss.say(["I am grasping " + userdata.objects[0].label + " now."],False)
+        if ("light" in self.components):
+            sss.set_light('yellow')
+        
+        if("sound" in self.components):
+            sss.say(["I am grasping " + userdata.objects[0].label + " now."],False)
         # run, handle errors
         i = 0
         for ex in mp.execute():
             if not ex.wait(80.0).success:
-                                sss.set_light('red')
+                                if ("light" in self.components):
+                                    sss.set_light('red')
                                 return 'failed'
             i+=1
-        sss.set_light('green')
+        if ("light" in self.components):
+            sss.set_light('green')
         return 'grasped'
