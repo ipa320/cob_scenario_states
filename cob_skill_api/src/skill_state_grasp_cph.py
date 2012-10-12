@@ -28,7 +28,7 @@ import numpy
 
 from abc_state_skill import SkillsState
 
-class Grasp(SkillsState):
+class skill_state_grasp_cph(SkillsState):
     def __init__(self):
         
         self.state = self.create_state()

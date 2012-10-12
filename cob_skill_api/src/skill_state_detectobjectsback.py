@@ -96,7 +96,7 @@ class skill_state_detectobjectsback(SkillsState):
     ####################################################################
     
     def create_state(self, outcomes=['detected','not_detected','failed'],
-                     input_keys=['object_names'],
+                     input_keys=['object_names', 'objects'],
                      output_keys=['objects']):
     
         state = smach.State()
@@ -111,6 +111,7 @@ class skill_state_detectobjectsback(SkillsState):
             sss.set_light("blue")
             
         result, userdata.objects = self.object_detector.execute(userdata)
+        print "Object", userdata.objects
         #cleanup robot components
         if result != "detected":
             if ("light" in self.components):

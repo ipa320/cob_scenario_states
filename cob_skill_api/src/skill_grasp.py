@@ -71,14 +71,14 @@ import geometry_msgs
 import random
 
 import condition_check
-import skill_state_grasp
+#import skill_state_grasp
 import skill_state_grasp_cph
 
 import tf
 from tf.msg import tfMessage
 from tf.transformations import euler_from_quaternion
 
-import skill_state_grasp
+
 from cob_object_detection_msgs.msg import * # for defining the main
 from cob_object_detection_msgs.srv import *  # for defining the main
 
@@ -93,14 +93,14 @@ class SkillImplementation(SkillsBase):
         rospy.loginfo("Executing the grasp machine")
         
         self.machine = self.create_machine()
-        self.grasp = skill_state_grasp.skill_state_grasp()
+        self.grasp = skill_state_grasp_cph.skill_state_grasp_cph()
         self.check_pre = self.pre_conditions()
                 
         with self.machine:
             
             self.machine.add("PRECONDITIONS_GRASP", self.check_pre.state, transitions={'success' : "GRASP_CPH",'failed':'failed'})
             
-            self.machine.add('GRASP_CPH',skill_state_grasp.grasp_side(),
+            self.machine.add('GRASP_CPH',self.grasp.state,
                                 transitions={'not_grasped':'failed',
                                         'failed':'failed','grasped':'success'})
             
@@ -149,14 +149,14 @@ if __name__=='__main__':
         
         sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
         sis.start()
-            
+        
+        # Creating the userdata for performing the grasp    
         obj1 = cob_object_detection_msgs.msg.Detection()
         obj1.header.frame_id = "/head_color_camera_l_link"
         obj1.header.stamp = rospy.Time.now()
         obj1.label = "milk"
         obj1.detector = "Testingthegrasp"
         
-        #obj1.pose.pose.position = [-0.0548130202307,-0.333948243415,0.914694305204]
         obj1.pose.pose.position.x = -0.0548130202307
         obj1.pose.pose.position.y = -0.333948243415
         obj1.pose.pose.position.z = 0.914694305204
@@ -165,9 +165,10 @@ if __name__=='__main__':
         obj1.pose.pose.orientation.y = 0.726799172609
         obj1.pose.pose.orientation.z = 0.686439171832
         obj1.pose.pose.orientation.w = -0.00486221397491
+        
         obj1.pose.header.frame_id = "/head_color_camera_l_link"
-        obj1.pose.header.stamp = rospy.Time.now()
-        #obj1.pose.stamp = rospy.Time.now()
+        obj1.pose.header.stamp = rospy.Time.now()+rospy.Duration(1)
+        
         sm.userdata.objects = [obj1]
         
         outcome = sm.execute()
