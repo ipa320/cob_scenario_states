@@ -103,14 +103,6 @@ class SkillImplementation(SkillsBase):
             self.machine.add('GRASP_CPH',self.grasp.state,
                                 transitions={'not_grasped':'failed',
                                         'failed':'failed','grasped':'success'})
-            
-            #self.machine.add('GRASP_SIDE',skill_state_grasp.grasp_side(),
-             #                   transitions={'not_grasped':'failed',
-              #                          'failed':'failed','grasped':'success'})
-           # self.machine.add('GRASP_TOP',skill_state_grasp.grasp_top(),
-           #                     transitions={'not_grasped':'failed',
-           #                             'failed':'failed','grasped':'success'})
-            
       ####################################################################
     # function: create_machine()
     # Creates the Machine
@@ -152,7 +144,7 @@ if __name__=='__main__':
         
         # Creating the userdata for performing the grasp    
         obj1 = cob_object_detection_msgs.msg.Detection()
-        obj1.header.frame_id = "/head_color_camera_l_link"
+        obj1.header.frame_id = ""
         obj1.header.stamp = rospy.Time.now()
         obj1.label = "milk"
         obj1.detector = "Testingthegrasp"

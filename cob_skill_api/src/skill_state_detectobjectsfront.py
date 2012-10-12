@@ -109,7 +109,7 @@ class skill_state_detectobjectsfront(SkillsState):
             sss.set_light('blue')
         
         result, userdata.objects = self.object_detector.execute(userdata)
-        print "USERDATA IN OBJECTS", userdata.objects
+        print "Objects front", userdata.objects
         if ("torso" in self.components):
         # ... cleanup robot components
             sss.move("torso","front")

@@ -111,7 +111,7 @@ class skill_state_detectobjectsback(SkillsState):
             sss.set_light("blue")
             
         result, userdata.objects = self.object_detector.execute(userdata)
-        print "Object", userdata.objects
+        print "Objects Back", userdata.objects
         #cleanup robot components
         if result != "detected":
             if ("light" in self.components):
