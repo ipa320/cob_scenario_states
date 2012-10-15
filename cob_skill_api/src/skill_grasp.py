@@ -73,6 +73,7 @@ import random
 import condition_check
 #import skill_state_grasp
 import skill_state_grasp_cph
+import skill_state_putobjectontray
 
 import tf
 from tf.msg import tfMessage
@@ -96,13 +97,19 @@ class SkillImplementation(SkillsBase):
         
         self.check_pre = self.pre_conditions()
         self.grasp = self.execute_machine()
+        self.put_on_tray = skill_state_putobjectontray.skill_state_putobjectontray(components = self.check_pre.full_components)
+        
         with self.machine:
             
             self.machine.add("PRECONDITIONS_GRASP", self.check_pre.state, transitions={'success' : "GRASP_CPH",'failed':'failed'})
             
             self.machine.add('GRASP_CPH',self.grasp.state,
                                 transitions={'not_grasped':'failed',
-                                        'failed':'failed','grasped':'success'})
+                                        'failed':'failed','grasped':'PUT_ON_TRAY'})
+            
+            self.machine.add("PUT_ON_TRAY", self.put_on_tray.state, 
+                             transitions={'put':"success",
+                                          "not_put":"failed", 'failed':'failed'})
       ####################################################################
     # function: create_machine()
     # Creates the Machine
@@ -154,14 +161,14 @@ if __name__=='__main__':
         obj1.label = "milk"
         obj1.detector = "Testingthegrasp"
 
-        obj1.pose.pose.position.x = 0.0401807911268
-        obj1.pose.pose.position.y = -0.340016497634
-        obj1.pose.pose.position.z = 0.837299415591
+        obj1.pose.pose.position.x = 0.0074015454892
+        obj1.pose.pose.position.y = -0.319340167725
+        obj1.pose.pose.position.z = 1.03468273568
 
-        obj1.pose.pose.orientation.x = -0.0436038094931
-        obj1.pose.pose.orientation.y = 0.724638866364
-        obj1.pose.pose.orientation.z = 0.687506062372
-        obj1.pose.pose.orientation.w = 0.0182382936292
+        obj1.pose.pose.orientation.x = -0.0330447723319
+        obj1.pose.pose.orientation.y = 0.730206066455
+        obj1.pose.pose.orientation.z = 0.682365125033
+        obj1.pose.pose.orientation.w = 0.00921844197269
         
         obj1.pose.header.frame_id = "/head_color_camera_l_link"
         obj1.pose.header.stamp = rospy.Time.now()+rospy.Duration(1)
