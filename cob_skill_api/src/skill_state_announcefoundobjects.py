@@ -91,7 +91,7 @@ class skill_state_announcefoundobjects(SkillsState):
         return state
     
     def execute(self, userdata):
-	print "USERDATA TO ANNOUNCE", userdata
+	
         rospy.loginfo("Executing Announce Objects Skill")
         object_names = ""
         for obj in userdata.objects:
