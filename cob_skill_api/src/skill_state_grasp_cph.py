@@ -106,7 +106,8 @@ class skill_state_grasp_cph(SkillsState):
         
         if ("light" in self.components):
             sss.set_light('blue')
-
+        
+        userdata.objects[0].pose.header.stamp = rospy.Time.now()+rospy.Duration(1)
         wi = WorldInterface()
         wi.reset_attached_objects()
         graspdata = dict()
