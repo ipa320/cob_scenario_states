@@ -113,6 +113,7 @@ class skill_state_putobjectontray(SkillsState):
         handle_arm = sss.move("arm","grasp-to-tray",False)
         sss.move("tray","up")
         handle_arm.wait()
+        rospy.sleep(2)
         sss.move("sdh","cylopen")
         handle_arm = sss.move("arm","tray-to-folded",False)
         rospy.sleep(3)

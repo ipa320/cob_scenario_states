@@ -124,8 +124,8 @@ class skill_sm_explore(SkillsSM):
                                   'failed':'failed'})
 
             self.machine.add('GRASP_SKILL',self.grasp.machine,
-                     transitions={'grasped':'SELECT_NAVIGATION_GOAL',
-                                  'not_grasped':'SELECT_NAVIGATION_GOAL',
+                     transitions={'grasped':'success',
+                                  'not_grasped':'failed',
                                   'failed':'failed'})
 
     ####################################################################
