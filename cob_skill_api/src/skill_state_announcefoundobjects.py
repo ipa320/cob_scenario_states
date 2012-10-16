@@ -70,10 +70,10 @@ from abc_state_skill import SkillsState
 
 class skill_state_announcefoundobjects(SkillsState):
     
-    def __init__(self, components =["sound"]):
+    def __init__(self, components =[]):
         rospy.loginfo("Initializing Announce objects skill")
         
-	self.components = components
+        self.components = components
         self.state = self.create_state()
         self.state.execute = self.execute
         
