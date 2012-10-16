@@ -74,7 +74,7 @@ class SkillImplementation(SkillsBase):
         
         with self.machine:
             self.machine.add('Explore_SKILL',self.explore.machine,
-                     transitions={'success':'Explore_SKILL'})
+                     transitions={'success':'success'})
         
     ####################################################################
     # function: create_machine()
