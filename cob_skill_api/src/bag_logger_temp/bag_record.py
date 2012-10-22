@@ -136,8 +136,6 @@ class bag_record():
             self.current_rotation[target_frame] = rot
             return "triggered"
         else:
-            self.current_translation[target_frame] = trans
-            self.current_rotation[target_frame] = rot
             return "not_triggered"
     
     def process_topics(self, tfs):
