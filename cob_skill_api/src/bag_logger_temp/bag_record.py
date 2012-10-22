@@ -96,6 +96,7 @@ class bag_record():
         
         self.tfL = tf.TransformListener()
         self.tfposed = TransformStamped()
+        self.tfMsg = tfMessage()
         
         self.tfL.waitForTransform(self.wanted_tfs[0]["reference_frame"], self.wanted_tfs[0]["target_frame"], rospy.Time(), rospy.Duration(20.0))
         
@@ -127,7 +128,9 @@ class bag_record():
         self.tfposed.transform.rotation.y = rot[1]
         self.tfposed.transform.rotation.z = rot[2]
         self.tfposed.transform.rotation.w = rot[3]
-
+        
+        self.tfMsg = tfMessage([self.tfposed])
+        
         if("trigger_record_translation" in tfs and distance >= tfs["trigger_record_translation"]):
             self.current_translation[target_frame] = trans
             self.current_rotation[target_frame] = rot
@@ -174,7 +177,7 @@ if __name__ == "__main__":
             triggers = bagR.bag_processor(tfs)
             if(triggers == "triggered"):
                 print "triggered"
-                bagR.bag.write("/tf", bagR.tfposed)
+                bagR.bag.write("/tf", bagR.tfMsg)
                 for tfs in bagR.wanted_topics:
                     print "triggered topic"
                     msg = bagR.process_topics(tfs)
@@ -185,7 +188,7 @@ if __name__ == "__main__":
         print  "what time is it", rospy.rostime.get_time() - start_time      
         if(rospy.rostime.get_time() - start_time > time_step):
                 print "triggered by time"
-                bagR.bag.write("tf", bagR.tfposed)
+                bagR.bag.write("/tf", bagR.tfMsg)
                 for tfs in bagR.wanted_topics:
                     print "triggered topic with time"
                     msg = bagR.process_topics(tfs)
