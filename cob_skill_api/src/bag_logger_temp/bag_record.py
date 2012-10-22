@@ -186,7 +186,9 @@ if __name__ == "__main__":
         print  "what time is it", rospy.rostime.get_time() - start_time      
         if(rospy.rostime.get_time() - start_time > time_step):
                 print "triggered by time"
-                bagR.bag.write("/tf", bagR.tfMsg)
+                for tfs in bagR.wanted_tfs:
+                    fake_trigger = bagR.bag_processor(tfs)
+                    bagR.bag.write("/tf", bagR.tfMsg)
                 for tfs in bagR.wanted_topics:
                     print "triggered topic with time"
                     msg = bagR.process_topics(tfs)
