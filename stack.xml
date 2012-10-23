@@ -10,6 +10,7 @@
   <url>http://ros.org/wiki/cob_scenario_states</url>
   <depend stack="arm_navigation" /> <!-- kinematics_msgs -->
   <depend stack="cob_command_tools" /> <!-- cob_script_server -->
+  <depend stack="cob_manipulation_sandbox" /> <!-- cob_arm_navigation_python -->
   <depend stack="cob_object_perception" /> <!-- cob_object_detection_msgs, cob_object_detection_fake -->
   <depend stack="common_msgs" /> <!-- nav_msgs, actionlib_msgs, visualization_msgs -->
   <depend stack="executive_smach" /> <!-- smach_ros, smach -->
