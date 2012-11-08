@@ -31,27 +31,30 @@ class Grasp(smach.State):
 		smach.State.__init__(self, 
 			outcomes=['grasped','not_grasped','failed'],
 			input_keys=['object'],output_keys=['graspdata'])
-		transform_listener.get_transform_listener()
+		self.tl = transform_listener.get_transform_listener()
+
 	def execute(self, userdata):
 		sss.set_light('blue')
 
 		wi = WorldInterface()
 		wi.reset_attached_objects()
 		graspdata = dict()
-                print userdata.object
+		print userdata.object
+		print "time difference = ", (rospy.Time.now() - userdata.object.pose.header.stamp).to_sec()
 
-                # add wall
-                wall_extent = [3.0,0.1,2.5]
-		wall_pose = conversions.create_pose_stamped([  0, -0.99 - wall_extent[1], wall_extent[2]/2.0 ,0,0,0,1], 'base_link') # magic numbers are cool
+
+		# add wall
+		wall_extent = [3.0,0.1,2.5]
+		wall_pose = conversions.create_pose_stamped([  0, -0.99 - wall_extent[1], wall_extent[2]/2.0 ,0,0,0,1], '/base_link') # magic numbers are cool
 		wi.add_collision_box(wall_pose, wall_extent, "wall")
 
-                # add floor
-                floor_extent = [3.0,3.0,0.1]
+		# add floor
+		floor_extent = [3.0,3.0,0.1]
 		floor_pose = conversions.create_pose_stamped([  0, 0, floor_extent[2]/2.0 ,0,0,0,1], '/base_link') # magic numbers are cool
 		wi.add_collision_box(floor_pose, floor_extent, "floor")
 		
 		#transform into base_link
-		grasp_pose = transform_listener.transform_pose_stamped('base_link', userdata.object.pose, use_most_recent=False)
+		grasp_pose = transform_listener.transform_pose_stamped('/base_link', userdata.object.pose, use_most_recent=False)
 
 		# add object bounding box
 		obj_pose = deepcopy(grasp_pose)
@@ -64,7 +67,7 @@ class Grasp(smach.State):
 		print grasp_pose
 		# add table
 		table_extent = (2.0, 2.0, grasp_pose.pose.position.z)
-		table_pose = conversions.create_pose_stamped([ -0.5 - table_extent[0]/2.0, 0 ,table_extent[2]/2.0 ,0,0,0,1], 'base_link')
+		table_pose = conversions.create_pose_stamped([ -0.5 - table_extent[0]/2.0, 0 ,table_extent[2]/2.0 ,0,0,0,1], '/base_link')
 		wi.add_collision_box(table_pose, table_extent, "table")
 
 		# calculate grasp and lift pose
@@ -85,7 +88,7 @@ class Grasp(smach.State):
 		
 		mp = MotionPlan()
 		# open hand
-                mp += CallFunction(sss.move, 'sdh','cylopen', False)
+		mp += CallFunction(sss.move, 'sdh','cylopen', False)
 		mp += MoveArm('arm',[pregrasp_pose,['sdh_grasp_link']], seed = 'pregrasp')
 		mp += MoveComponent('sdh','cylopen', True)
 
@@ -99,7 +102,7 @@ class Grasp(smach.State):
 		# goto grasp
 		mp += MoveArmUnplanned('arm', [grasp_pose,['sdh_grasp_link']])
 		
-                # close hand
+		# close hand
 		mp += MoveComponent('sdh','cylclosed')
 		
 		# check grasp
@@ -126,17 +129,17 @@ class Grasp(smach.State):
 		userdata.graspdata = graspdata
 
 		if not mp.plan(5).success:
-                        sss.set_light('green')
+			sss.set_light('green')
 			return "not_grasped"
 		
-                sss.set_light('yellow')
+		sss.set_light('yellow')
 		sss.say(["I am grasping " + userdata.object.label + " now."],False)
 		# run, handle errors
 		i = 0
 		for ex in mp.execute():
 			if not ex.wait(80.0).success:
-                                sss.set_light('red')
+				sss.set_light('red')
 				return 'failed'
 			i+=1
-                sss.set_light('green')
+		sss.set_light('green')
 		return 'grasped'
