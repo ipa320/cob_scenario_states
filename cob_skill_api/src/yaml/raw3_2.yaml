@@ -1,0 +1,34 @@
+# Definition of skills for the Explore State Machine
+
+robot_name: raw3-2
+#comment to disable components
+required_components: 
+  base
+  
+#optional_components:
+#  light
+#  sound
+     
+#############################################
+# Definitions for the approach pose skill
+#############################################
+
+# definition of pre condition checks
+pre_approach_pose_check:
+  - component_ready_check:
+    - //base_controller
+
+  - action_check: 
+    - action_name: move_base
+      action_type: MoveBaseAction
+
+post_approach_pose_check:
+
+  - pose_check:
+    - reference_frame: /base_link
+      target_pose:
+        frame_id: /map
+        position: userdata
+        orientation: userdata
+      allowed_position_error: 0.2 #m
+      allowed_orientation_error: 0.2 #rad
