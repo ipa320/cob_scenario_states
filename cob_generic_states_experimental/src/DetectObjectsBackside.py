@@ -51,7 +51,7 @@ class DetectObjectsBackside(smach.State):
 		sss.set_light('blue')
 
 		#Preparations for object detection
-		handle_torso = sss.move("torso","shake",False)
+		handle_torso = sss.move("torso","home",False)
 		sss.set_light('yellow')
 		handle_arm = sss.move("arm","folded-to-look_at_table",False)
 		handle_head = sss.move("head","back",False)
