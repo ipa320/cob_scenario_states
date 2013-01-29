@@ -65,9 +65,6 @@ from simple_script_server import *
 sss = simple_script_server()
 
 
-## Deliver object state
-#
-# This state will deliver an object which should be on the tray.
 class Sleep(smach.State):
 	def __init__(self):
 		smach.State.__init__(self, 
@@ -80,10 +77,17 @@ class Sleep(smach.State):
 		return 'succeeded'
 
 
-## Deliver object state
-#
-# This state will deliver an object which should be on the tray.
 class Light(smach.State):
+	def __init__(self, color):
+		smach.State.__init__(self, 
+			outcomes=['succeeded'])
+		self.color = color
+
+	def execute(self, userdata):
+		sss.set_light(self.color)
+		return 'succeeded'
+
+class LightDyn(smach.State):
 	def __init__(self):
 		smach.State.__init__(self, 
 			outcomes=['succeeded'],
@@ -91,5 +95,4 @@ class Light(smach.State):
 
 	def execute(self, color):
 		sss.set_light(color)
-		
 		return 'succeeded'
