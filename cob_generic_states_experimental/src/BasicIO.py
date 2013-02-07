@@ -66,13 +66,13 @@ sss = simple_script_server()
 
 
 class Sleep(smach.State):
-	def __init__(self):
+	def __init__(self, duration):
 		smach.State.__init__(self, 
-			outcomes=['succeeded'],
-			input_keys=['duration'])
+			outcomes=['succeeded'])
+		self.duration = duration
 
-	def execute(self, duration):
-		sss.sleep(duration)
+	def execute(self, userdata):
+		sss.sleep(self.duration)
 		
 		return 'succeeded'
 
@@ -93,6 +93,6 @@ class LightDyn(smach.State):
 			outcomes=['succeeded'],
 			input_keys=['color'])
 
-	def execute(self, color):
-		sss.set_light(color)
+	def execute(self, userdata):
+		sss.set_light(userdata.color)
 		return 'succeeded'
