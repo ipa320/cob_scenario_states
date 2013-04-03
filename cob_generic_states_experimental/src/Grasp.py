@@ -27,13 +27,24 @@ from tf_conversions import posemath as pm
 import numpy
 
 class Grasp(smach.State):
-	def __init__(self):
+	PRESETS = {
+	    'fixed_orientation_euler': (-1.706, 0.113, 2.278),
+	    'grasp_offset': (0.02, 0.02, 0.1),
+	    'pregrasp_offset': (0.20, 0.11, 0.1),
+	    'lift_offset': (0,0,0.03),
+	    'tcp_link': 'sdh_grasp_link',
+	    'pregrasp_seed': 'pregrasp',
+	}
+	def __init__(self, presets = dict(), additional_input=[]):
 		smach.State.__init__(self, 
 			outcomes=['grasped','not_grasped','failed'],
-			input_keys=['object'],output_keys=['graspdata'])
-		self.tl = transform_listener.get_transform_listener()
-
-	def execute(self, userdata):
+			input_keys=['object']+additional_input, output_keys=['graspdata'])
+		self.tl = transform_listener.get_transform_listener() # create singleton
+		self.default_presets = PRESETS
+		self.default_presets.update(presets)
+	def execute(self, userdata, overwrite_presets = dict()):
+		presets = self.default_presets
+		presets.update(overwrite_presets)
 		sss.set_light('blue')
 
 		wi = WorldInterface()
@@ -82,25 +93,27 @@ class Grasp(smach.State):
 		wi.add_collision_box(table_pose, table_extent, "table")
 
 		# calculate grasp and lift pose
-		grasp_pose.pose.position.x += 0.02
-		grasp_pose.pose.position.y += 0.02
-		grasp_pose.pose.position.z += 0.1 #0.03 + 0.05
-		grasp_pose.pose.orientation = Quaternion(*quaternion_from_euler(-1.706, 0.113, 2.278)) # orientation of sdh_grasp_link in base_link for 'grasp' joint goal
+		grasp_pose.pose.position.x += presets['grasp_offset'][0]
+		grasp_pose.pose.position.y += presets['grasp_offset'][1]
+		grasp_pose.pose.position.z += presets['grasp_offset'][2]
+		grasp_pose.pose.orientation = Quaternion(*quaternion_from_euler(*presets['fixed_orientation_euler'])) # orientation of sdh_grasp_link in base_link for 'grasp' joint goal
 		
 		graspdata['height'] =  grasp_pose.pose.position.z - table_extent[2]
 		
 		pregrasp_pose = deepcopy(grasp_pose)
-		pregrasp_pose.pose.position.x += 0.20
-		pregrasp_pose.pose.position.y += 0.11
-		pregrasp_pose.pose.position.z += 0.1
+		pregrasp_pose.pose.position.x += presets['pregrasp_offset'][0]
+		pregrasp_pose.pose.position.y += presets['pregrasp_offset'][1]
+		pregrasp_pose.pose.position.z += presets['pregrasp_offset'][2]
 
 		lift_pose = deepcopy(grasp_pose)
-		lift_pose.pose.position.z += 0.03
+		lift_pose.pose.position.x += presets['lift_offset'][0]
+		lift_pose.pose.position.y += presets['lift_offset'][1]
+		lift_pose.pose.position.z += presets['lift_offset'][2]
 		
 		mp = MotionPlan()
 		# open hand
 		mp += CallFunction(sss.move, 'sdh','cylopen', False)
-		mp += MoveArm('arm',[pregrasp_pose,['sdh_grasp_link']], seed = 'pregrasp')
+		mp += MoveArm('arm',[pregrasp_pose,[presets['tcp_link']]], seed = presets['pregrasp_seed'])
 		mp += MoveComponent('sdh','cylopen', True)
 
 		# allow collison hand/object
@@ -108,7 +121,7 @@ class Grasp(smach.State):
 		    mp += EnableCollision("grasp_object", l)
 		
 		# goto grasp
-		mp += MoveArm('arm', [grasp_pose,['sdh_grasp_link']]) # Move sdh_grasp_link to grasp_pose
+		mp += MoveArm('arm', [grasp_pose,[presets['tcp_link']]]) # Move sdh_grasp_link to grasp_pose
 		
 		# close hand
 		mp += MoveComponent('sdh','cylclosed')
@@ -126,13 +139,13 @@ class Grasp(smach.State):
 		mp += EnableCollision("grasp_object", "table")
 		
 		# lift motion
-		mp += MoveArm('arm', [lift_pose,['sdh_grasp_link']]) # Move sdh_grasp_link to lift_pose
+		mp += MoveArm('arm', [lift_pose,[presets['tcp_link']]]) # Move sdh_grasp_link to lift_pose
 
 		# disable collison
 		mp += ResetCollisions()
 
 		# move away
-		#mp += MoveArm('arm', [pregrasp_pose,['sdh_grasp_link']])
+		#mp += MoveArm('arm', [pregrasp_pose,[presets['tcp_link']]])
 		
 		# goto hold
 		mp += MoveArm('arm', 'hold')
@@ -154,3 +167,9 @@ class Grasp(smach.State):
 			i+=1
 		sss.set_light('green')
 		return 'grasped'
+
+class GraspExternalPresets(smach.State):
+	def __init__(self, presets = dict()):
+		Grasp.__init__(self,presets,['graspdata'])
+	def execute(self, userdata):
+	    return Grasp.execute(self.userdata,self.userdata.graspdata)
