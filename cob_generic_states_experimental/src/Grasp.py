@@ -55,19 +55,30 @@ class Grasp(smach.State):
 		
 		#transform into base_link
 		grasp_pose = transform_listener.transform_pose_stamped('/base_link', userdata.object.pose, use_most_recent=False)
+		print grasp_pose
 
 		# add object bounding box
-		obj_pose = deepcopy(grasp_pose)
+		obj_pose = deepcopy(userdata.object.pose)
 		lwh = userdata.object.bounding_box_lwh
 		m1 = pm.toMatrix( pm.fromMsg(obj_pose.pose) )
 		m2 = pm.toMatrix( pm.fromTf( ((0,0, lwh.z/2.0),(0,0,0,1)) ) )
 		obj_pose.pose = pm.toMsg( pm.fromMatrix(numpy.dot(m1,m2)) )
 		wi.add_collision_box(obj_pose,(lwh.x*2.0,lwh.y*2.0,lwh.z) , "grasp_object")
 
-		print grasp_pose
+		# compute minimal height of object bounding box edges in base_link
+		min_z = grasp_pose.pose.position.z
+		for k in [(0.5,0.5,1.0),(0.5,0.5,0.0),(0.5,-0.5,1.0),(0.5,-0.5,0.0),(-0.5,0.5,1.0),(-0.5,0.5,0.0),(-0.5,-0.5,1.0),(-0.5,-0.5,0.0)]:		
+			m1 = pm.toMatrix( pm.fromMsg(grasp_pose.pose) ) # BFromO
+			m2 = pm.toMatrix( pm.fromTf( ((k[0]*lwh.x,k[1]*lwh.y, k[2]*lwh.z),(0,0,0,1)) ) ) # inO
+			min_z = min(min_z,pm.toMsg( pm.fromMatrix(numpy.dot(m1,m2))).position.z) #min_z inB
+
 		# add table
-		table_extent = (2.0, 2.0, grasp_pose.pose.position.z)
-		table_pose = conversions.create_pose_stamped([ -0.5 - table_extent[0]/2.0, 0 ,table_extent[2]/2.0 ,0,0,0,1], '/base_link')
+		table_extent = (2.0, 2.0, min_z)
+		# base_link
+		# x - points towards front of robot
+		# y - follow right hand rule
+		# z - points upwards
+		table_pose = conversions.create_pose_stamped([ -0.5 - table_extent[0]/2.0, 0 ,table_extent[2]/2.0 ,0,0,0,1], '/base_link') # center of table, 0.5 meter behind the robot
 		wi.add_collision_box(table_pose, table_extent, "table")
 
 		# calculate grasp and lift pose
@@ -93,14 +104,11 @@ class Grasp(smach.State):
 		mp += MoveComponent('sdh','cylopen', True)
 
 		# allow collison hand/object
-		#for l in hand_description.HandDescription('arm').touch_links:
-		#    mp += EnableCollision("grasp_object", l)
-		#
-		# disable collison
-		#mp += ResetCollisions()
-
+		for l in hand_description.HandDescription('arm').touch_links:
+		    mp += EnableCollision("grasp_object", l)
+		
 		# goto grasp
-		mp += MoveArmUnplanned('arm', [grasp_pose,['sdh_grasp_link']])
+		mp += MoveArm('arm', [grasp_pose,['sdh_grasp_link']]) # Move sdh_grasp_link to grasp_pose
 		
 		# close hand
 		mp += MoveComponent('sdh','cylclosed')
@@ -108,6 +116,9 @@ class Grasp(smach.State):
 		# check grasp
 		#mp += CheckService('/sdh_controller/is_cylindric_grasped', Trigger, lambda res: res.success.data)
 		
+		# disable collison
+		mp += ResetCollisions()
+
 		# attach object
 		mp += AttachObject('arm', "grasp_object")
 		
@@ -115,13 +126,13 @@ class Grasp(smach.State):
 		mp += EnableCollision("grasp_object", "table")
 		
 		# lift motion
-		mp += MoveArmUnplanned('arm', [lift_pose,['sdh_grasp_link']])
+		mp += MoveArm('arm', [lift_pose,['sdh_grasp_link']]) # Move sdh_grasp_link to lift_pose
 
 		# disable collison
 		mp += ResetCollisions()
 
 		# move away
-		mp += MoveArm('arm', [pregrasp_pose,['sdh_grasp_link']])
+		#mp += MoveArm('arm', [pregrasp_pose,['sdh_grasp_link']])
 		
 		# goto hold
 		mp += MoveArm('arm', 'hold')
