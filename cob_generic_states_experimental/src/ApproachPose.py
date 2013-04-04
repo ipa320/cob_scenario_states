@@ -133,10 +133,12 @@ class ApproachPose(smach.State):
 			# finished with aborted
 			elif (handle_base.get_state() == 4):
 				sss.set_light('green')
+				sss.stop("base")
 				return 'not_reached'
 			# finished with preempted or canceled
 			elif (handle_base.get_state() == 2) or (handle_base.get_state() == 8):
 				sss.set_light('green')
+				sss.stop("base")
 				return 'not_reached'
 			# return with error
 			elif (handle_base.get_error_code() > 0):
@@ -153,8 +155,8 @@ class ApproachPose(smach.State):
 
 				# abort after timeout is reached
 				if stopping_time >= self.timeout:
-					sss.stop("base")
 					sss.set_light('green')
+					sss.stop("base")
 					return 'not_reached'
 				
 				# announce warning after every 10 sec
