@@ -19,7 +19,8 @@
   <depend package="cob_script_server"/>
   <depend package="cob_object_detection_msgs"/>
   <depend package="visualization_msgs"/>
-  <depend package="cob_arm_navigation_python"/>
+  <!--depend package="cob_arm_navigation_python"/-->
+  <depend package="cob_3d_mapping_msgs"/>
 
   <python path="${prefix}/states"/>
 

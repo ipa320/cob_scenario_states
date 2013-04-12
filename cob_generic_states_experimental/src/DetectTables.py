@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import roslib
 roslib.load_manifest('cob_generic_states_experimental')
 import rospy
@@ -63,7 +64,7 @@ class FindTables(smach.State):
 		smach.State.__init__(self,
 			outcomes=['found', 'not_found', 'failed'],
 			output_keys=['tables'])
-		self.client = actionlib.SimpleActionClient('segmentation/trigger_segmentation', TriggerMappingAction)
+		self.client = actionlib.SimpleActionClient('segmentation/trigger_segmentation', TriggerAction)
 
 	def execute(self, userdata):
 		rospy.wait_for_service('geometry_map/clear_map',10)
@@ -74,7 +75,7 @@ class FindTables(smach.State):
 			print "Service call failed: %s"%e
 		sss.move("torso", "frontleft")
 		#start mapping
-		goal = TriggerMappingGoal()
+		goal = TriggerGoal()
 		goal.start = True
 		if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
 			rospy.logerr('server not available')
@@ -84,7 +85,7 @@ class FindTables(smach.State):
 			return 'failed'
 		sss.move("torso", "frontright")
 		#stop mapping
-		goal = TriggerMappingGoal()
+		goal = TriggerGoal()
 		goal.start = False
 		if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
 			rospy.logerr('server not available')

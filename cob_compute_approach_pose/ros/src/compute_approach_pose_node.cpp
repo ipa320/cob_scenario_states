@@ -17,6 +17,12 @@
 
 #include <tf/transform_listener.h>
 
+//only for testing
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <cob_3d_mapping_common/polygon.h>
+#include <cob_3d_mapping_common/ros_msg_conversions.h>
+
 
 struct Pose
 {
@@ -93,6 +99,27 @@ public:
 
 	bool computeApproachPose(cob_3d_mapping_msgs::GetApproachPoseForPolygon::Request& req, cob_3d_mapping_msgs::GetApproachPoseForPolygon::Response& res)
 	{
+		cob_3d_mapping::Polygon p1;
+		Eigen::Vector3f v;
+		std::vector<Eigen::Vector3f> vv;
+		p1.id = 1;
+		p1.normal << 0.0,0.0,1.0;
+		p1.d = -1;
+		v << 1,-2,1;
+		vv.push_back(v);
+		v << 1,-3,1;
+		vv.push_back(v);
+		v << 2,-3,1;
+		vv.push_back(v);
+		v << 2,-2,1;
+		vv.push_back(v);
+		p1.contours.push_back(vv);
+		p1.holes.push_back(false);
+		cob_3d_mapping_msgs::Shape p_msg;
+		toROSMsg(p1, p_msg);
+		req.polygon = p_msg;
+
+
 		// determine robot pose
 		tf::StampedTransform transform;
 		try
@@ -129,14 +156,14 @@ public:
 		cv::Mat map_expanded = map_.clone();
 		cv::drawContours(map_expanded, polygon_contours, -1, cv::Scalar(128), CV_FILLED);
 
-		cv::imshow("map", map_expanded);
-		cv::waitKey();
+		//cv::imshow("map", map_expanded);
+		//cv::waitKey();
 
 		// create the inflated map
 		int iterations = (int)(robot_radius_/map_resolution_);
 		cv::erode(map_expanded, map_expanded, cv::Mat(), cv::Point(-1,-1), iterations);
-		cv::imshow("expanded map", map_expanded);
-		cv::waitKey();
+		//cv::imshow("expanded map", map_expanded);
+		//cv::waitKey();
 
 		// compute gradients
 		cv::Mat dx, dy;
@@ -145,23 +172,26 @@ public:
 
 		// find the individual connected areas
 		std::vector< std::vector<cv::Point> > area_contours;		// first index=contour index;  second index=point index within contour
-		cv::findContours(map_expanded, area_contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+		cv::Mat map_expanded_copy = map_expanded.clone();
+		cv::findContours(map_expanded_copy, area_contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
 
 		// iterate through all white points and consider those as potential approach poses that have an expanded table pixel in their neighborhood
 		for (int y=1; y<map_expanded.rows-1; y++)
 		{
 			for (int x=1; x<map_expanded.cols-1; x++)
 			{
-				if (map_expanded.at<uchar>(y,x)==255);
+				if (map_expanded.at<uchar>(y,x)==255)
 				{
 					bool close_to_table = false;
 					for (int ky=-1; ky<=1; ky++)
 						for(int kx=-1; kx<=1; kx++)
-							if (map_expanded.at<uchar>(y+ky,x+kx)==128)
+						{
+							if (map_expanded.at<uchar>(y+ky,x+kx) == 128)
 							{
 								close_to_table = true;
 								break;
 							}
+						}
 					if (close_to_table == true)
 					{
 						std::cout << "true\n";
@@ -169,21 +199,23 @@ public:
 						if (isApproachPositionAccessible(robot_location, cv::Point(x,y), area_contours)==true)
 						{
 							geometry_msgs::Pose pose;
-							pose.position.x = x;
-							pose.position.y = y;
+							Pose pose_p(x,y,0);
+							Pose pose_m = convertFromPixelCoordinatesToMeter<Pose>(pose_p);
+							pose.position.x = pose_m.x;
+							pose.position.y = pose_m.y;
 							pose.position.z = 0;
-							tf::quaternionTFToMsg(tf::createQuaternionFromYaw(atan2(dy.at<float>(y,x),dx.at<float>(y,x))), pose.orientation);
+							tf::quaternionTFToMsg(tf::createQuaternionFromYaw(atan2(-dy.at<float>(y,x),-dx.at<float>(y,x))), pose.orientation);
 							res.approach_poses.poses.push_back(pose);
 						}
 
 						// display found contours
-						cv::Mat map_expanded_copy = map_expanded.clone();
-						cv::drawContours(map_expanded_copy, area_contours, -1, cv::Scalar(128,128,128,128), 2);
-						cv::circle(map_expanded_copy, robot_location, 3, cv::Scalar(200,200,200,200), -1);
-						cv::circle(map_expanded_copy, cv::Point(x,y), 3, cv::Scalar(200,200,200,200), -1);
-						std::cout << " x=" << x << "  y=" << y << "\n";
-						cv::imshow("contour areas", map_expanded_copy);
-						cv::waitKey();
+//						cv::Mat map_expanded_copy = map_expanded.clone();
+//						cv::drawContours(map_expanded_copy, area_contours, -1, cv::Scalar(128,128,128,128), 2);
+//						cv::circle(map_expanded_copy, robot_location, 3, cv::Scalar(200,200,200,200), -1);
+//						cv::circle(map_expanded_copy, cv::Point(x,y), 3, cv::Scalar(200,200,200,200), -1);
+//						std::cout << " x=" << x << "  y=" << y << "\n";
+//						cv::imshow("contour areas", map_expanded_copy);
+//						cv::waitKey();
 					}
 				}
 			}
@@ -198,6 +230,15 @@ public:
 		T val;
 		val.x = (pose.x-map_origin_.x)/map_resolution_;
 		val.y = (pose.y-map_origin_.y)/map_resolution_;
+		return val;
+	}
+
+	template <class T>
+	T convertFromPixelCoordinatesToMeter(const Pose& pose)
+	{
+		T val;
+		val.x = map_resolution_*pose.x + map_origin_.x;
+		val.y = map_resolution_*pose.y + map_origin_.y;
 		return val;
 	}
 
