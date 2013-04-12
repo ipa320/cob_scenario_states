@@ -16,8 +16,8 @@ from ApproachPose import *
 class ComputeNavigationGoal(smach.State):
 	def __init__(self):
 		smach.State.__init__(self,
-			outcomes=['computed', 'failed'],
-			input_keys=['polygons','base_pose'],
+			outcomes=['computed', 'no_goals_left', 'failed'],
+			input_keys=['polygon','base_pose'],
 			output_keys=['base_pose'])
 		self.listener = tf.TransformListener()
 
@@ -25,7 +25,7 @@ class ComputeNavigationGoal(smach.State):
 		rospy.wait_for_service('compute_approach_pose',10)
 		try:
 			get_approach_pose = rospy.ServiceProxy('compute_approach_pose', GetApproachPoseForPolygon)
-			res = get_approach_pose()
+			res = get_approach_pose(userdata.polygon)
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 		try:
@@ -57,15 +57,16 @@ class ComputeNavigationGoal(smach.State):
 class ApproachPolygon(smach.StateMachine):
 	def __init__(self):
 		smach.StateMachine.__init__(self,
-			outcomes=['finished', 'failed'])
+			outcomes=['reached', 'not_reached', 'failed'])
 		with self:
 
 			smach.StateMachine.add('SELECT_GOAL', ComputeNavigationGoal(),
 																transitions={'computed':'MOVE_BASE',
+																			'no_goals_left':'not_reached',
 																			'failed':'failed'})
 
 			smach.StateMachine.add('MOVE_BASE', ApproachPose(),
-																	 transitions={'reached':'finished',
+																	 transitions={'reached':'reached',
 																				'not_reached':'SELECT_GOAL',
 																				'failed':'failed'})
 

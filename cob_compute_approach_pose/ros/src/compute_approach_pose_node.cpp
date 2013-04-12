@@ -17,12 +17,6 @@
 
 #include <tf/transform_listener.h>
 
-//only for testing
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <cob_3d_mapping_common/polygon.h>
-#include <cob_3d_mapping_common/ros_msg_conversions.h>
-
 
 struct Pose
 {
@@ -99,27 +93,6 @@ public:
 
 	bool computeApproachPose(cob_3d_mapping_msgs::GetApproachPoseForPolygon::Request& req, cob_3d_mapping_msgs::GetApproachPoseForPolygon::Response& res)
 	{
-		cob_3d_mapping::Polygon p1;
-		Eigen::Vector3f v;
-		std::vector<Eigen::Vector3f> vv;
-		p1.id = 1;
-		p1.normal << 0.0,0.0,1.0;
-		p1.d = -1;
-		v << 1,-2,1;
-		vv.push_back(v);
-		v << 1,-3,1;
-		vv.push_back(v);
-		v << 2,-3,1;
-		vv.push_back(v);
-		v << 2,-2,1;
-		vv.push_back(v);
-		p1.contours.push_back(vv);
-		p1.holes.push_back(false);
-		cob_3d_mapping_msgs::Shape p_msg;
-		toROSMsg(p1, p_msg);
-		req.polygon = p_msg;
-
-
 		// determine robot pose
 		tf::StampedTransform transform;
 		try
