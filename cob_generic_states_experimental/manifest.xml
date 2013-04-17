@@ -18,8 +18,8 @@
   <depend package="nav_msgs"/>
   <depend package="cob_script_server"/>
   <depend package="cob_object_detection_msgs"/>
+  <depend package="cob_people_detection_msgs"/>
   <depend package="visualization_msgs"/>
-  <depend package="cob_arm_navigation_python"/>
 
   <python path="${prefix}/states"/>
 
