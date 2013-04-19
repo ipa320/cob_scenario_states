@@ -10,7 +10,8 @@
 #  - cob_bringup_sim
 #  - cob_navigation_global/2dnav_ros_dwa
 #Set name to look for in SetName and Position in SetNavigationGoal.
-###
+
+
 import roslib
 roslib.load_manifest('cob_generic_states_experimental')
 import rospy
@@ -19,6 +20,9 @@ import smach_ros
 import random
 from cob_people_detection_msgs.msg import *
 from ApproachPose import *
+import sys
+from tf import TransformListener
+from tf.transformations import euler_from_quaternion
 
 class SelectNavigationGoal(smach.State):
   def __init__(self):
@@ -51,19 +55,22 @@ class SetName(smach.State):
       output_keys=['id'])
 
   def execute(self, userdata):
-    userdata.id='Tom'
+    userdata.id='Richard'
+    #userdata.id='Richard'
     sss.say(["I am looking for %s!"%str(userdata.id)])
     return 'set'
 
 class Rotate(smach.State):
   #class handles the rotation until program is stopped
   def __init__(self):
+    self.tf = TransformListener()
     smach.State.__init__(self,
       outcomes=['finished','failed'],
       input_keys=['base_pose','stop_rotating'],
       output_keys=['detected'])
     self.stop_rotating=False
     rospy.Subscriber("/cob_people_detection/detection_tracker/face_position_array",DetectionArray, self.callback)
+    self.label="Unknown"
 
   def callback(self,msg):
     if len(msg.detections) >0:
@@ -74,12 +81,32 @@ class Rotate(smach.State):
     return
 
   def execute(self, userdata):
+    sss.say(["I am going to look around now"])
+
+    if self.tf.frameExists("/base_link") and self.tf.frameExists("/map"):
+        t = self.tf.getLatestCommonTime("/base_link", "/map")
+        position, quaternion = self.tf.lookupTransform("/base_link", "/map", t)
+	[r,p,y]=euler_from_quaternion(quaternion)
+	print r
+	print p
+	print y
+        print position
+    else:
+        print "No transform available"
+        return "failed"
+
+    
+    time.sleep(1)
     self.stop_rotating=False
-    while not rospy.is_shutdown() and self.stop_rotating==False:
-      curr_pose=userdata.base_pose
-      curr_pose[2]+=0.5
-      handle_base = sss.move("base", curr_pose, mode="omni", blocking=False)
-      time.sleep(3)
+    curr_pose=list()
+    curr_pose.append(0)
+    curr_pose.append(0)
+    curr_pose.append(0.1)
+
+    while not rospy.is_shutdown() and self.stop_rotating==False and curr_pose[2]< 3.14:
+      handle_base = sss.move_base_rel("base", curr_pose)
+      print "rotation command sent ..."
+      time.sleep(2)
     print "-->stop rotating"
     userdata.detected=self.label
     return 'finished'
@@ -118,7 +145,7 @@ class Seek(smach.StateMachine):
                 outcomes=['finished','failed'])
         with self:
             smach.StateMachine.add('SETNAME',SetName(),
-                                   transitions={'set':'SELECT_GOAL',
+                                   transitions={'set':'ROTATE',
                                                 'failed':'failed'})
             smach.StateMachine.add('SELECT_GOAL',SelectNavigationGoal(),
                                    transitions={'selected':'MOVE_BASE',
@@ -133,6 +160,7 @@ class Seek(smach.StateMachine):
                                                 'failed':'failed'})
             smach.StateMachine.add('TALK',Talk(),
                                    transitions={'found':'finished',
+                                                #'not_found':'failed',
                                                 'not_found':'ROTATE',
                                                 'failed':'failed'})
 
