@@ -14,6 +14,7 @@ from cob_srvs.srv import Trigger
 from ApproachPose import *
 from ApproachPolygon import *
 from DetectTables import *
+from InvestigateTableObjects import *
 
 class SelectNavigationGoal(smach.State):
 	def __init__(self):
@@ -37,10 +38,18 @@ class SelectNavigationGoal(smach.State):
 	
 class ApproachNextTable(smach.State):
 	def __init__(self):
+		smach.State.__init__(self,
+			outcomes=['found', 'not_found', 'failed'],
+			input_keys=['tables', 'polygon', 'new_computation_flag'],
+			output_keys=['polygon', 'new_computation_flag'])
 		return
 	
 	def execute(self, userdata):
-		return
+		if len(userdata.tables.shapes) == 0: 
+			return 'not_found'
+		userdata.polygon = userdata.tables.shapes.pop()
+		userdata.new_computation_flag = True
+		return 'found'
 
 
 class ObjectExploration(smach.StateMachine):
@@ -74,6 +83,10 @@ class ObjectExploration(smach.StateMachine):
 													'not_reached':'APPROACH_NEXT_TABLE',
 													'failed':'failed'})
 
+			smach.StateMachine.add('INVESTIGATE_TABLE_OBJECTS', InvestigateTableObjects(),
+										transitions={'finished_table':'APPROACH_NEXT_TABLE',
+													'approach_next_pose':'APPROACH_POLYGON',
+													'failed':'failed'})
 
 if __name__ == '__main__':
 	rospy.init_node("object_exploration")
