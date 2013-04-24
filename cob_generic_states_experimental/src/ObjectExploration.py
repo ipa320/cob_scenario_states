@@ -23,16 +23,15 @@ class SelectNavigationGoal(smach.State):
 			input_keys=['base_pose'],
 			output_keys=['base_pose'])
 
-		self.goals = [[0,0,-math.pi/4],[2.5,0,-3*math.pi/4]]
+		self.goals = [[0,0,-math.pi/3],[2.5,0,-3*math.pi/4]]
 		self.ctr = 0
 
 	def execute(self, userdata):
-
-		userdata.base_pose = self.goals[self.ctr]
-		self.ctr+=1
 		if self.ctr == len(self.goals):
 			print "All poses tried, aborting"
 			return 'not_selected'
+		userdata.base_pose = self.goals[self.ctr]
+		self.ctr+=1
 		print ("Selected ", userdata.base_pose, " as nav goal")
 		return 'selected'
 	

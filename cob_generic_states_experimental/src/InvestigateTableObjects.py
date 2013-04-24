@@ -27,7 +27,7 @@ class InvestigateTableObjects(smach.StateMachine):
 		with self:
 
 			smach.StateMachine.add('SET_STUPID_OBJECT_NAME', SetObjectName(),
-										transitions={'success':'DETECT_OBJECTS'})
+										transitions={'success':'approach_next_pose'})#'DETECT_OBJECTS'})
 			smach.StateMachine.add('DETECT_OBJECTS', DetectObjectsBackside(),
 										transitions={'detected':'approach_next_pose',
 													'not_detected':'approach_next_pose',

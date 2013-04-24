@@ -2,6 +2,7 @@
 import roslib
 roslib.load_manifest('cob_generic_states_experimental')
 import rospy
+import copy
 import smach
 import smach_ros
 from simple_script_server import *  # import script
@@ -23,7 +24,6 @@ class ComputeNavigationGoals(smach.State):
 		self.listener = tf.TransformListener()
 
 	def execute(self, userdata):
-		print "FLAG", userdata.new_computation_flag
 		if not userdata.new_computation_flag:
 			return 'computed'
 		rospy.wait_for_service('compute_approach_pose',10)
@@ -45,7 +45,7 @@ class SelectNavigationGoal(smach.State):
 			input_keys=['polygon','goal_poses', 'goal_pose'],
 			output_keys=['goal_pose'])
 		self.listener = tf.TransformListener()
-		self.nogo_area_radius_squared = 0.5*0.5 #in meters, radius the current goal covers
+		self.nogo_area_radius_squared = 1*1 #in meters, radius the current goal covers
 
 	def execute(self, userdata):
 		"""compute closest position to current robot pose"""
@@ -62,13 +62,14 @@ class SelectNavigationGoal(smach.State):
 			dist_squared = (robot_pose[0][0]-pose.position.x)*(robot_pose[0][0]-pose.position.x)+(robot_pose[0][1]-pose.position.y)*(robot_pose[0][1]-pose.position.y)
 			if dist_squared < minimum_distance_squared:
 				minimum_distance_squared = dist_squared
-				closest_pose = pose
+				closest_pose = copy.deepcopy(pose)
 				found_valid_pose = 1
 		if found_valid_pose == 0:
 			return 'no_goals_left'
 		
 		"""delete all poses too close to current goal"""
-		for pose in userdata.goal_poses:
+		for p in range(len(userdata.goal_poses)-1,-1,-1):
+			pose = userdata.goal_poses[p]
 			dist_squared = (closest_pose.position.x-pose.position.x)*(closest_pose.position.x-pose.position.x)+(closest_pose.position.y-pose.position.y)*(closest_pose.position.y-pose.position.y)
 			if dist_squared < self.nogo_area_radius_squared:
 				userdata.goal_poses.remove(pose)
