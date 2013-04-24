@@ -49,7 +49,7 @@ public:
 		node_handle_ = nh;
 		map_resolution_ = 0;
 
-		robot_radius_ = 0.6;	// in [m]
+		robot_radius_ = 0.8;	// in [m]
 
 		static_map_sub_ = node_handle_.subscribe<nav_msgs::OccupancyGrid>("/map", 1, &ComputeApproachPoseNode::updateMapCallback, this);
 
@@ -91,6 +91,25 @@ public:
 		ROS_INFO("ComputeApproachPoseNode: Map received.");
 	}
 
+	// pose_p and closest_point_on_polygon in pixel coordinates!
+	void computeClosestPointOnPolygon(const cv::Mat& map_with_polygon, const Pose& pose_p, Pose& closest_point_on_polygon)
+	{
+		double closest_pixel_distance_squared = 1e10;
+		for (int v=0; v<map_with_polygon.rows; v++)
+		{
+			for (int u=0; u<map_with_polygon.cols; u++)
+			{
+				double dist_squared = 0;
+				if (map_with_polygon.at<uchar>(v,u) == 128 && (dist_squared=(pose_p.x-u)*(pose_p.x-u)+(pose_p.y-v)*(pose_p.y-v))<closest_pixel_distance_squared)
+				{
+					closest_pixel_distance_squared = dist_squared;
+					closest_point_on_polygon.x = u;
+					closest_point_on_polygon.y = v;
+				}
+			}
+		}
+	}
+
 	bool computeApproachPose(cob_3d_mapping_msgs::GetApproachPoseForPolygon::Request& req, cob_3d_mapping_msgs::GetApproachPoseForPolygon::Response& res)
 	{
 		// determine robot pose
@@ -128,6 +147,7 @@ public:
 		// add contours to map
 		cv::Mat map_expanded = map_.clone();
 		cv::drawContours(map_expanded, polygon_contours, -1, cv::Scalar(128), CV_FILLED);
+		cv::Mat map_with_polygon = map_expanded.clone();
 
 		//cv::imshow("map", map_expanded);
 		//cv::waitKey();
@@ -139,9 +159,9 @@ public:
 		//cv::waitKey();
 
 		// compute gradients
-		cv::Mat dx, dy;
-		cv::Sobel(map_expanded, dx, CV_32F, 1, 0, 3);
-		cv::Sobel(map_expanded, dy, CV_32F, 0, 1, 3);
+//		cv::Mat dx, dy;
+//		cv::Sobel(map_expanded, dx, CV_32F, 1, 0, 3);
+//		cv::Sobel(map_expanded, dy, CV_32F, 0, 1, 3);
 
 		// find the individual connected areas
 		std::vector< std::vector<cv::Point> > area_contours;		// first index=contour index;  second index=point index within contour
@@ -177,7 +197,12 @@ public:
 							pose.position.x = pose_m.x;
 							pose.position.y = pose_m.y;
 							pose.position.z = 0;
-							tf::quaternionTFToMsg(tf::createQuaternionFromYaw(atan2(-dy.at<float>(y,x),-dx.at<float>(y,x))), pose.orientation);
+
+							Pose closest_point_on_polygon;
+							computeClosestPointOnPolygon(map_with_polygon, pose_p, closest_point_on_polygon);
+
+							tf::quaternionTFToMsg(tf::createQuaternionFromYaw(atan2(closest_point_on_polygon.y-pose_p.y, closest_point_on_polygon.x-pose_p.x)), pose.orientation);
+							//tf::quaternionTFToMsg(tf::createQuaternionFromYaw(atan2(-dy.at<float>(y,x),-dx.at<float>(y,x))), pose.orientation);
 							res.approach_poses.poses.push_back(pose);
 						}
 
