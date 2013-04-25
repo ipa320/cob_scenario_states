@@ -119,13 +119,15 @@ class Rotate(smach.State):
         elif det in self.false_detections:
         # false person is detected
           print "Already in false detections"
-       #  person detected is unknown
+       #  person detected is unknown - only react the first time
         elif det == "Unknown":
           print "Unknown face detected"
-          #sss.say(['Hi! .'%(str(det),str(userdata.id))])
+          sss.say(['Hi! Nice to meet you, but I am still searching for %s.'%str(userdata.id)])
+          self.false_detections.append("Unknown")
       # wrong face is detected the first time
         else:
           self.false_detections.append(det)
+          print "known - wrong face detected"
           sss.say(['Hello %s! Have you seen %s.'%(str(det),str(userdata.id))])
       #clear detection list, so it is not checked twice
       del self.detections[:]
