@@ -1,0 +1,22 @@
+<package>
+  <description brief="cob_compute_approach_pose">
+
+     cob_compute_approach_pose
+
+  </description>
+  <author>Georg Arbeiter</author>
+  <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_compute_approach_pose</url>
+
+  <depend package="pcl"/>
+  <depend package="roscpp"/>
+  <depend package="nav_msgs"/>
+  <depend package="opencv2"/>
+  <depend package="tf"/>
+  <depend package="cob_3d_mapping_msgs"/>
+  <depend package="cob_3d_mapping_common"/>
+
+</package>
+
+
