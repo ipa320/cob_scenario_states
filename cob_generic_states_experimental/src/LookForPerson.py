@@ -26,7 +26,7 @@ from tf.transformations import euler_from_quaternion
 
 class SelectNavigationGoal(smach.State):
   def __init__(self):
-    smach.State.__init__(self, 
+    smach.State.__init__(self,
       outcomes=['selected','not_selected','failed'],
       output_keys=['base_pose'])
     self.goals = []
@@ -66,38 +66,42 @@ class Rotate(smach.State):
     self.tf = TransformListener()
     smach.State.__init__(self,
       outcomes=['finished','failed'],
-      input_keys=['base_pose','stop_rotating'],
+      input_keys=['base_pose','stop_rotating','id'],
       output_keys=['detected'])
-    self.stop_rotating=False
     rospy.Subscriber("/cob_people_detection/detection_tracker/face_position_array",DetectionArray, self.callback)
-    self.label="Unknown"
+    self.stop_rotating=False
+    self.detections=      list()
+    self.false_detections=list()
 
   def callback(self,msg):
+    # go through list of detections and append them to detection list
     if len(msg.detections) >0:
-        self.label=msg.detections[0].label
-        self.stop_rotating=True
-    else:
-        a=1
+      #clear detection list
+      del self.detections[:]
+      for i in xrange( len(msg.detections)):
+        self.detections.append(msg.detections[i].label)
     return
 
   def execute(self, userdata):
-    sss.say(["I am going to look around now"])
+    sss.say(["I am going to take a look around now."])
 
+    # get position from tf
     if self.tf.frameExists("/base_link") and self.tf.frameExists("/map"):
         t = self.tf.getLatestCommonTime("/base_link", "/map")
         position, quaternion = self.tf.lookupTransform("/base_link", "/map", t)
+  # calculate angles from quaternion
 	[r,p,y]=euler_from_quaternion(quaternion)
-	print r
-	print p
-	print y
-        print position
+	#print r
+	#print p
+	#print y
+  #print position
     else:
         print "No transform available"
         return "failed"
 
-    
     time.sleep(1)
     self.stop_rotating=False
+    # create relative pose - x,y,theta
     curr_pose=list()
     curr_pose.append(0)
     curr_pose.append(0)
@@ -105,10 +109,29 @@ class Rotate(smach.State):
 
     while not rospy.is_shutdown() and self.stop_rotating==False and curr_pose[2]< 3.14:
       handle_base = sss.move_base_rel("base", curr_pose)
-      print "rotation command sent ..."
+
+      #check in detection and react appropriately
+      for det in self.detections:
+        # right person is detected
+        if det == userdata.id:
+          self.stop_rotating=True
+          sss.say(['I have found you, %s! Nice to see you.'%str(det)])
+        elif det in self.false_detections:
+        # false person is detected
+          print "Already in false detections"
+       #  person detected is unknown
+        elif det == "Unknown":
+          print "Unknown face detected"
+          #sss.say(['Hi! .'%(str(det),str(userdata.id))])
+      # wrong face is detected the first time
+        else:
+          self.false_detections.append(det)
+          sss.say(['Hello %s! Have you seen %s.'%(str(det),str(userdata.id))])
+      #clear detection list, so it is not checked twice
+      del self.detections[:]
       time.sleep(2)
+
     print "-->stop rotating"
-    userdata.detected=self.label
     return 'finished'
 
 class Talk(smach.State):
@@ -130,12 +153,11 @@ class Talk(smach.State):
     print "wanted: %s"%name
     print "found:  %s"% userdata.detected
     if userdata.id != userdata.detected:
-      print name
       #speech=self.phrases[3]+name+" !"
-      sss.say(['No, you are not %s'%str(name)])
+      sss.say(['No, I am sorry, but you are not %s.'%str(name)])
       return 'not_found'
     else:
-      sss.say(['I have found you, %s !'%str(name)])
+      sss.say(['I have found you, %s! Nice to see you.'%str(name)])
       time.sleep(2)
       return 'found'
 
@@ -156,7 +178,7 @@ class Seek(smach.StateMachine):
                                                 'not_reached':'failed',
                                                 'failed':'failed'})
             smach.StateMachine.add('ROTATE',Rotate(),
-                                   transitions={'finished':'TALK',
+                                   transitions={'finished':'finished',
                                                 'failed':'failed'})
             smach.StateMachine.add('TALK',Talk(),
                                    transitions={'found':'finished',
