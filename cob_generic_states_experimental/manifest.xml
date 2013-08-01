@@ -19,10 +19,10 @@
   <depend package="cob_script_server"/>
   <depend package="cob_object_detection_msgs"/>
   <depend package="cob_people_detection_msgs"/>
+  <depend package="accompany_uva_msg"/>
+  <depend package="geometry_msgs"/>
   <depend package="visualization_msgs"/>
-
   <python path="${prefix}/states"/>
-
 </package>
 
 
