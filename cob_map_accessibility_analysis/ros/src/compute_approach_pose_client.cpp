@@ -9,21 +9,21 @@
 int main(int argc, char **argv)
 {
 	cob_3d_mapping::Polygon p1;
-	Eigen::Vector3f v;
-	std::vector<Eigen::Vector3f> vv;
-	p1.id = 1;
-	p1.normal << 0.0,0.0,1.0;
-	p1.d = -1;
-	v << 1,-2,1;
+	Eigen::Vector2f v;
+	std::vector<Eigen::Vector2f> vv;
+	p1.id_ = 1;
+	p1.normal_ << 0.0,0.0,1.0;
+	p1.d_ = -1;
+	v << 1,-2;//,1;
 	vv.push_back(v);
-	v << 1,-3,1;
+	v << 1,-3;//,1;
 	vv.push_back(v);
-	v << 2,-3,1;
+	v << 2,-3;//,1;
 	vv.push_back(v);
-	v << 2,-2,1;
+	v << 2,-2;//,1;
 	vv.push_back(v);
-	p1.contours.push_back(vv);
-	p1.holes.push_back(false);
+	p1.contours_.push_back(vv);
+	p1.holes_.push_back(false);
 	cob_3d_mapping_msgs::Shape p_msg;
 	toROSMsg(p1, p_msg);
 
