@@ -26,9 +26,9 @@ class ComputeNavigationGoals(smach.State):
 	def execute(self, userdata):
 		if not userdata.new_computation_flag:
 			return 'computed'
-		rospy.wait_for_service('compute_approach_pose',10)
+		rospy.wait_for_service('map_accessibility_analysis/map_polygon_accessibility_check',10)
 		try:
-			get_approach_pose = rospy.ServiceProxy('compute_approach_pose', GetApproachPoseForPolygon)
+			get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_polygon_accessibility_check', GetApproachPoseForPolygon)
 			res = get_approach_pose(userdata.polygon)
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
