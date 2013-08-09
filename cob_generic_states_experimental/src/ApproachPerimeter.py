@@ -103,7 +103,7 @@ class ApproachPerimeter(smach.StateMachine):
 		smach.StateMachine.__init__(self,
 			outcomes=['reached', 'not_reached', 'failed'],
 			input_keys=['center', 'radius', 'rotational_sampling_step', 'goal_pose_selection_strategy', 'new_computation_flag'],
-			output_keys=[])
+			output_keys=['new_computation_flag'])
 		with self:
 
 			smach.StateMachine.add('COMPUTE_GOALS', ComputeNavigationGoals(),
@@ -135,7 +135,7 @@ if __name__ == '__main__':
 		sm.userdata.new_computation_flag = True
 		sm.userdata.goal_pose_selection_strategy = 'closest_to_target_gaze_direction'  #'closest_to_target_gaze_direction', 'closest_to_robot'
 		
-			# introspection -> smach_viewer
+		# introspection -> smach_viewer
 		sis = smach_ros.IntrospectionServer('map_accessibility_analysis_introspection', sm, '/MAP_ACCESSIBILITY_ANALYSIS')
 		sis.start()
 		
