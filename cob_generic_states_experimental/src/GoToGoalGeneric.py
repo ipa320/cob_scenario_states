@@ -24,6 +24,10 @@ import threading
 from geometry_msgs.msg import Pose2D
 
 ############### PARAMETER SETTINGS #######################
+
+global MAP_BOUNDS
+MAP_BOUNDS=[-1.0,4.5,-0.5,1.5] # x_min,x_max,y_min,y_max
+
 # threshold defines whether a goal is approached close enough
 global APPROACHED_THRESHOLD
 APPROACHED_THRESHOLD=0.3 #[m]
@@ -295,9 +299,6 @@ class ObserveGeneric(smach.State):
 
 
   def execute(self, userdata):
-    #TODO temp
-    if DOUBLECHECK==True:
-      userdata.person_detected_at_goal=False
     self.generic_listener.reset()
     self.rotate_while_observing=True
     self.generic_listener.config=userdata.callback_config
@@ -331,7 +332,7 @@ class ObserveGeneric(smach.State):
       rel_pose.append(0)
       rel_pose.append(0)
       rel_pose.append(0.1)
-      for i in xrange(20):
+      for i in xrange(70):
         handle_base = sss.move_base_rel("base", rel_pose,blocking =True)
 
         # pick detection label which is majority in list
@@ -354,6 +355,37 @@ class ObserveGeneric(smach.State):
           userdata.person_detected_at_goal=False
       return 'not_detected'
 
+class SetRandomGoal(smach.State):
+  def __init__(self):
+    smach.State.__init__(self,
+      outcomes=['finished','failed'],
+      input_keys=['current_goal'],
+      output_keys=['current_goal'])
+
+  def execute(self, userdata):
+      print "NAVIGATING TO RANDOM GOAL."
+      map_bounds=MAP_BOUNDS
+      new_goal=Pose2D()
+      new_goal.x=random.uniform(map_bounds[0],map_bounds[1]) # x
+      new_goal.y=random.uniform(map_bounds[2],map_bounds[3]) # y
+      new_goal.theta=random.uniform(0,2*3.14) # theta
+      userdata.current_goal=new_goal
+      return 'finished'
+
+class FakeState(smach.State):
+  def __init__(self):
+    smach.State.__init__(self,
+        outcomes=['set','failed'],
+        input_keys=['script_time','current_goal','position_last_seen','person_name'],
+        output_keys=['script_time','current_goal','person_name','position_last_seen'])
+
+  def execute(self,userdata):
+    pos={"name":"fake","x":1.5,"y":-1.5,"theta":0.0}
+    userdata.position_last_seen=pos
+    userdata.person_name="Caro"
+    userdata.current_goal=pos
+    #userdata.script_time=3
+    return 'set'
 
 class GenericListener():
   def __init__(self,target_frame=None,config=None):
@@ -566,4 +598,7 @@ class SearchPersonGeneric(smach.StateMachine):
             smach.StateMachine.add("ROTATE",ObserveGeneric(),
                                     transitions={'failed':'failed',
                                                   'detected':'GO',
-                                                  'not_detected':'finished'})
+                                                  'not_detected':'RANDOMGOAL'})
+            smach.StateMachine.add("RANDOMGOAL",SetRandomGoal(),
+                                    transitions={'failed':'failed',
+                                                  'finished':'GO'})
