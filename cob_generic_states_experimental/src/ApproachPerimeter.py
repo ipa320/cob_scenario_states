@@ -22,7 +22,27 @@
 # \date Date of creation: August 2013
 #
 # \brief
-#   tbd
+#   Approaches a pose on the perimeter of a circle and checks the accessibility for moving to this pose beforehand with the services provided by cob_map_accessibility_analysis.
+#   To use this state machine the map analysis has to be started first: roslaunch cob_map_accessibility_analysis map_accessibility_analysis.launch
+#
+#   Input keys:
+#   'center': Pose2D defining the center point of the circle to be visited. You may provide an orientation angle as well, which defines the "viewing direction" of the target.
+#   'radius': Double value of the radius of the circle.
+#   'rotational_sampling_step': Double value of the angular sampling step with in [rad] of goal poses on the perimeter of the circle.
+#   'goal_pose_selection_strategy': defines which of the possible poses on the circle shall be preferred
+#                                   'closest_to_target_gaze_direction' (commands the robot to the pose which is closest to the target's viewing direction, useful e.g. for living targets),
+#                                   'closest_to_robot' (commands the robot to the pose closest to the current robot position, useful e.g. for inspecting a location),
+#                                   Independent of the mode, this state machine always terminates once a goal position could be reached,
+#                                   however, to visit multiple locations on the same circle the state_machine has to be called with 'new_computation_flag' set to False
+#                                   and an appropriate 'invalidate_other_poses_radius' until 'not_reached' is returned from 'SELECT_GOAL'
+#                                   Internally, the remaining, not yet visited states, are stored in the list 'goal_poses_verified'.
+#   'invalidate_other_poses_radius': Within a circle of this radius (in [m]) around the current goal pose all other valid poses become deleted from userdata.goal_poses_verified
+#                                    so that the next accessible pose a a certain minimum distance from the current goal pose. 
+#   'new_computation_flag': If True, the poses on the defined circle are examined for accessibility, else the old list from userdata.goal_poses_verified is used again.
+#                           This variable is used to command the robot to different perspectives on the same goal, which are computed at the first call of this state machine.
+#
+#   Output_keys:
+#   'new_computation_flag': see above
 #
 #################################################################
 #
@@ -79,7 +99,7 @@ class ComputeNavigationGoals(smach.State):
 		smach.State.__init__(self,
 			outcomes=['computed', 'failed'],
 			input_keys=['center', 'radius', 'rotational_sampling_step', 'new_computation_flag'],
-			output_keys=['goal_poses', 'gaze_direction_goal_pose', 'new_computation_flag'])
+			output_keys=['goal_poses_verified', 'gaze_direction_goal_pose', 'new_computation_flag'])
 
 	def execute(self, userdata):
 		sf = ScreenFormat("ComputeNavigationGoals")
@@ -92,7 +112,7 @@ class ComputeNavigationGoals(smach.State):
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 			return 'failed'
-		userdata.goal_poses = res.accessible_poses_on_perimeter
+		userdata.goal_poses_verified = res.accessible_poses_on_perimeter
 		userdata.new_computation_flag = False
 		gaze_direction_goal_pose = Pose2D()
 		gaze_direction_goal_pose.x = userdata.center.x + userdata.radius * math.cos(userdata.center.theta)
@@ -105,10 +125,9 @@ class SelectNavigationGoal(smach.State):
 	def __init__(self):
 		smach.State.__init__(self,
 			outcomes=['computed', 'no_goals_left', 'failed'],
-			input_keys=['goal_poses', 'gaze_direction_goal_pose', 'goal_pose_selection_strategy'],
+			input_keys=['goal_poses_verified', 'gaze_direction_goal_pose', 'goal_pose_selection_strategy', 'invalidate_other_poses_radius'],
 			output_keys=['goal_pose'])
 		self.listener = tf.TransformListener(True, rospy.Duration(20.0))
-		self.nogo_area_radius_squared = 1*1 #in meters, radius the current goal covers
 		
 	def execute(self, userdata):
 		sf = ScreenFormat("SelectNavigationGoal")
@@ -133,7 +152,7 @@ class SelectNavigationGoal(smach.State):
 		closest_pose = Pose2D()
 		minimum_distance_squared = 100000.0
 		found_valid_pose = 0
-		for pose in userdata.goal_poses:
+		for pose in userdata.goal_poses_verified:
 			dist_squared = (goal_pose.x-pose.x)*(goal_pose.x-pose.x)+(goal_pose.y-pose.y)*(goal_pose.y-pose.y)
 			if dist_squared < minimum_distance_squared:
 				minimum_distance_squared = dist_squared
@@ -143,11 +162,12 @@ class SelectNavigationGoal(smach.State):
 			return 'no_goals_left'
 		
 		"""delete all poses too close to current goal"""
-		for p in range(len(userdata.goal_poses)-1,-1,-1):
-			pose = userdata.goal_poses[p]
+		nogo_area_radius_squared = userdata.invalidate_other_poses_radius * userdata.invalidate_other_poses_radius
+		for p in range(len(userdata.goal_poses_verified)-1,-1,-1):
+			pose = userdata.goal_poses_verified[p]
 			dist_squared = (closest_pose.x-pose.x)*(closest_pose.x-pose.x)+(closest_pose.y-pose.y)*(closest_pose.y-pose.y)
-			if dist_squared < self.nogo_area_radius_squared:
-				userdata.goal_poses.remove(pose)
+			if dist_squared < nogo_area_radius_squared:
+				userdata.goal_poses_verified.remove(pose)
 		
 		userdata.goal_pose=[closest_pose.x, closest_pose.y, closest_pose.theta]
 		return 'computed'
@@ -158,7 +178,7 @@ class ApproachPerimeter(smach.StateMachine):
 	def __init__(self):
 		smach.StateMachine.__init__(self,
 			outcomes=['reached', 'not_reached', 'failed'],
-			input_keys=['center', 'radius', 'rotational_sampling_step', 'goal_pose_selection_strategy', 'new_computation_flag'],
+			input_keys=['center', 'radius', 'rotational_sampling_step', 'goal_pose_selection_strategy', 'invalidate_other_poses_radius', 'new_computation_flag'],
 			output_keys=['new_computation_flag'])
 		with self:
 
@@ -178,6 +198,9 @@ class ApproachPerimeter(smach.StateMachine):
 						remapping = {'base_pose':'goal_pose'})
 
 
+
+"""exemplary usage of this state machine"""
+
 if __name__ == '__main__':
 	try:
 		rospy.init_node("approach_perimeter")
@@ -189,6 +212,7 @@ if __name__ == '__main__':
 		sm.userdata.radius = 0.8
 		sm.userdata.rotational_sampling_step = 10.0/180.0*math.pi
 		sm.userdata.new_computation_flag = True
+		sm.userdata.invalidate_other_poses_radius = 1.0 #in meters, radius the current goal covers
 		sm.userdata.goal_pose_selection_strategy = 'closest_to_target_gaze_direction'  #'closest_to_target_gaze_direction', 'closest_to_robot'
 		
 		# introspection -> smach_viewer

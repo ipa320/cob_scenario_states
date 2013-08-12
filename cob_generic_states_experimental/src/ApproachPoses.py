@@ -23,7 +23,23 @@
 # \date Date of creation: August 2013
 #
 # \brief
-#   tbd
+#   Approaches a pose or a list of poses and checks the accessibility for moving to these poses beforehand with the services provided by cob_map_accessibility_analysis.
+#   To use this state machine the map analysis has to be started first: roslaunch cob_map_accessibility_analysis map_accessibility_analysis.launch
+#
+#   Input keys:
+#   'goal_poses': array of geometry_msgs/Pose2D objects, each describing a goal position of the robot
+#   'goal_pose_application': defines the mode of usage of the provided goal poses
+#                            'visit_all_in_order' (commands the robot to all poses in the provided order),
+#                            'visit_all_nearest' (commands the robot to all poses using the closest next pose each time),
+#                            'use_as_alternatives' (visits the first pose of the list that is reachable)
+#                            Independent of the mode, this state machine always terminates once a goal position could be reached,
+#                            so for the visit_all modes the state_machine has to be called until 'not_reached' is returned from 'SELECT_GOAL'
+#                            Internally, the remaining, not yet visited states, are stored in the list 'goal_poses_verified' for the visit_all modes.
+#   'new_computation_flag': If True, the provided list of poses is examined for accessibility, else the old list from userdata.goal_poses_verified is used again.
+#                           This variable is used by the visit_all modes, which work on the already existing list of goal poses after the first call.
+#
+#   Output_keys:
+#   'new_computation_flag': see above
 #
 #################################################################
 #
@@ -192,6 +208,8 @@ class ApproachPoses(smach.StateMachine):
 									'failed':'failed'},
 						remapping = {'base_pose':'goal_pose'})
 
+
+"""exemplary usage of this state machine"""
 
 if __name__ == '__main__':
 	try:

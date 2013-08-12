@@ -24,7 +24,21 @@
 # \date Date of creation: August 2013
 #
 # \brief
-#   tbd
+#   Approaches one or multiple poses on the perimeter of an arbitrary polygon and checks the accessibility for moving to this pose beforehand with the services provided by cob_map_accessibility_analysis.
+#   To use this state machine the map analysis has to be started first: roslaunch cob_map_accessibility_analysis map_accessibility_analysis.launch
+#
+#   Input keys:
+#   'polygon': cob_3d_mapping_msgs/Shape defining the polygon whose perimeter is to be visited by the robot.
+#   'invalidate_other_poses_radius': Within a circle of this radius (in [m]) around the current goal pose all other valid poses become deleted from userdata.goal_poses_verified
+#                                    so that the next accessible pose a a certain minimum distance from the current goal pose. 
+#   'new_computation_flag': If True, the poses on the defined circle are examined for accessibility, else the old list from userdata.goal_poses_verified is used again.
+#                           This variable is used to command the robot to different perspectives on the same goal, which are computed at the first call of this state machine.
+#                           This state machine always terminates once a goal position could be reached, however, to visit multiple locations around the same polygon
+#                           the state_machine has to be called with 'new_computation_flag' set to False and an appropriate 'invalidate_other_poses_radius'
+#                           until 'not_reached' is returned from 'SELECT_GOAL'. Internally, the remaining, not yet visited states, are stored in the list 'goal_poses_verified'.
+#
+#   Output_keys:
+#   'new_computation_flag': see above
 #
 #################################################################
 #
@@ -87,7 +101,7 @@ class ComputeNavigationGoals(smach.State):
 		smach.State.__init__(self,
 			outcomes=['computed', 'failed'],
 			input_keys=['polygon','new_computation_flag'],
-			output_keys=['goal_poses','new_computation_flag'])
+			output_keys=['goal_poses_verified','new_computation_flag'])
 
 	def execute(self, userdata):
 		sf = ScreenFormat("ComputeNavigationGoals")
@@ -100,7 +114,7 @@ class ComputeNavigationGoals(smach.State):
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 			return 'failed'
-		userdata.goal_poses = res.approach_poses.poses
+		userdata.goal_poses_verified = res.approach_poses.poses
 		userdata.new_computation_flag = False
 		return 'computed'
 	
@@ -109,10 +123,9 @@ class SelectNavigationGoal(smach.State):
 	def __init__(self):
 		smach.State.__init__(self,
 			outcomes=['computed', 'no_goals_left', 'failed'],
-			input_keys=['goal_poses'],
+			input_keys=['goal_poses_verified', 'invalidate_other_poses_radius'],
 			output_keys=['goal_pose'])
 		self.listener = tf.TransformListener(True, rospy.Duration(20.0))
-		self.nogo_area_radius_squared = 1*1 #in meters, radius the current goal covers
 
 	def execute(self, userdata):
 		sf = ScreenFormat("SelectNavigationGoal")
@@ -127,7 +140,7 @@ class SelectNavigationGoal(smach.State):
 		closest_pose = Pose()
 		minimum_distance_squared = 100000.0
 		found_valid_pose = 0
-		for pose in userdata.goal_poses:
+		for pose in userdata.goal_poses_verified:
 			dist_squared = (robot_pose[0][0]-pose.position.x)*(robot_pose[0][0]-pose.position.x)+(robot_pose[0][1]-pose.position.y)*(robot_pose[0][1]-pose.position.y)
 			if dist_squared < minimum_distance_squared:
 				minimum_distance_squared = dist_squared
@@ -137,11 +150,12 @@ class SelectNavigationGoal(smach.State):
 			return 'no_goals_left'
 		
 		"""delete all poses too close to current goal"""
-		for p in range(len(userdata.goal_poses)-1,-1,-1):
-			pose = userdata.goal_poses[p]
+		nogo_area_radius_squared = userdata.invalidate_other_poses_radius * userdata.invalidate_other_poses_radius
+		for p in range(len(userdata.goal_poses_verified)-1,-1,-1):
+			pose = userdata.goal_poses_verified[p]
 			dist_squared = (closest_pose.position.x-pose.position.x)*(closest_pose.position.x-pose.position.x)+(closest_pose.position.y-pose.position.y)*(closest_pose.position.y-pose.position.y)
-			if dist_squared < self.nogo_area_radius_squared:
-				userdata.goal_poses.remove(pose)
+			if dist_squared < nogo_area_radius_squared:
+				userdata.goal_poses_verified.remove(pose)
 		
 		"""convert goal pose"""
 		[roll, pitch, yaw] = euler_from_quaternion([closest_pose.orientation.x,
@@ -157,7 +171,7 @@ class ApproachPolygon(smach.StateMachine):
 	def __init__(self):
 		smach.StateMachine.__init__(self,
 			outcomes=['reached', 'not_reached', 'failed'],
-			input_keys=['polygon','new_computation_flag'],
+			input_keys=['polygon', 'invalidate_other_poses_radius', 'new_computation_flag'],
 			output_keys=['new_computation_flag'])
 		with self:
 
@@ -176,6 +190,10 @@ class ApproachPolygon(smach.StateMachine):
 												'failed':'failed'},
 									remapping = {'base_pose':'goal_pose'})
 
+
+
+
+"""exemplary usage of this state machine"""
 
 _DATATYPES = {}
 _DATATYPES[PointField.INT8]    = ('b', 1)
@@ -261,6 +279,7 @@ if __name__ == '__main__':
 		print "4"
 		sm.userdata.polygon.points.append(pc_msg)
 		sm.userdata.polygon.holes.append(False)
+		sm.userdata.invalidate_other_poses_radius = 1.0; #in meters, radius the current goal covers
 		sm.userdata.new_computation_flag = True
 
 		# introspection -> smach_viewer
