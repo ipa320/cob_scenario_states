@@ -2,6 +2,7 @@
 
 
 #TODO transformation from coordinate fmrame of camera to map necessary
+# doublecheck.....
 
 ############### PARAMETER SETTINGS #######################
 import roslib
@@ -151,8 +152,28 @@ class GoToGoalGeneric(smach.State):
 
 
   def execute(self,userdata):
-    # set generic listener to  userdata config
     self.generic_listener.config=userdata.callback_config
+    self.activate_callback(reset_detections=True)
+
+    if DOUBLECHECK==True:
+      userdata.person_detected_at_goal=False
+      self.person_detected_at_current_goal=False
+      self.generic_listener.reset()
+
+    movement_unecessary=self.utils.goal_approached(userdata.current_goal,get_transform_listener())
+    if movement_unecessary==True:
+      print "MOVE UNNECESSARY waiting for detections"
+      for i in xrange(5):
+        self.check_callback(userdata.person_name)
+        time.sleep(1)
+      if self.person_detected_at_current_goal==True:
+          return 'approached_goal_found'
+      else:
+          return 'approached_goal_not_found'
+
+
+
+    # set generic listener to  userdata config
 
     # reset update goal
     self.update_goal=False
@@ -181,12 +202,8 @@ class GoToGoalGeneric(smach.State):
     #elif userdata.search_while_moving==True:
     if True:
       print "moving towards goal while searching"
-      # try reaching pose
-      if DOUBLECHECK==True:
-        userdata.person_detected_at_goal=False
 
       # activate processing of external information
-      self.activate_callback(reset_detections=True)
       # command robot move
       self.command_move(userdata.current_goal,block_program=False)
 
@@ -279,6 +296,9 @@ class ObserveGeneric(smach.State):
 
   def execute(self, userdata):
     #TODO temp
+    if DOUBLECHECK==True:
+      userdata.person_detected_at_goal=False
+    self.generic_listener.reset()
     self.rotate_while_observing=True
     self.generic_listener.config=userdata.callback_config
 
@@ -325,13 +345,14 @@ class ObserveGeneric(smach.State):
         # check what is returned from generic listener
         if new_goal !=False:
             userdata.position_last_seen=new_goal
+            userdata.current_goal=new_goal
             userdata.person_detected_at_goal=True
             # stop observation
             sss.stop("base")
             return 'detected'
         else:
           userdata.person_detected_at_goal=False
-          return 'not_detected'
+      return 'not_detected'
 
 
 class GenericListener():
@@ -354,6 +375,11 @@ class GenericListener():
 
     rospy.Subscriber(self.config["topicname"],self.config["msgclass"], self.listen)
     self.target_frame=target_frame
+
+
+
+  def reset(self):
+    del self.detections[:]
 
   def listen(self,msg):
 
