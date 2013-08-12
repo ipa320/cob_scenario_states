@@ -25,6 +25,9 @@ import threading
 # topic where person positions are provided, tracked by tha accompany tracker
 global TOPIC_TRACKED_HUMANS
 TOPIC_TRACKED_HUMANS="/accompany/TrackedHumans"
+#  set to true if you want to double check if the person is still at the goal
+global DOUBLECHECK
+DOUBLECHECK=True
 
 ###############''WORKAROUND FOR TRANSFORMLISTENER ISSUE####################
 _tl=None
@@ -41,7 +44,7 @@ def get_transform_listener():
 class GoToGoal(smach.State):
   def __init__(self):
     smach.State.__init__(self,
-        outcomes=['approached_goal','failed'],
+        outcomes=['failed','approached_goal_found','approached_goal_not_found','updated_goal'],
         input_keys=[ 'search_while_moving','current_goal','position_last_seen','person_name'],
         output_keys=['search_while_moving','current_goal','position_last_seen','person_detected_at_goal','person_name'])
     self.detections=list()
@@ -51,9 +54,10 @@ class GoToGoal(smach.State):
     self.person_detected_at_current_goal=False
     self.update_goal=False
     self.new_goal=False
+    self.current_goal_approached=False
 
 
-  def check_callback(self,msg):
+  def check_callback(self,name):
     # This function is supposed to do the following:
     # - listen to topic
     # - when callback is activated:
@@ -63,11 +67,11 @@ class GoToGoal(smach.State):
 
     #listening to generic topic
 
-    if callback_activated == True:
-      print "callback is active"
+    if self.callback_activated == True:
       # get pose for name
-      (name,self.new_goal)=self.generic_listener.get_pose_for_name(userdata.person_name)
+      (name,self.new_goal)=self.generic_listener.get_pose_for_name(name)
       if self.new_goal!=False:
+        print self.new_goal
         self.update_goal=self.goals_differ(self.new_goal,userdata.current_goal,SIMILAR_GOAL_THRESHOLD)
         # if goal is not updated but detection was available - person is
         # detected at current goal - if goal is updated person is NOT detected
@@ -173,7 +177,7 @@ class GoToGoal(smach.State):
         #check every second for goal updates
         time.sleep(1)
         # when external information makes change of goals necessary
-        self.check_callback()
+        self.check_callback(userdata.person_name)
         if self.update_goal==True:
           # internal  ---------------
           stop_base=True
@@ -184,9 +188,10 @@ class GoToGoal(smach.State):
         else:
           #TODO somehow get status goal approached
 
+          self.current_goal_approached=False
           # when goal has been approached and person was detected in the
           # process
-          if self.goal_approached==True and self.person_detected_at_current_goal==True:
+          if self.current_goal_approached==True and self.person_detected_at_current_goal==True:
             # internal flags------
             stop_base=True
             # external flags------
@@ -196,7 +201,7 @@ class GoToGoal(smach.State):
 
           # when goal has been approached but person was NOT detected in the
           # process
-          elif self.goal_approached==True and self.person_detected_at_current_goal==False:
+          elif self.current_goal_approached==True and self.person_detected_at_current_goal==False:
             # internal flags------
             stop_base=True
             # external flags------
@@ -246,14 +251,16 @@ class GenericListener():
                    "argname_position":["location","point"],
                    "argname_header":["location","header"],
                    "topicname":TOPIC_TRACKED_HUMANS,
-                   "msgtype":"TrackedHumans"}
+                   "msgclass":TrackedHumans}
     else:
       self.config=config
 
     # initialize variables
     self.detections=list()
     #TODO get this to work
-    rospy.Subscriber(self.config["topicname"],cons(), self.listen)
+
+
+    rospy.Subscriber(self.config["topicname"],self.config["msgclass"], self.listen)
     self.target_frame=target_frame
 
   def listen(self,msg):
@@ -271,23 +278,27 @@ class GenericListener():
 
 
       else:
-        position=extract_from_msg(self.config["argname_position"])
-        name=extract_from_msg(self.config["argname_position"])
-        header=extract_from_msg(self.config["argname_header"])
-        frame=extract_from_msg(self.config["argname_frame"])
+        position=self.extract_from_msg(d,self.config["argname_position"])
+        name=self.extract_from_msg(d,self.config["argname_position"])
+        header=self.extract_from_msg(d,self.config["argname_header"])
+        frame=self.extract_from_msg(d,self.config["argname_frame"])
 
 
 
         print "-----------------------------------------------------"
+        print "-----------------------------------------------------"
         print name
+        print "-----------------------------------------------------"
         print position
+        print "-----------------------------------------------------"
         print frame
+        print "-----------------------------------------------------"
         print "-----------------------------------------------------"
 
         # turn position to pose
         pose=PoseStamped()
         pose.header=header
-        pose.position=position
+        pose.pose.position=position
 
         # if necessary transform pose
         if frame !=self.target_frame:
@@ -297,15 +308,15 @@ class GenericListener():
           print "trafo not necessary"
           t_pose=pose
 
-        self.detections.append(name,t_pose.position)
+        self.detections.append((name,t_pose.pose.position))
 
 
-  def extract_from_msg(self,keyword_list):
+  def extract_from_msg(self,d,keyword_list):
         if len(keyword_list)>1:
           att_it=d
           for syl in keyword_list:
             att_it=getattr(att_it,str(syl))
-          position=att_it
+          val=att_it
         else:
           val=getattr(d,keyword_list)
         return val
@@ -323,7 +334,7 @@ class GenericListener():
           if name == str(n):
             return (n,p)
         #extract pose for name return false if not present
-    return False
+    return (name,False)
 
 class Utils():
   def __init__(self):
