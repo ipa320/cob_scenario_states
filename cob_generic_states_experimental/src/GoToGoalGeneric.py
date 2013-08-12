@@ -20,14 +20,21 @@ from tf.transformations import euler_from_quaternion
 import tf
 import time
 import threading
+from geometry_msgs.msg import Pose2D
 
 ############### PARAMETER SETTINGS #######################
+# threshold defines whether a goal is approached close enough
+global APPROACHED_THRESHOLD
+APPROACHED_THRESHOLD=0.3 #[m]
 # topic where person positions are provided, tracked by tha accompany tracker
 global TOPIC_TRACKED_HUMANS
 TOPIC_TRACKED_HUMANS="/accompany/TrackedHumans"
 #  set to true if you want to double check if the person is still at the goal
 global DOUBLECHECK
 DOUBLECHECK=True
+# threshold defines whether a goal is similar to another goal 
+global SIMILAR_GOAL_THRESHOLD
+SIMILAR_GOAL_THRESHOLD=0.1 #[m]
 
 ###############''WORKAROUND FOR TRANSFORMLISTENER ISSUE####################
 _tl=None
@@ -41,11 +48,11 @@ def get_transform_listener():
     return _tl
 #################################################################################
 
-class GoToGoal(smach.State):
+class GoToGoalGeneric(smach.State):
   def __init__(self):
     smach.State.__init__(self,
         outcomes=['failed','approached_goal_found','approached_goal_not_found','updated_goal'],
-        input_keys=[ 'search_while_moving','current_goal','position_last_seen','person_name'],
+        input_keys=[ 'callback_config','search_while_moving','current_goal','position_last_seen','person_name'],
         output_keys=['search_while_moving','current_goal','position_last_seen','person_detected_at_goal','person_name'])
     self.detections=list()
     self.callback_activated=False
@@ -53,6 +60,7 @@ class GoToGoal(smach.State):
     self.utils=Utils()
     self.person_detected_at_current_goal=False
     self.update_goal=False
+    self.current_goal=False
     self.new_goal=False
     self.current_goal_approached=False
 
@@ -69,10 +77,13 @@ class GoToGoal(smach.State):
 
     if self.callback_activated == True:
       # get pose for name
-      (name,self.new_goal)=self.generic_listener.get_pose_for_name(name)
+      (name,self.new_goal)=self.generic_listener.get_pose_for_name(name=name)
+      #print "I got this from a generic callback"
+      #print name
+      #print self.new_goal
+      #print "------------------"
       if self.new_goal!=False:
-        print self.new_goal
-        self.update_goal=self.goals_differ(self.new_goal,userdata.current_goal,SIMILAR_GOAL_THRESHOLD)
+        self.update_goal=self.goals_differ(self.new_goal,self.current_goal,SIMILAR_GOAL_THRESHOLD)
         # if goal is not updated but detection was available - person is
         # detected at current goal - if goal is updated person is NOT detected
         # at current goal
@@ -119,7 +130,8 @@ class GoToGoal(smach.State):
 
 
   def goals_differ(self,old_goal,new_goal,threshold=0.2):
-    dist_between_goals=self.utils.calc_dist(old_goal["x"],old_goal["y"],new_goal["x"],new_goal["y"])
+    #dist_between_goals=self.utils.calc_dist(old_goal["x"],old_goal["y"],new_goal["x"],new_goal["y"])
+    dist_between_goals=self.utils.calc_dist(old_goal.x,old_goal.y,new_goal.x,new_goal.y)
     if dist_between_goals> threshold:
       return True
     else:
@@ -131,36 +143,43 @@ class GoToGoal(smach.State):
       #TODO check whether goal is blocked
       #TODO call service that moves base to there or to circle around goal - facing the center
       pose=list()
-      pose.append(float(goal["x"]))
-      pose.append(float(goal["y"]))
-      pose.append(float(goal["theta"]))
+      pose.append(float(goal.x))
+      pose.append(float(goal.y))
+      pose.append(float(goal.theta))
       handle_base = sss.move("base", pose,blocking=block_program)
+      print "commanding move to current goal"
 
 
   def execute(self,userdata):
+    # set generic listener to  userdata config
+    self.generic_listener.config=userdata.callback_config
+
     # reset update goal
     self.update_goal=False
+    self.current_goal=userdata.current_goal
+    # TODO is this still necessary - as whole state is based on the assumption
     # do not search for external position hints
-    if userdata.search_while_moving==False:
-      print "moving towards goal without searching"
-      stop_base=False
-      self.command_move(userdata.current_goal)
+    #if userdata.search_while_moving==False:
+    #  print "moving towards goal without searching"
+    #  stop_base=False
+    #  self.command_move(userdata.current_goal)
 
-      while not rospy.is_shutdown() and stop_base==False :
-        # check if goal has been approached close enough
-        #if self.utils.goal_approached(userdata.current_goal,get_transform_listener()):
-        #TODO get goal status when it is approached
-          sss.stop("base")
-          stop_base=True
-          rospy.sleep(0.3) 
+    #  while not rospy.is_shutdown() and stop_base==False :
+    #    # check if goal has been approached close enough
+    #    #if self.utils.goal_approached(userdata.current_goal,get_transform_listener()):
+    #    #TODO get goal status when it is approached
+    #      sss.stop("base")
+    #      stop_base=True
+    #      rospy.sleep(0.3) 
 
-      #TODO verify the following line
-      if DOUBLECHECK==True:
-        userdata.person_detected_at_goal=False
-      return 'approached_goal'
+    #  #TODO verify the following line
+    #  if DOUBLECHECK==True:
+    #    userdata.person_detected_at_goal=False
+    #  return 'approached_goal'
 
 
-    elif userdata.search_while_moving==True:
+    #elif userdata.search_while_moving==True:
+    if True:
       print "moving towards goal while searching"
       # try reaching pose
       if DOUBLECHECK==True:
@@ -173,11 +192,13 @@ class GoToGoal(smach.State):
 
       #TODO check for goal status
       stop_base=False
+      print "spinning ..."
       while not rospy.is_shutdown() and stop_base==False :
         #check every second for goal updates
         time.sleep(1)
         # when external information makes change of goals necessary
         self.check_callback(userdata.person_name)
+
         if self.update_goal==True:
           # internal  ---------------
           stop_base=True
@@ -188,7 +209,10 @@ class GoToGoal(smach.State):
         else:
           #TODO somehow get status goal approached
 
-          self.current_goal_approached=False
+
+
+          self.current_goal_approached=self.utils.goal_approached(userdata.current_goal,get_transform_listener())
+          print self.current_goal_approached
           # when goal has been approached and person was detected in the
           # process
           if self.current_goal_approached==True and self.person_detected_at_current_goal==True:
@@ -241,6 +265,74 @@ class GoToGoal(smach.State):
 #      return 'failed'
 ###########################################################################
 
+class ObserveGeneric(smach.State):
+  def __init__(self):
+    smach.State.__init__(self,
+      outcomes=['detected','not_detected','failed'],
+      input_keys=[ 'callback_config','person_detected_at_goal','rotate_while_observing','person_name','predefined_goals','current_goal','position_last_seen','script_time'],
+      output_keys=['callback_config','person_detected_at_goal','rotate_while_observing','person_name','predefined_goals','current_goal','position_last_seen','script_time'])
+    self.rep_ctr=0
+    self.utils=Utils()
+    self.generic_listener=GenericListener(target_frame="/map")
+    #self.tf = TransformListener()
+
+
+  def execute(self, userdata):
+    #TODO temp
+    self.rotate_while_observing=True
+    self.generic_listener.config=userdata.callback_config
+
+    # TODO is this still necessary - as whole state is based on the assumption
+    #if userdata.rotate_while_observing==False:
+    #  # give person time to order and observe in the meantime
+    #  rospy.sleep(2)
+
+    #  # pick detection label which is majority in list
+    #  #TODO pick first is temporary hack
+
+    #  if userdata.person_name=="NOSET":
+    #    # automatically use firste entry in detections
+    #    (new_name,new_goal)=self.generic_listener.get_pose_for_name()
+    #  else:
+    #    (new_name,new_goal)=self.generic_listener.get_pose_for_name(name=userdata.person_name)
+
+    #  # check what is returned from generic listener
+    #  if new_goal !=False:
+    #      userdata.position_last_seen=new_goal
+    #      userdata.person_detected_at_goal=True
+    #      return 'detected'
+    #  else:
+    #    userdata.person_detected_at_goal=False
+    #    return 'not_detected'
+
+    #elif userdata.rotate_while_observing==True:
+    if True:
+      rel_pose=list()
+      rel_pose.append(0)
+      rel_pose.append(0)
+      rel_pose.append(0.1)
+      for i in xrange(20):
+        handle_base = sss.move_base_rel("base", rel_pose,blocking =True)
+
+        # pick detection label which is majority in list
+        #TODO pick first is temporary hack
+        if userdata.person_name=="NOSET":
+          # automatically use firste entry in detections
+          (new_name,new_goal)=self.generic_listener.get_pose_for_name()
+        else:
+          (new_name,new_goal)=self.generic_listener.get_pose_for_name(name=userdata.person_name)
+
+        # check what is returned from generic listener
+        if new_goal !=False:
+            userdata.position_last_seen=new_goal
+            userdata.person_detected_at_goal=True
+            # stop observation
+            sss.stop("base")
+            return 'detected'
+        else:
+          userdata.person_detected_at_goal=False
+          return 'not_detected'
+
 
 class GenericListener():
   def __init__(self,target_frame=None,config=None):
@@ -279,21 +371,21 @@ class GenericListener():
 
       else:
         position=self.extract_from_msg(d,self.config["argname_position"])
-        name=self.extract_from_msg(d,self.config["argname_position"])
+        name=self.extract_from_msg(d,self.config["argname_label"])
         header=self.extract_from_msg(d,self.config["argname_header"])
         frame=self.extract_from_msg(d,self.config["argname_frame"])
 
 
 
-        print "-----------------------------------------------------"
-        print "-----------------------------------------------------"
-        print name
-        print "-----------------------------------------------------"
-        print position
-        print "-----------------------------------------------------"
-        print frame
-        print "-----------------------------------------------------"
-        print "-----------------------------------------------------"
+        #print "-----------------------------------------------------"
+        #print "-----------------------------------------------------"
+        #print name
+        #print "-----------------------------------------------------"
+        #print position
+        #print "-----------------------------------------------------"
+        #print frame
+        #print "-----------------------------------------------------"
+        #print "-----------------------------------------------------"
 
         # turn position to pose
         pose=PoseStamped()
@@ -303,9 +395,9 @@ class GenericListener():
         # if necessary transform pose
         if frame !=self.target_frame:
           t_pose=self.utils.transformPose(pose,get_transform_listener())
-          print "trafo necessary"
+          #print "trafo necessary"
         else:
-          print "trafo not necessary"
+          #print "trafo not necessary"
           t_pose=pose
 
         self.detections.append((name,t_pose.pose.position))
@@ -318,21 +410,30 @@ class GenericListener():
             att_it=getattr(att_it,str(syl))
           val=att_it
         else:
-          val=getattr(d,keyword_list)
+          val=getattr(d,str(keyword_list[0]))
         return val
 
   def get_pose_for_name(self,name=None):
     if len(self.detections)>0:
+      #print "detections available"
       if name==None:
           #extract position for the first name in detections
           det_name=self.detections[0][0]
-          det_pose=self.detections[0][1]
+          det_pose=Pose2D()
+          det_pose.x=self.detections[0][1].x
+          det_pose.y=self.detections[0][1].y
+          det_pose.theta=self.detections[0][1].theta
           return (det_name,det_pose)
       # scan detections for name and pose
       else:
+        print "Searching detections for %s"%name
         for n,p in self.detections:
           if name == str(n):
-            return (n,p)
+            det_pose=Pose2D()
+            det_pose.x=p.x
+            det_pose.y=p.y
+            det_pose.theta=0
+            return (n,det_pose)
         #extract pose for name return false if not present
     return (name,False)
 
@@ -375,7 +476,7 @@ class Utils():
         #print p
         #print y
         print current_position
-        dist_to_goal=self.calc_dist(goal["x"],goal["y"],current_position[0],current_position[1])
+        dist_to_goal=self.calc_dist(goal.x,goal.y,current_position[0],current_position[1])
         print "distance to goal= %f"%dist_to_goal
         if dist_to_goal<=dist_threshold:
           return True
@@ -423,13 +524,20 @@ class Utils():
 
 
 
-class GoToGoalGeneric(smach.StateMachine):
+class SearchPersonGeneric(smach.StateMachine):
     def __init__(self):
         smach.StateMachine.__init__(self,
-                outcomes=['finished','failed'])
+                outcomes=['finished','failed'],
+                input_keys=['callback_config','person_name','position_last_seen','current_goal','person_detected_at_goal','position_last_seen'],
+                output_keys=['callback_config','person_name','position_last_seen','current_goal','person_detected_at_goal','position_last_seen'])
+
         with self:
-            smache.StateMachine.add("GO",GoToGoal(),
+            smach.StateMachine.add("GO",GoToGoalGeneric(),
                                     transitions={'failed':'failed',
                                                   'approached_goal_found':'finished',
                                                   'approached_goal_not_found':'ROTATE',
                                                   'updated_goal':'GO'})
+            smach.StateMachine.add("ROTATE",ObserveGeneric(),
+                                    transitions={'failed':'failed',
+                                                  'detected':'GO',
+                                                  'not_detected':'finished'})
