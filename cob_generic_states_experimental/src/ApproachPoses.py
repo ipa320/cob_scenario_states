@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 #################################################################
 ##\file
 #
@@ -67,7 +68,7 @@ from ScreenFormatting import *
 #sss = simple_script_server()
 
 from geometry_msgs.msg import Pose2D
-from cob_map_accessibility_analysis.srv import CheckPerimeterAccessibility
+from cob_map_accessibility_analysis.srv import CheckPointAccessibility
 import tf
 from tf.transformations import *
 
@@ -78,26 +79,32 @@ class ComputeNavigationGoals(smach.State):
 	def __init__(self):
 		smach.State.__init__(self,
 			outcomes=['computed', 'failed'],
-			input_keys=['center', 'radius', 'rotational_sampling_step', 'new_computation_flag'],
-			output_keys=['goal_poses', 'gaze_direction_goal_pose', 'new_computation_flag'])
+			input_keys=['goal_poses', 'goal_pose_application', 'new_computation_flag'],
+			output_keys=['goal_poses_verified', 'new_computation_flag'])
 
 	def execute(self, userdata):
 		sf = ScreenFormat("ComputeNavigationGoals")
 		if not userdata.new_computation_flag:
 			return 'computed'
-		rospy.wait_for_service('map_accessibility_analysis/map_perimeter_accessibility_check',10)
+		rospy.wait_for_service('map_accessibility_analysis/map_points_accessibility_check',10)
 		try:
-			get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_perimeter_accessibility_check', CheckPerimeterAccessibility)
-			res = get_approach_pose(userdata.center, userdata.radius, userdata.rotational_sampling_step)
+			get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_points_accessibility_check', CheckPointAccessibility)
+			res = get_approach_pose(userdata.goal_poses)
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 			return 'failed'
-		userdata.goal_poses = res.accessible_poses_on_perimeter
-		userdata.new_computation_flag = False
-		gaze_direction_goal_pose = Pose2D()
-		gaze_direction_goal_pose.x = userdata.center.x + userdata.radius * math.cos(userdata.center.theta)
-		gaze_direction_goal_pose.y = userdata.center.y + userdata.radius * math.sin(userdata.center.theta)
-		userdata.gaze_direction_goal_pose = gaze_direction_goal_pose
+		goal_poses_verified = []
+		for i in range(len(userdata.goal_poses)):
+			if res.accessibility_flags[i] == True:
+				goal_poses_verified.append(userdata.goal_poses[i])
+		userdata.goal_poses_verified = goal_poses_verified
+		
+		if userdata.goal_pose_application=='visit_all_in_order' or userdata.goal_pose_application=='visit_all_nearest':
+			userdata.new_computation_flag = False
+		elif userdata.goal_pose_application=='use_as_alternatives':
+			userdata.new_computation_flag = True
+		else:
+			print "The selected goal_pose_application %s does not match any of the valid choices." %userdata.goal_pose_application
 		return 'computed'
 	
 	
@@ -105,16 +112,22 @@ class SelectNavigationGoal(smach.State):
 	def __init__(self):
 		smach.State.__init__(self,
 			outcomes=['computed', 'no_goals_left', 'failed'],
-			input_keys=['goal_poses', 'gaze_direction_goal_pose', 'goal_pose_selection_strategy'],
+			input_keys=['goal_poses_verified', 'goal_pose_application'],
 			output_keys=['goal_pose'])
 		self.listener = tf.TransformListener(True, rospy.Duration(20.0))
-		self.nogo_area_radius_squared = 1*1 #in meters, radius the current goal covers
+		self.nogo_area_radius_squared = 0*0 #in meters, radius the current goal covers
 		
 	def execute(self, userdata):
 		sf = ScreenFormat("SelectNavigationGoal")
 		
 		goal_pose = Pose2D()
-		if userdata.goal_pose_selection_strategy=='closest_to_robot':
+		if userdata.goal_pose_application=='visit_all_in_order' or userdata.goal_pose_application=='use_as_alternatives':
+			""" use next pose in given order"""
+			if len(userdata.goal_poses_verified)>0:
+				goal_pose = userdata.goal_poses_verified[0]
+			else:
+				return 'no_goals_left'
+		elif userdata.goal_pose_application=='visit_all_nearest':
 			"""compute closest position to current robot pose"""
 			try:
 				t = rospy.Time(0)
@@ -123,42 +136,44 @@ class SelectNavigationGoal(smach.State):
 			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException), e:
 				print "Could not lookup robot pose: %s" %e
 				return 'failed'
-			goal_pose.x = robot_pose[0][0]
-			goal_pose.y = robot_pose[0][1]
-		elif userdata.goal_pose_selection_strategy=='closest_to_target_gaze_direction':
-			goal_pose = userdata.gaze_direction_goal_pose
-		else:
-			print "The selected strategy %s does not match any of the valid choices." %userdata.gaze_direction_goal_pose
 
-		closest_pose = Pose2D()
-		minimum_distance_squared = 100000.0
-		found_valid_pose = 0
-		for pose in userdata.goal_poses:
-			dist_squared = (goal_pose.x-pose.x)*(goal_pose.x-pose.x)+(goal_pose.y-pose.y)*(goal_pose.y-pose.y)
-			if dist_squared < minimum_distance_squared:
-				minimum_distance_squared = dist_squared
-				closest_pose = copy.deepcopy(pose)
-				found_valid_pose = 1
-		if found_valid_pose == 0:
-			return 'no_goals_left'
+			# todo: also obey rotation for closeness measure
+			minimum_distance_squared = 100000.0
+			found_valid_pose = 0
+			for pose in userdata.goal_poses_verified:
+				dist_squared = (robot_pose[0][0]-pose.x)*(robot_pose[0][0]-pose.x)+(robot_pose[0][1]-pose.y)*(robot_pose[0][1]-pose.y)
+				if dist_squared < minimum_distance_squared:
+					minimum_distance_squared = dist_squared
+					goal_pose = copy.deepcopy(pose)
+					found_valid_pose = 1
+			if found_valid_pose == 0:
+				return 'no_goals_left'
+		else:
+			print "The selected goal_pose_application %s does not match any of the valid choices." %userdata.goal_pose_application
+			
+ 		"""delete the current goal from the list of goal poses"""
+ 		for p in range(len(userdata.goal_poses_verified)-1,-1,-1):
+ 			pose = userdata.goal_poses_verified[p]
+ 			if pose == goal_pose:
+ 				userdata.goal_poses_verified.remove(pose)
 		
-		"""delete all poses too close to current goal"""
-		for p in range(len(userdata.goal_poses)-1,-1,-1):
-			pose = userdata.goal_poses[p]
-			dist_squared = (closest_pose.x-pose.x)*(closest_pose.x-pose.x)+(closest_pose.y-pose.y)*(closest_pose.y-pose.y)
-			if dist_squared < self.nogo_area_radius_squared:
-				userdata.goal_poses.remove(pose)
+# 		"""delete all poses too close to current goal"""
+# 		for p in range(len(userdata.goal_poses_verified)-1,-1,-1):
+# 			pose = userdata.goal_poses_verified[p]
+# 			dist_squared = (goal_pose.x-pose.x)*(goal_pose.x-pose.x)+(goal_pose.y-pose.y)*(goal_pose.y-pose.y)
+# 			if dist_squared < self.nogo_area_radius_squared:
+# 				userdata.goal_poses_verified.remove(pose)
 		
-		userdata.goal_pose=[closest_pose.x, closest_pose.y, closest_pose.theta]
+		userdata.goal_pose=[goal_pose.x, goal_pose.y, goal_pose.theta]
 		return 'computed'
 
 
 
-class ApproachPerimeter(smach.StateMachine):
+class ApproachPoses(smach.StateMachine):
 	def __init__(self):
 		smach.StateMachine.__init__(self,
 			outcomes=['reached', 'not_reached', 'failed'],
-			input_keys=['center', 'radius', 'rotational_sampling_step', 'goal_pose_selection_strategy', 'new_computation_flag'],
+			input_keys=['goal_poses', 'goal_pose_application', 'new_computation_flag'],
 			output_keys=['new_computation_flag'])
 		with self:
 
@@ -181,15 +196,30 @@ class ApproachPerimeter(smach.StateMachine):
 if __name__ == '__main__':
 	try:
 		rospy.init_node("approach_perimeter")
-		sm = ApproachPerimeter()
-		sm.userdata.center = Pose2D()
-		sm.userdata.center.x = -1.0
-		sm.userdata.center.y = -1.0
-		sm.userdata.center.theta = 0
-		sm.userdata.radius = 0.8
-		sm.userdata.rotational_sampling_step = 10.0/180.0*math.pi
+		sm = ApproachPoses()
+		sm.userdata.goal_poses = []
+		pose = Pose2D()
+		pose.x = -1.5
+		pose.y = 0.0
+		pose.theta = 0.0
+		sm.userdata.goal_poses.append(pose)
+		pose = Pose2D()
+		pose.x = 0.0
+		pose.y = 0.0
+		pose.theta = 0.0
+		sm.userdata.goal_poses.append(pose)
+		pose = Pose2D()
+		pose.x = 1.0
+		pose.y = 0.0
+		pose.theta = math.pi/4.0
+		sm.userdata.goal_poses.append(pose)
+		pose = Pose2D()
+		pose.x = 2.0
+		pose.y = -1.0
+		pose.theta = math.pi
+		sm.userdata.goal_poses.append(pose)
 		sm.userdata.new_computation_flag = True
-		sm.userdata.goal_pose_selection_strategy = 'closest_to_target_gaze_direction'  #'closest_to_target_gaze_direction', 'closest_to_robot'
+		sm.userdata.goal_pose_application = 'use_as_alternatives' # 'visit_all_in_order' (commands the robot to all poses in the provided order), 'visit_all_nearest' (commands the robot to all poses using the closest next pose each time), 'use_as_alternatives' (visits the first pose of the list that is reachable)
 		
 		# introspection -> smach_viewer
 		sis = smach_ros.IntrospectionServer('map_accessibility_analysis_introspection', sm, '/MAP_ACCESSIBILITY_ANALYSIS')
