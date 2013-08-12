@@ -4,7 +4,7 @@
 ##\file
 #
 # \note
-#   Copyright (c) 2010 \n
+#   Copyright (c) 2013 \n
 #   Fraunhofer Institute for Manufacturing Engineering
 #   and Automation (IPA) \n\n
 #
