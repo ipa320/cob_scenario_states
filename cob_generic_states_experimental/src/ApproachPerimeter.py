@@ -31,7 +31,7 @@
 #   'rotational_sampling_step': Double value of the angular sampling step with in [rad] of goal poses on the perimeter of the circle.
 #   'goal_pose_selection_strategy': defines which of the possible poses on the circle shall be preferred
 #                                   'closest_to_target_gaze_direction' (commands the robot to the pose which is closest to the target's viewing direction, useful e.g. for living targets),
-#                                   'closest_to_robot' (commands the robot to the pose closest to the current robot position, useful e.g. for inspecting a location),
+#                                   'closest_to_robot' (commands the robot to the pose closest to the current robot position, useful e.g. for inspecting a location).
 #                                   Independent of the mode, this state machine always terminates once a goal position could be reached,
 #                                   however, to visit multiple locations on the same circle the state_machine has to be called with 'new_computation_flag' set to False
 #                                   and an appropriate 'invalidate_other_poses_radius' until 'not_reached' is returned from 'SELECT_GOAL'

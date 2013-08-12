@@ -162,7 +162,7 @@ class SelectNavigationGoal(smach.State):
 												closest_pose.orientation.y,
 												closest_pose.orientation.z,
 												closest_pose.orientation.w])
-		userdata.goal_pose=[closest_pose.position.x, closest_pose.position.y, yaw+math.pi]
+		userdata.goal_pose=[closest_pose.position.x, closest_pose.position.y, yaw]
 		return 'computed'
 
 
