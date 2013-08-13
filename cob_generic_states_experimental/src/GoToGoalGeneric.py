@@ -137,13 +137,12 @@ class GoToGoalGeneric(smach.State):
 
   def get_perimeter_goal(self,goal,radius):
 
-      rospy.wait_for_service('map_accessibility_analysis/map_points_accessibility_check',10)
       try:
         get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_points_accessibility_check', CheckPointAccessibility)
         res = get_approach_pose([goal])
       except rospy.ServiceException, e:
         print "Service call failed: %s"%e
-        return 'failed'
+        return False
 
       # check whether goal on perimeter has to be approached
       if res.accessibility_flags[0]==False:
@@ -253,7 +252,7 @@ class GoToGoalGeneric(smach.State):
       # activate processing of external information
       # command robot move
       if self.use_perimeter_goal==True:
-        perimeter_goal=self.get_perimeter_goal(userdata.current_goal,userdata.predefinitions["approached_threshold"])
+        perimeter_goal=self.get_perimeter_goal(userdata.current_goal,userdata.predefinitions["goal_perimeter"])
         print perimeter_goal
         if perimeter_goal!=False:
           userdata.current_goal=perimeter_goal
@@ -428,6 +427,7 @@ class GenericListener():
     self.detections=list()
 
     self.target_frame=target_frame
+    self.utils=Utils()
 
 
   def set_config(self,config):
@@ -441,8 +441,7 @@ class GenericListener():
     del self.detections[:]
 
   def listen(self,msg):
-    msg_content=dir(msg)[-1]
-    det_content=getattr(msg,msg_content)
+    det_content=getattr(msg,self.config["msg_element"])
     for d in det_content:
       d_content=dir(d)
 
