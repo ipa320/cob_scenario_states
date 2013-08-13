@@ -22,6 +22,7 @@ from geometry_msgs.msg import Pose2D
 
 from GoToUtils import *
 from cob_map_accessibility_analysis.srv import CheckPerimeterAccessibility
+from cob_map_accessibility_analysis.srv import CheckPointAccessibility
 ############### PARAMETER SETTINGS #######################
 #
 #global MAP_BOUNDS
@@ -135,40 +136,56 @@ class GoToGoalGeneric(smach.State):
       return False
 
   def get_perimeter_goal(self,goal,radius):
-      rotational_sampling_step = 10.0/180.0*math.pi
 
+      rospy.wait_for_service('map_accessibility_analysis/map_points_accessibility_check',10)
       try:
-        get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_perimeter_accessibility_check', CheckPerimeterAccessibility)
-        res = get_approach_pose(goal, radius, rotational_sampling_step)
-        valid_poses=res.accessible_poses_on_perimeter
+        get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_points_accessibility_check', CheckPointAccessibility)
+        res = get_approach_pose([goal])
       except rospy.ServiceException, e:
-        return False
         print "Service call failed: %s"%e
+        return 'failed'
 
-      # try for a while to get robot pose # TODO check if this is necessary
-      for i in xrange(10):
-        (trafo_possible,robot_pose,quaternion)=self.utils.getRobotPose(get_transform_listener())
-        rospy.sleep(0.2)
+      # check whether goal on perimeter has to be approached
+      if res.accessibility_flags[0]==False:
+        print "Computing goal on perimeter"
+
+        rotational_sampling_step = 10.0/180.0*math.pi
+        try:
+          get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_perimeter_accessibility_check', CheckPerimeterAccessibility)
+          res = get_approach_pose(goal, radius, rotational_sampling_step)
+          valid_poses=res.accessible_poses_on_perimeter
+        except rospy.ServiceException, e:
+          return False
+          print "Service call failed: %s"%e
+
+        # try for a while to get robot pose # TODO check if this is necessary
+        for i in xrange(10):
+          (trafo_possible,robot_pose,quaternion)=self.utils.getRobotPose(get_transform_listener())
+          rospy.sleep(0.2)
+          if trafo_possible==True:
+            current_pose=Pose2D()
+            current_pose.x=robot_pose[0]
+            current_pose.y=robot_pose[1]
+            break
+
         if trafo_possible==True:
-          current_pose=Pose2D()
-          current_pose.x=robot_pose[0]
-          current_pose.y=robot_pose[1]
-          break
+          closest_pose = Pose2D()
+          minimum_distance_squared = 100000.0
+          for pose in valid_poses:
+            dist_squared = (pose.x-current_pose.x)*(pose.x-current_pose.x)+(pose.y-current_pose.y)*(pose.y-current_pose.y)
+            if dist_squared < minimum_distance_squared:
+              minimum_distance_squared = dist_squared
+              closest_pose = pose
+          return closest_pose
+        else:
+          print "could not get current robot pose - taking first pose in list"
+          return valid_poses[0]
+        #handle_base = sss.move("base", pose,blocking=block_program)
+        #print "commanding move to current goal"
 
-      if trafo_possible==True:
-        closest_pose = Pose2D()
-        minimum_distance_squared = 100000.0
-        for pose in valid_poses:
-          dist_squared = (pose.x-current_pose.x)*(pose.x-current_pose.x)+(pose.y-current_pose.y)*(pose.y-current_pose.y)
-          if dist_squared < minimum_distance_squared:
-            minimum_distance_squared = dist_squared
-            closest_pose = pose
-        return closest_pose
       else:
-        print "could not get current robot pose - taking first pose in list"
-        return valid_poses[0]
-      #handle_base = sss.move("base", pose,blocking=block_program)
-      #print "commanding move to current goal"
+        print "Goal not blocked"
+        return goal
 
   def command_move(self,goal,block_program=False):
       pose=list()
