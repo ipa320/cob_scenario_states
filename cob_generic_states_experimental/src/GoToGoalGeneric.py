@@ -21,23 +21,24 @@ import threading
 from geometry_msgs.msg import Pose2D
 
 from GoToUtils import *
+from cob_map_accessibility_analysis.srv import CheckPerimeterAccessibility
 ############### PARAMETER SETTINGS #######################
-
-global MAP_BOUNDS
-MAP_BOUNDS=[-1.0,4.5,-0.5,1.5] # x_min,x_max,y_min,y_max
-
-# threshold defines whether a goal is approached close enough
-global APPROACHED_THRESHOLD
-APPROACHED_THRESHOLD=0.3 #[m]
-# topic where person positions are provided, tracked by tha accompany tracker
-global TOPIC_TRACKED_HUMANS
-TOPIC_TRACKED_HUMANS="/accompany/TrackedHumans"
-#  set to true if you want to double check if the person is still at the goal
-global DOUBLECHECK
-DOUBLECHECK=True
-# threshold defines whether a goal is similar to another goal 
-global SIMILAR_GOAL_THRESHOLD
-SIMILAR_GOAL_THRESHOLD=0.1 #[m]
+#
+#global MAP_BOUNDS
+#MAP_BOUNDS=[-1.0,4.5,-0.5,1.5] # x_min,x_max,y_min,y_max
+#
+## threshold defines whether a goal is approached close enough
+#global APPROACHED_THRESHOLD
+#APPROACHED_THRESHOLD=0.3 #[m]
+## topic where person positions are provided, tracked by tha accompany tracker
+#global TOPIC_TRACKED_HUMANS
+#TOPIC_TRACKED_HUMANS="/accompany/TrackedHumans"
+##  set to true if you want to double check if the person is still at the goal
+#global DOUBLECHECK
+#DOUBLECHECK=True
+## threshold defines whether a goal is similar to another goal 
+#global SIMILAR_GOAL_THRESHOLD
+#SIMILAR_GOAL_THRESHOLD=0.1 #[m]
 
 
 
@@ -45,8 +46,8 @@ class GoToGoalGeneric(smach.State):
   def __init__(self):
     smach.State.__init__(self,
         outcomes=['failed','approached_goal_found','approached_goal_not_found','updated_goal'],
-        input_keys=['person_detected_at_goal', 'callback_config','search_while_moving','current_goal','position_last_seen','person_name'],
-        output_keys=['search_while_moving','current_goal','position_last_seen','person_detected_at_goal','person_name'])
+        input_keys= ['predefinitions','person_detected_at_goal', 'callback_config','search_while_moving','current_goal','position_last_seen','person_name'],
+        output_keys=['predefinitions','search_while_moving','current_goal','position_last_seen','person_detected_at_goal','person_name'])
     self.detections=list()
     self.callback_activated=False
     self.generic_listener=GenericListener(target_frame="/map")
@@ -56,9 +57,12 @@ class GoToGoalGeneric(smach.State):
     self.current_goal=False
     self.new_goal=False
     self.current_goal_approached=False
+    # flag if perimeter goals are supposed to be approached instead of
+    # approaching the goal directly
+    self.use_perimeter_goal=True
 
 
-  def check_callback(self,name):
+  def check_callback(self,name,similar_goal_threshold):
     # This function is supposed to do the following:
     # - listen to topic
     # - when callback is activated:
@@ -76,7 +80,7 @@ class GoToGoalGeneric(smach.State):
       #print self.new_goal
       #print "------------------"
       if self.new_goal!=False:
-        self.update_goal=self.goals_differ(self.new_goal,self.current_goal,SIMILAR_GOAL_THRESHOLD)
+        self.update_goal=self.goals_differ(self.new_goal,self.current_goal,similar_goal_threshold)
         # if goal is not updated but detection was available - person is
         # detected at current goal - if goal is updated person is NOT detected
         # at current goal
@@ -91,7 +95,7 @@ class GoToGoalGeneric(smach.State):
   def activate_callback(self,reset_detections=True):
 
     if reset_detections==True:
-      del self.detections[:]
+      self.generic_listener.reset()
     self.callback_activated=True
 
     return
@@ -117,7 +121,7 @@ class GoToGoalGeneric(smach.State):
         print det.label
         print "NAME FOUND"
         # when name found  reset detection list
-        del self.detections[:]
+        self.reset()
         return det
     return False
 
@@ -130,11 +134,43 @@ class GoToGoalGeneric(smach.State):
     else:
       return False
 
+  def get_perimeter_goal(self,goal,radius):
+      rotational_sampling_step = 10.0/180.0*math.pi
+
+      try:
+        get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_perimeter_accessibility_check', CheckPerimeterAccessibility)
+        res = get_approach_pose(goal, radius, rotational_sampling_step)
+        valid_poses=res.accessible_poses_on_perimeter
+      except rospy.ServiceException, e:
+        return False
+        print "Service call failed: %s"%e
+
+      # try for a while to get robot pose # TODO check if this is necessary
+      for i in xrange(10):
+        (trafo_possible,robot_pose,quaternion)=self.utils.getRobotPose(get_transform_listener())
+        rospy.sleep(0.2)
+        if trafo_possible==True:
+          current_pose=Pose2D()
+          current_pose.x=robot_pose[0]
+          current_pose.y=robot_pose[1]
+          break
+
+      if trafo_possible==True:
+        closest_pose = Pose2D()
+        minimum_distance_squared = 100000.0
+        for pose in valid_poses:
+          dist_squared = (pose.x-current_pose.x)*(pose.x-current_pose.x)+(pose.y-current_pose.y)*(pose.y-current_pose.y)
+          if dist_squared < minimum_distance_squared:
+            minimum_distance_squared = dist_squared
+            closest_pose = pose
+        return closest_pose
+      else:
+        print "could not get current robot pose - taking first pose in list"
+        return valid_poses[0]
+      #handle_base = sss.move("base", pose,blocking=block_program)
+      #print "commanding move to current goal"
 
   def command_move(self,goal,block_program=False):
-      #TODO replace the following sss.move() command with:
-      #TODO check whether goal is blocked
-      #TODO call service that moves base to there or to circle around goal - facing the center
       pose=list()
       pose.append(float(goal.x))
       pose.append(float(goal.y))
@@ -146,19 +182,19 @@ class GoToGoalGeneric(smach.State):
   def execute(self,userdata):
     print "INPUT VALUES:"
     print "Person detected at goal: %s"%userdata.person_detected_at_goal
-    self.generic_listener.config=userdata.callback_config
+    self.generic_listener.set_config(userdata.callback_config)
     self.activate_callback(reset_detections=True)
 
-    if DOUBLECHECK==True:
+    if userdata.predefinitions["double_check"]==True:
       userdata.person_detected_at_goal=False
       self.person_detected_at_current_goal=False
       self.generic_listener.reset()
 
-    movement_unecessary=self.utils.goal_approached(userdata.current_goal,get_transform_listener(),dist_threshold=APPROACHED_THRESHOLD)
+    movement_unecessary=self.utils.goal_approached(userdata.current_goal,get_transform_listener(),dist_threshold=userdata.predefinitions["approached_threshold"])
     if movement_unecessary==True:
       print "MOVE UNNECESSARY waiting for detections"
       for i in xrange(5):
-        self.check_callback(userdata.person_name)
+        self.check_callback(userdata.person_name,userdata.predefinitions["similar_goal_threshold"])
         time.sleep(1)
       if self.person_detected_at_current_goal==True:
           return 'approached_goal_found'
@@ -199,16 +235,20 @@ class GoToGoalGeneric(smach.State):
 
       # activate processing of external information
       # command robot move
+      if self.use_perimeter_goal==True:
+        perimeter_goal=self.get_perimeter_goal(userdata.current_goal,userdata.predefinitions["approached_threshold"])
+        print perimeter_goal
+        if perimeter_goal!=False:
+          userdata.current_goal=perimeter_goal
       self.command_move(userdata.current_goal,block_program=False)
 
       #TODO check for goal status
       stop_base=False
-      print "spinning ..."
       while not rospy.is_shutdown() and stop_base==False :
         #check every second for goal updates
         time.sleep(1)
         # when external information makes change of goals necessary
-        self.check_callback(userdata.person_name)
+        self.check_callback(userdata.person_name,userdata.predefinitions["similar_goal_threshold"])
 
         if self.update_goal==True:
           # internal  ---------------
@@ -222,8 +262,7 @@ class GoToGoalGeneric(smach.State):
 
 
 
-          self.current_goal_approached=self.utils.goal_approached(userdata.current_goal,get_transform_listener(),dist_threshold=APPROACHED_THRESHOLD)
-          print self.current_goal_approached
+          self.current_goal_approached=self.utils.goal_approached(userdata.current_goal,get_transform_listener(),dist_threshold=userdata.predefinitions["approached_threshold"])
           # when goal has been approached and person was detected in the
           # process
           if self.current_goal_approached==True and self.person_detected_at_current_goal==True:
@@ -280,8 +319,8 @@ class ObserveGeneric(smach.State):
   def __init__(self):
     smach.State.__init__(self,
       outcomes=['detected','not_detected','failed'],
-      input_keys=[ 'callback_config','person_detected_at_goal','rotate_while_observing','person_name','predefined_goals','current_goal','position_last_seen','script_time'],
-      output_keys=['callback_config','person_detected_at_goal','rotate_while_observing','person_name','predefined_goals','current_goal','position_last_seen','script_time'])
+      input_keys=[ 'callback_config','person_detected_at_goal','rotate_while_observing','person_name','predefinitions','current_goal','position_last_seen','script_time'],
+      output_keys=['callback_config','person_detected_at_goal','rotate_while_observing','person_name','predefinitions','current_goal','position_last_seen','script_time'])
     self.rep_ctr=0
     self.utils=Utils()
     self.generic_listener=GenericListener(target_frame="/map")
@@ -291,7 +330,7 @@ class ObserveGeneric(smach.State):
   def execute(self, userdata):
     self.generic_listener.reset()
     self.rotate_while_observing=True
-    self.generic_listener.config=userdata.callback_config
+    self.generic_listener.set_config(userdata.callback_config)
 
     # TODO is this still necessary - as whole state is based on the assumption
     #if userdata.rotate_while_observing==False:
@@ -349,12 +388,12 @@ class SetRandomGoal(smach.State):
   def __init__(self):
     smach.State.__init__(self,
       outcomes=['finished','failed'],
-      input_keys=['current_goal'],
-      output_keys=['current_goal'])
+      input_keys= ['predefinitions','current_goal'],
+      output_keys=['predefinitions','current_goal'])
 
   def execute(self, userdata):
       print "NAVIGATING TO RANDOM GOAL."
-      map_bounds=MAP_BOUNDS
+      map_bounds=userdata.predefinitions["map_bounds"]
       new_goal=Pose2D()
       new_goal.x=random.uniform(map_bounds[0],map_bounds[1]) # x
       new_goal.y=random.uniform(map_bounds[2],map_bounds[3]) # y
@@ -362,49 +401,29 @@ class SetRandomGoal(smach.State):
       userdata.current_goal=new_goal
       return 'finished'
 
-class FakeState(smach.State):
-  def __init__(self):
-    smach.State.__init__(self,
-        outcomes=['set','failed'],
-        input_keys=['script_time','current_goal','position_last_seen','person_name'],
-        output_keys=['script_time','current_goal','person_name','position_last_seen'])
-
-  def execute(self,userdata):
-    pos={"name":"fake","x":1.5,"y":-1.5,"theta":0.0}
-    userdata.position_last_seen=pos
-    userdata.person_name="Caro"
-    userdata.current_goal=pos
-    #userdata.script_time=3
-    return 'set'
-
 class GenericListener():
-  def __init__(self,target_frame=None,config=None):
+  def __init__(self,target_frame=None):
     # get configuration from input or default one
-    if config==None:
-      self.config={"argname_frame":["location","header","frame_id"],
-                   "argname_label":["identity"],
-                   "argname_position":["location","point"],
-                   "argname_header":["location","header"],
-                   "topicname":TOPIC_TRACKED_HUMANS,
-                   "msgclass":TrackedHumans}
-    else:
-      self.config=config
-
+    self.config=None
+    if target_frame==None:
+        target_frame="/map"
     # initialize variables
     self.detections=list()
-    #TODO get this to work
 
-
-    rospy.Subscriber(self.config["topicname"],self.config["msgclass"], self.listen)
     self.target_frame=target_frame
 
 
+  def set_config(self,config):
+    print "SETTING CONFIG"
+    self.config=config
+    print "Subscribing to %s"%config["topicname"]
+
+    rospy.Subscriber(self.config["topicname"],self.config["msgclass"], self.listen)
 
   def reset(self):
     del self.detections[:]
 
   def listen(self,msg):
-
     msg_content=dir(msg)[-1]
     det_content=getattr(msg,msg_content)
     for d in det_content:
@@ -474,13 +493,13 @@ class GenericListener():
           return (det_name,det_pose)
       # scan detections for name and pose
       else:
-        print "Searching detections for %s"%name
         for n,p in self.detections:
           if name == str(n):
             det_pose=Pose2D()
             det_pose.x=p.x
             det_pose.y=p.y
             det_pose.theta=0
+            self.reset()
             return (n,det_pose)
         #extract pose for name return false if not present
     return (name,False)
@@ -489,8 +508,8 @@ class SearchPersonGeneric(smach.StateMachine):
     def __init__(self):
         smach.StateMachine.__init__(self,
                 outcomes=['finished','failed'],
-                input_keys=['callback_config','person_name','position_last_seen','current_goal','person_detected_at_goal','position_last_seen'],
-                output_keys=['callback_config','person_name','position_last_seen','current_goal','person_detected_at_goal','position_last_seen'])
+                input_keys= ['predefinitions','callback_config','person_name','position_last_seen','current_goal','person_detected_at_goal','position_last_seen'],
+                output_keys=['predefinitions','callback_config','person_name','position_last_seen','current_goal','person_detected_at_goal','position_last_seen'])
 
         with self:
             smach.StateMachine.add("GO",GoToGoalGeneric(),
