@@ -1,9 +1,6 @@
 #!/usr/bin/python
 
 
-#TODO transformation from coordinate fmrame of camera to map necessary
-# doublecheck.....
-
 ############### PARAMETER SETTINGS #######################
 import roslib
 roslib.load_manifest('cob_generic_states_experimental')
@@ -23,6 +20,7 @@ import time
 import threading
 from geometry_msgs.msg import Pose2D
 
+from GoToUtils import *
 ############### PARAMETER SETTINGS #######################
 
 global MAP_BOUNDS
@@ -41,23 +39,13 @@ DOUBLECHECK=True
 global SIMILAR_GOAL_THRESHOLD
 SIMILAR_GOAL_THRESHOLD=0.1 #[m]
 
-###############''WORKAROUND FOR TRANSFORMLISTENER ISSUE####################
-_tl=None
-_tl_creation_lock=threading.Lock()
 
-def get_transform_listener():
-  global _tl
-  with _tl_creation_lock:
-    if _tl==None:
-      _tl=tf.TransformListener()
-    return _tl
-#################################################################################
 
 class GoToGoalGeneric(smach.State):
   def __init__(self):
     smach.State.__init__(self,
         outcomes=['failed','approached_goal_found','approached_goal_not_found','updated_goal'],
-        input_keys=[ 'callback_config','search_while_moving','current_goal','position_last_seen','person_name'],
+        input_keys=['person_detected_at_goal', 'callback_config','search_while_moving','current_goal','position_last_seen','person_name'],
         output_keys=['search_while_moving','current_goal','position_last_seen','person_detected_at_goal','person_name'])
     self.detections=list()
     self.callback_activated=False
@@ -156,6 +144,8 @@ class GoToGoalGeneric(smach.State):
 
 
   def execute(self,userdata):
+    print "INPUT VALUES:"
+    print "Person detected at goal: %s"%userdata.person_detected_at_goal
     self.generic_listener.config=userdata.callback_config
     self.activate_callback(reset_detections=True)
 
@@ -164,7 +154,7 @@ class GoToGoalGeneric(smach.State):
       self.person_detected_at_current_goal=False
       self.generic_listener.reset()
 
-    movement_unecessary=self.utils.goal_approached(userdata.current_goal,get_transform_listener())
+    movement_unecessary=self.utils.goal_approached(userdata.current_goal,get_transform_listener(),dist_threshold=APPROACHED_THRESHOLD)
     if movement_unecessary==True:
       print "MOVE UNNECESSARY waiting for detections"
       for i in xrange(5):
@@ -232,7 +222,7 @@ class GoToGoalGeneric(smach.State):
 
 
 
-          self.current_goal_approached=self.utils.goal_approached(userdata.current_goal,get_transform_listener())
+          self.current_goal_approached=self.utils.goal_approached(userdata.current_goal,get_transform_listener(),dist_threshold=APPROACHED_THRESHOLD)
           print self.current_goal_approached
           # when goal has been approached and person was detected in the
           # process
@@ -494,93 +484,6 @@ class GenericListener():
             return (n,det_pose)
         #extract pose for name return false if not present
     return (name,False)
-
-class Utils():
-  def __init__(self):
-    print "instatiating Utils"
-
-
-  def extract_detection(self,detections,name='NULL'):
-    if name is'NULL':
-      if(len(detections))>0:
-          # TODO return majority of array not first element
-          return detections[0]
-      else:
-        return False
-    else:
-      print "CHECKING DETECTIONS for %s"%name
-      if len(detections)==0:
-        return False
-      for det in detections:
-        #print "checking %s"%str(det.label)
-        if name == str(det.label):
-          print det.label
-          print "NAME FOUND"
-          # when name found  reset detection list
-          return det
-    return False
-
-  def calc_dist(self,x1,y1,x2,y2):
-    dist=math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
-    return dist
-
-
-  def goal_approached(self,goal,tl):
-      dist_threshold=APPROACHED_THRESHOLD
-      (transform_possible,current_position,quaternion)=self.getRobotPose(tl)
-      if transform_possible==True:
-        [r,p,y]=euler_from_quaternion(quaternion)
-        #print r
-        #print p
-        #print y
-        print current_position
-        dist_to_goal=self.calc_dist(goal.x,goal.y,current_position[0],current_position[1])
-        print "distance to goal= %f"%dist_to_goal
-        if dist_to_goal<=dist_threshold:
-          return True
-        else:
-          return False
-      else:
-        print "No transform available - no goal approached detection"
-        return False
-
-  def transformPose(self,pose,tl):
-    # TODO make this transformation work  - right now detected position is not the right one
-    while not rospy.is_shutdown():
-        try:
-            transformed_pose=tl.transformPose("/map",pose)
-            transform_possible=True
-            print "trafo to target frame succcesful"
-            break
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-          print "error looking up transformation "
-          rospy.sleep(0.5)
-          transformed_pose=pose.pose
-          break
-    #else:
-    #  transformed_pose=pose
-    return transformed_pose
-
-  def getRobotPose(self,tl):
-    transform_possible=False
-    current_position=0
-    quaternion=0
-
-    if tl.frameExists("/base_footprint") and tl.frameExists("/map"):
-        while not rospy.is_shutdown():
-            try:
-                (
-                    current_position, quaternion) = tl.lookupTransform( "/map","/base_footprint",
-                                                                rospy.Time(0))
-                transform_possible=True
-                break
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-              print "error looking up transformation "
-              rospy.sleep(0.5)
-
-    return (transform_possible,current_position,quaternion)
-
-
 
 class SearchPersonGeneric(smach.StateMachine):
     def __init__(self):
