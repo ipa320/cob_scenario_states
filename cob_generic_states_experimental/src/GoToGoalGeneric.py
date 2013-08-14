@@ -141,12 +141,12 @@ class GoToGoalGeneric(smach.State):
         get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_points_accessibility_check', CheckPointAccessibility)
         res = get_approach_pose([goal])
       except rospy.ServiceException, e:
-        print "Service call failed: %s"%e
+        rospy.logwarn("Service call failed: %s",e)
         return False
 
       # check whether goal on perimeter has to be approached
       if res.accessibility_flags[0]==False:
-        print "Computing goal on perimeter"
+        rospy.loginfo("Computing goal on perimeter")
 
         rotational_sampling_step = 10.0/180.0*math.pi
         try:
@@ -155,7 +155,7 @@ class GoToGoalGeneric(smach.State):
           valid_poses=res.accessible_poses_on_perimeter
         except rospy.ServiceException, e:
           return False
-          print "Service call failed: %s"%e
+          rospy.logwarn("Service call failed: %s",e)
 
         # try for a while to get robot pose # TODO check if this is necessary
         for i in xrange(10):
@@ -177,13 +177,13 @@ class GoToGoalGeneric(smach.State):
               closest_pose = pose
           return closest_pose
         else:
-          print "could not get current robot pose - taking first pose in list"
+          rospy.logwarn("Could not get current robot pose - taking first pose in list")
           return valid_poses[0]
         #handle_base = sss.move("base", pose,blocking=block_program)
         #print "commanding move to current goal"
 
       else:
-        print "Goal not blocked"
+        rospy.loginfo("Goal accessible")
         return goal
 
   def command_move(self,goal,block_program=False):
@@ -192,12 +192,11 @@ class GoToGoalGeneric(smach.State):
       pose.append(float(goal.y))
       pose.append(float(goal.theta))
       handle_base = sss.move("base", pose,blocking=block_program)
-      print "commanding move to current goal"
+      rospy.loginfo("Commanding move to current goal")
 
 
   def execute(self,userdata):
-    print "INPUT VALUES:"
-    print "Person detected at goal: %s"%userdata.person_detected_at_goal
+    rospy.loginfo("Person detected at goal: %s",userdata.person_detected_at_goal)
     self.generic_listener.set_config(userdata.callback_config)
     self.activate_callback(reset_detections=True)
 
@@ -208,7 +207,7 @@ class GoToGoalGeneric(smach.State):
 
     movement_unecessary=self.utils.goal_approached(userdata.current_goal,get_transform_listener(),dist_threshold=userdata.predefinitions["approached_threshold"])
     if movement_unecessary==True:
-      print "MOVE UNNECESSARY waiting for detections"
+      rospy.loginfo("Move unnecessary - waiting for detections")
       for i in xrange(5):
         self.check_callback(userdata.person_name,userdata.predefinitions["similar_goal_threshold"])
         time.sleep(1)
@@ -247,14 +246,14 @@ class GoToGoalGeneric(smach.State):
 
     #elif userdata.search_while_moving==True:
     if True:
-      print "moving towards goal while searching"
+      rospy.loginfo("moving towards goal while searching")
 
       # activate processing of external information
       # command robot move
       if self.use_perimeter_goal==True:
         perimeter_goal=self.get_perimeter_goal(userdata.current_goal,userdata.predefinitions["goal_perimeter"])
-        print perimeter_goal
         if perimeter_goal!=False:
+          rospy.loginfo("Commanding move to goal directly, as accessability check is not available")
           userdata.current_goal=perimeter_goal
       self.command_move(userdata.current_goal,block_program=False)
 
@@ -408,7 +407,7 @@ class SetRandomGoal(smach.State):
       output_keys=['predefinitions','current_goal'])
 
   def execute(self, userdata):
-      print "NAVIGATING TO RANDOM GOAL."
+      rospy.loginfo("navigating to random goal.")
       map_bounds=userdata.predefinitions["map_bounds"]
       new_goal=Pose2D()
       new_goal.x=random.uniform(map_bounds[0],map_bounds[1]) # x
@@ -431,9 +430,8 @@ class GenericListener():
 
 
   def set_config(self,config):
-    print "SETTING CONFIG"
     self.config=config
-    print "Subscribing to %s"%config["topicname"]
+    rospy.loginfo("Subscribing to %s",config["topicname"])
 
     rospy.Subscriber(self.config["topicname"],self.config["msgclass"], self.listen)
 
@@ -447,9 +445,9 @@ class GenericListener():
 
       # check if config fits incoming message
       if self.config["argname_label"][0]  not in d_content:
-        print "ERROR: cannot subscribe to topic because argname_label was not found in incoming message"
+        rospy.logerr("Cannot subscribe to topic because argname_label was not found in incoming message")
       elif self.config["argname_position"][0] not in d_content:
-        print "ERROR: cannot subscribe to topic because argname_position[0] was not found in incoming message"
+        rospy.logerr("Cannot subscribe to topic because argname_position[0] was not found in incoming message")
 
 
       else:
