@@ -137,25 +137,30 @@ class GoToGoalGeneric(smach.State):
 
   def get_perimeter_goal(self,goal,radius):
 
-      try:
-        get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_points_accessibility_check', CheckPointAccessibility)
-        res = get_approach_pose([goal])
-      except rospy.ServiceException, e:
-        rospy.logwarn("Service call failed: %s",e)
-        return False
+    #  rospy.wait_for_service('map_accessibility_analysis/map_points_accessibility_check',10)
+    #  try:
+    #    get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_points_accessibility_check', CheckPointAccessibility)
+    #    res = get_approach_pose([goal])
+    #  except rospy.ServiceException, e:
+    #    rospy.logwarn("Service call failed: %s",e)
+    #    print "logwarn  returing false"
+    #    return False
 
-      # check whether goal on perimeter has to be approached
-      if res.accessibility_flags[0]==False:
+    #  # check whether goal on perimeter has to be approached
+    #  if res.accessibility_flags[0]==False:
+      if True:
         rospy.loginfo("Computing goal on perimeter")
 
         rotational_sampling_step = 10.0/180.0*math.pi
+        rospy.wait_for_service('map_accessibility_analysis/map_perimeter_accessibility_check',10)
         try:
           get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_perimeter_accessibility_check', CheckPerimeterAccessibility)
           res = get_approach_pose(goal, radius, rotational_sampling_step)
           valid_poses=res.accessible_poses_on_perimeter
         except rospy.ServiceException, e:
-          return False
           rospy.logwarn("Service call failed: %s",e)
+          print "logwarn  returing false"
+          return False
 
         # try for a while to get robot pose # TODO check if this is necessary
         for i in xrange(10):
@@ -177,6 +182,7 @@ class GoToGoalGeneric(smach.State):
               closest_pose = pose
           return closest_pose
         else:
+          print "logwarn  returing false"
           rospy.logwarn("Could not get current robot pose - taking first pose in list")
           return valid_poses[0]
         #handle_base = sss.move("base", pose,blocking=block_program)
@@ -252,9 +258,11 @@ class GoToGoalGeneric(smach.State):
       # command robot move
       if self.use_perimeter_goal==True:
         perimeter_goal=self.get_perimeter_goal(userdata.current_goal,userdata.predefinitions["goal_perimeter"])
+        print perimeter_goal
         if perimeter_goal!=False:
-          rospy.loginfo("Commanding move to goal directly, as accessability check is not available")
           userdata.current_goal=perimeter_goal
+        else:
+          rospy.loginfo("Commanding move to goal directly, as accessability check is not available")
       self.command_move(userdata.current_goal,block_program=False)
 
       #TODO check for goal status

@@ -9,7 +9,7 @@ from tf.transformations import euler_from_quaternion
 import tf
 import time
 import threading
-
+import numpy as np
 ###############''WORKAROUND FOR TRANSFORMLISTENER ISSUE####################
 _tl=None
 _tl_creation_lock=threading.Lock()
@@ -18,7 +18,7 @@ def get_transform_listener():
   global _tl
   with _tl_creation_lock:
     if _tl==None:
-      _tl=tf.TransformListener()
+      _tl=tf.TransformListener(True, rospy.Duration(40.0))
     return _tl
 #################################################################################
 
@@ -59,8 +59,16 @@ class Utils():
         #print y
         print current_position
         dist_to_goal=self.calc_dist(goal.x,goal.y,current_position[0],current_position[1])
+        #angledist
+        rho=180/math.pi
+        delta=5/rho
+        angle_dist=(abs(y-goal.theta)/delta)*0.1
+        rospy.logdebug("angle distance = %f",angle_dist)
+        rospy.logdebug("angle goal = %f",goal.theta)
+        rospy.logdebug("angle robot (yaw)= %f",y)
         rospy.loginfo("distance to goal= %f",dist_to_goal)
-        if dist_to_goal<=dist_threshold:
+        # test combined distance against threshold
+        if (angle_dist+dist_to_goal)<=dist_threshold:
           return True
         else:
           return False
@@ -71,14 +79,28 @@ class Utils():
   def transformPose(self,pose,tl):
     while not rospy.is_shutdown():
         try:
+            #t=rospy.Time(0)
+            t=pose.header.stamp
+            tl.waitForTransform('/map', pose.header.frame_id, t, rospy.Duration(10))
+           # (pos,quat) = tl.lookupTransform( "/map",pose.header.frame_id,t)
+           # t_matrix=tl.fromTranslationRotation(pos,quat)
+           # point=np.matrix(  ((pose.pose.position.x,),(pose.pose.position.y,),(pose.pose.position.z,),(1,) )     )
+           # t_point=np.dot(t_matrix,point)
+           # print t_matrix
+           # print point
+           # print t_point
+
+           # transformed_pose=pose
+           # transformed_pose.pose.position.x=t_point[0,0]
+           # transformed_pose.pose.position.y=t_point[1,0]
+           # transformed_pose.pose.position.z=t_point[2,0]
+            
             transformed_pose=tl.transformPose("/map",pose)
+
             transform_possible=True
             break
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-          rospy.sleep(0.5)
-          transformed_pose=pose.pose
-    #else:
-    #  transformed_pose=pose
+          rospy.sleep(0.2)
     return transformed_pose
 
   def getRobotPose(self,tl):
@@ -86,15 +108,18 @@ class Utils():
     current_position=0
     quaternion=0
 
-    if tl.frameExists("/base_footprint") and tl.frameExists("/map"):
+    if tl.frameExists("/base_link") and tl.frameExists("/map"):
         while not rospy.is_shutdown():
             try:
+                t=rospy.Time(0)
+		tl.waitForTransform('/map', '/base_link', t, rospy.Duration(10))
                 (
-                    current_position, quaternion) = tl.lookupTransform( "/map","/base_footprint",
-                                                                rospy.Time(0))
+                    current_position, quaternion) = tl.lookupTransform( "/map","/base_link",
+                                                                t)
                 transform_possible=True
                 break
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+              print"trafo not found"
               rospy.sleep(0.5)
 
     return (transform_possible,current_position,quaternion)
