@@ -19,7 +19,15 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
-#rosbuild_gensrv()
+rosbuild_gensrv()
+
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include
+					${PROJECT_SOURCE_DIR}/common/include)
+
+rosbuild_add_executable(map_accessibility_analysis_server ros/src/map_accessibility_analysis_server.cpp)
+rosbuild_add_executable(map_accessibility_analysis_client ros/src/map_accessibility_analysis_client.cpp)
+
+
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
@@ -28,6 +36,3 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
-
-rosbuild_add_executable(compute_approach_pose_node ros/src/compute_approach_pose_node.cpp)
-rosbuild_add_executable(compute_approach_pose_client ros/src/compute_approach_pose_client.cpp)
