@@ -62,11 +62,12 @@ class Utils():
         #angledist
         rho=180/math.pi
         delta=5/rho
-        angle_dist=(abs(y-goal.theta)/delta)*0.1
-        rospy.logdebug("angle distance = %f",angle_dist)
-        rospy.logdebug("angle goal = %f",goal.theta)
-        rospy.logdebug("angle robot (yaw)= %f",y)
+        angle_dist=(abs(abs(y)-abs(goal.theta))/delta)*0.1
+        rospy.loginfo("angle goal = %f",goal.theta)
+        rospy.loginfo("angle robot (yaw)= %f",y)
+        rospy.loginfo("angle distance = %f",angle_dist)
         rospy.loginfo("distance to goal= %f",dist_to_goal)
+        rospy.loginfo("combined distance to goal= %f",(dist_to_goal+angle_dist))
         # test combined distance against threshold
         if (angle_dist+dist_to_goal)<=dist_threshold:
           return True
@@ -76,6 +77,8 @@ class Utils():
         rospy.logwarn("No transform available - no goal approached detection")
         return False
 
+  # TODO make transform pose dependent on target frame argument  - so it is not
+  # always transformed to map
   def transformPose(self,pose,tl):
     while not rospy.is_shutdown():
         try:
@@ -112,7 +115,7 @@ class Utils():
         while not rospy.is_shutdown():
             try:
                 t=rospy.Time(0)
-		tl.waitForTransform('/map', '/base_link', t, rospy.Duration(10))
+                tl.waitForTransform('/map', '/base_link', t, rospy.Duration(10))
                 (
                     current_position, quaternion) = tl.lookupTransform( "/map","/base_link",
                                                                 t)
