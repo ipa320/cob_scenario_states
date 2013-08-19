@@ -20,6 +20,9 @@
   <depend package="nav_msgs"/>
   <depend package="cob_script_server"/>
   <depend package="cob_object_detection_msgs"/>
+  <depend package="cob_people_detection_msgs"/>
+  <depend package="accompany_uva_msg"/>
+  <depend package="geometry_msgs"/>
   <depend package="visualization_msgs"/>
   <!--depend package="cob_arm_navigation_python"/-->
   <depend package="cob_3d_mapping_msgs"/>
