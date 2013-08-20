@@ -61,8 +61,20 @@ class Utils():
         dist_to_goal=self.calc_dist(goal.x,goal.y,current_position[0],current_position[1])
         #angledist
         rho=180/math.pi
-        delta=5/rho
-        angle_dist=0.0 # (abs(abs(y)-abs(goal.theta))/delta)*0.1
+        delta=rho/5
+        gy = goal.theta
+        while gy > 2*math.pi:
+            gy = gy - 2*math.pi
+        while gy < 0:
+            gy = gy + 2*math.pi
+        while y > 2*math.pi:
+            y = y - 2*math.pi
+        while y < 0:
+            y = y + 2*math.pi
+        dy = abs(gy-y)
+        if dy > math.pi:
+            dy = math.pi - dy
+        angle_dist=(dy*delta)*0.1
         rospy.loginfo("angle goal = %f",goal.theta)
         rospy.loginfo("angle robot (yaw)= %f",y)
         rospy.loginfo("angle distance = %f",angle_dist)

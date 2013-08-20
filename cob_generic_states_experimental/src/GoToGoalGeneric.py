@@ -47,7 +47,7 @@ class GoToGoalGeneric(smach.State):
   def __init__(self):
     smach.State.__init__(self,
         outcomes=['failed','approached_goal_found','approached_goal_not_found','updated_goal'],
-        input_keys= ['predefinitions','person_detected_at_goal', 'callback_config','search_while_moving','current_goal','position_last_seen','person_name'],
+        input_keys= ['predefinitions','person_detected_at_goal', 'callback_config','search_while_moving','current_goal','use_perimeter_goal','position_last_seen','person_name'],
         output_keys=['predefinitions','search_while_moving','current_goal','position_last_seen','person_detected_at_goal','person_name'])
     self.detections=list()
     self.callback_activated=False
@@ -60,7 +60,7 @@ class GoToGoalGeneric(smach.State):
     self.current_goal_approached=False
     # flag if perimeter goals are supposed to be approached instead of
     # approaching the goal directly
-    self.use_perimeter_goal=True
+ #   self.use_perimeter_goal=True --> should be set by userdata for each call individually
 
 
   def check_callback(self,name,similar_goal_threshold):
@@ -161,6 +161,9 @@ class GoToGoalGeneric(smach.State):
           rospy.logwarn("Service call failed: %s",e)
           print "logwarn  returing false"
           return False
+        
+        if len(valid_poses) == 0:
+            return 0
 
         # try for a while to get robot pose # TODO check if this is necessary
         for i in xrange(10):
@@ -219,7 +222,6 @@ class GoToGoalGeneric(smach.State):
         time.sleep(1)
       if self.person_detected_at_current_goal==True:
           userdata.person_detected_at_goal=True
-          print "say it: here is your order"
           return 'approached_goal_found'
       else:
           return 'approached_goal_not_found'
@@ -258,13 +260,21 @@ class GoToGoalGeneric(smach.State):
 
       # activate processing of external information
       # command robot move
-      if self.use_perimeter_goal==True:
-        perimeter_goal=self.get_perimeter_goal(userdata.current_goal,userdata.predefinitions["goal_perimeter"])
-        print "perimeter_goal=", perimeter_goal
-        if perimeter_goal!=False:
-          userdata.current_goal=perimeter_goal
-        else:
-          rospy.loginfo("Commanding move to goal directly, as accessability check is not available")
+      #if self.use_perimeter_goal==True:
+      if userdata.use_perimeter_goal==True:
+        radius_factor = 1.0
+        while radius_factor < 1.5:
+          perimeter_goal=self.get_perimeter_goal(userdata.current_goal,radius_factor*userdata.predefinitions["goal_perimeter"])
+          if perimeter_goal!=False:
+            if perimeter_goal==0:
+              radius_factor = radius_factor * 1.2
+            else: 
+              userdata.current_goal=perimeter_goal
+              print "perimeter_goal=", perimeter_goal
+              break
+          else:
+            rospy.loginfo("Commanding move to goal directly, as accessability check is not available")
+            break
       self.command_move(userdata.current_goal,block_program=False)
 
       #TODO check for goal status
@@ -401,10 +411,11 @@ class ObserveGeneric(smach.State):
           (new_name,new_goal)=self.generic_listener.get_pose_for_name(name=userdata.person_name)
 
         # check what is returned from generic listener
-        if new_goal !=False:
+        if new_goal != False:
             userdata.position_last_seen=new_goal
             userdata.current_goal=new_goal
             userdata.person_detected_at_goal=True
+            userdata.use_perimeter_goal = True
             # stop observation
             sss.stop("base")
             return 'detected'
@@ -422,12 +433,25 @@ class SetRandomGoal(smach.State):
   def execute(self, userdata):
       rospy.loginfo("navigating to random goal.")
       map_bounds=userdata.predefinitions["map_bounds"]
-      new_goal=Pose2D()
-      new_goal.x=random.uniform(map_bounds[0],map_bounds[1]) # x
-      new_goal.y=random.uniform(map_bounds[2],map_bounds[3]) # y
-      new_goal.theta=random.uniform(0,2*3.14) # theta
-      # todo: check accessibility
-      userdata.current_goal=new_goal
+      while True:
+        new_goal=Pose2D()
+        new_goal.x=random.uniform(map_bounds[0],map_bounds[1]) # x
+        new_goal.y=random.uniform(map_bounds[2],map_bounds[3]) # y
+        new_goal.theta=random.uniform(0,2*3.14) # theta
+        goal_poses = [new_goal]
+        rospy.wait_for_service('map_accessibility_analysis/map_points_accessibility_check',10)
+        try:
+          get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_points_accessibility_check', CheckPointAccessibility)
+          res = get_approach_pose(goal_poses)
+        except rospy.ServiceException, e:
+          print "Service call failed: %s"%e
+          return 'failed'
+        if res.accessibility_flags[0] == True:
+          userdata.current_goal=new_goal
+          userdata.use_perimeter_goal = False
+          break
+
+      print '-------> moving to random goal ', userdata.current_goal
       return 'finished'
 
 class GenericListener():
@@ -469,8 +493,7 @@ class GenericListener():
         name=self.extract_from_msg(d,self.config["argname_label"])
         header=self.extract_from_msg(d,self.config["argname_header"])
         frame=self.extract_from_msg(d,self.config["argname_frame"])
-
-
+ 
 
         #print "-----------------------------------------------------"
         #print "-----------------------------------------------------"
@@ -511,15 +534,13 @@ class GenericListener():
   def get_pose_for_name(self,name=None):
     if len(self.detections)>0:
       #print "detections available"
-
-      # todo: angle
       if name==None:
           #extract position for the first name in detections
           det_name=self.detections[0][0]
           det_pose=Pose2D()
           det_pose.x=self.detections[0][1].x
           det_pose.y=self.detections[0][1].y
-          det_pose.theta=0   # self.detections[0][1].theta
+          det_pose.theta=self.detections[0][1].theta
           return (det_name,det_pose)
       # scan detections for name and pose
       else:
