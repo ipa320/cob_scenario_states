@@ -23,6 +23,7 @@ from geometry_msgs.msg import Pose2D
 from GoToUtils import *
 from cob_map_accessibility_analysis.srv import CheckPerimeterAccessibility
 from cob_map_accessibility_analysis.srv import CheckPointAccessibility
+from ScreenFormatting import *
 ############### PARAMETER SETTINGS #######################
 #
 #global MAP_BOUNDS
@@ -162,8 +163,11 @@ class GoToGoalGeneric(smach.State):
           print "logwarn  returing false"
           return False
         
+        #print "valid_poses"
+        #print valid_poses
+	
         if len(valid_poses) == 0:
-            return 0
+            return -1
 
         # try for a while to get robot pose # TODO check if this is necessary
         for i in xrange(10):
@@ -205,6 +209,7 @@ class GoToGoalGeneric(smach.State):
 
 
   def execute(self,userdata):
+    sf = ScreenFormat("GoToGoalGeneric")
     rospy.loginfo("Person detected at goal: %s",userdata.person_detected_at_goal)
     self.generic_listener.set_config(userdata.callback_config)
     self.activate_callback(reset_detections=True)
@@ -261,16 +266,18 @@ class GoToGoalGeneric(smach.State):
       # activate processing of external information
       # command robot move
       #if self.use_perimeter_goal==True:
+      print "checking perimeter on current goal: ", userdata.current_goal
       if userdata.use_perimeter_goal==True:
         radius_factor = 1.0
-        while radius_factor < 1.5:
+        while radius_factor < 1.75:
           perimeter_goal=self.get_perimeter_goal(userdata.current_goal,radius_factor*userdata.predefinitions["goal_perimeter"])
+          #print "perimeter_goal=", perimeter_goal, "    radius_factor=", radius_factor
           if perimeter_goal!=False:
-            if perimeter_goal==0:
+            if perimeter_goal==-1:
               radius_factor = radius_factor * 1.2
             else: 
               userdata.current_goal=perimeter_goal
-              print "perimeter_goal=", perimeter_goal
+              print "perimeter_goal=", perimeter_goal, "   radius=", radius_factor*userdata.predefinitions["goal_perimeter"]
               break
           else:
             rospy.loginfo("Commanding move to goal directly, as accessability check is not available")
@@ -355,7 +362,7 @@ class ObserveGeneric(smach.State):
     smach.State.__init__(self,
       outcomes=['detected','not_detected','failed'],
       input_keys=[ 'callback_config','person_detected_at_goal','rotate_while_observing','person_name','predefinitions','current_goal','position_last_seen','script_time'],
-      output_keys=['callback_config','person_detected_at_goal','rotate_while_observing','person_name','predefinitions','current_goal','position_last_seen','script_time'])
+      output_keys=['callback_config','person_detected_at_goal','rotate_while_observing','person_name','predefinitions','current_goal','use_perimeter_goal','position_last_seen','script_time'])
     self.rep_ctr=0
     self.utils=Utils()
     self.generic_listener=GenericListener(target_frame="/map")
@@ -363,6 +370,7 @@ class ObserveGeneric(smach.State):
 
 
   def execute(self, userdata):
+    sf = ScreenFormat("ObserveGeneric")
     self.generic_listener.reset()
     self.rotate_while_observing=True
     self.generic_listener.set_config(userdata.callback_config)
@@ -428,9 +436,10 @@ class SetRandomGoal(smach.State):
     smach.State.__init__(self,
       outcomes=['finished','failed'],
       input_keys= ['predefinitions','current_goal'],
-      output_keys=['predefinitions','current_goal'])
+      output_keys=['predefinitions','current_goal','use_perimeter_goal'])
 
   def execute(self, userdata):
+      sf = ScreenFormat("SetRandomGoal")
       rospy.loginfo("navigating to random goal.")
       map_bounds=userdata.predefinitions["map_bounds"]
       while True:
@@ -559,7 +568,7 @@ class SearchPersonGeneric(smach.StateMachine):
     def __init__(self):
         smach.StateMachine.__init__(self,
                 outcomes=['finished','failed'],
-                input_keys= ['predefinitions','callback_config','person_name','position_last_seen','current_goal','person_detected_at_goal','position_last_seen'],
+                input_keys= ['predefinitions','callback_config','person_name','position_last_seen','current_goal','use_perimeter_goal','person_detected_at_goal','position_last_seen'],
                 output_keys=['predefinitions','callback_config','person_name','position_last_seen','current_goal','person_detected_at_goal','position_last_seen'])
 
         with self:

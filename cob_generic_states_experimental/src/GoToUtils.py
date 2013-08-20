@@ -57,7 +57,7 @@ class Utils():
         #print r
         #print p
         #print y
-        print "current_position=", current_position, "   yaw=", y
+        #print "current_position=", current_position, "   yaw=", y
         dist_to_goal=self.calc_dist(goal.x,goal.y,current_position[0],current_position[1])
         #angledist
         rho=180/math.pi
@@ -73,13 +73,13 @@ class Utils():
             y = y + 2*math.pi
         dy = abs(gy-y)
         if dy > math.pi:
-            dy = math.pi - dy
+            dy = 2*math.pi - dy
         angle_dist=(dy*delta)*0.1
-        rospy.loginfo("angle goal = %f",goal.theta)
-        rospy.loginfo("angle robot (yaw)= %f",y)
-        rospy.loginfo("angle distance = %f",angle_dist)
-        rospy.loginfo("distance to goal= %f",dist_to_goal)
-        rospy.loginfo("combined distance to goal= %f",(dist_to_goal+angle_dist))
+        #rospy.loginfo("angle goal = %f",goal.theta)
+        #rospy.loginfo("angle robot (yaw)= %f",y)
+        #rospy.loginfo("angle distance = %f",angle_dist)
+        #rospy.loginfo("distance to goal= %f",dist_to_goal)
+        #rospy.loginfo("combined distance to goal= %f",(dist_to_goal+angle_dist))
         # test combined distance against threshold
         if (angle_dist+dist_to_goal)<=dist_threshold:
           return True
@@ -97,8 +97,12 @@ class Utils():
             #t=rospy.Time(0)
             t=pose.header.stamp
             tl.waitForTransform('/map', pose.header.frame_id, t, rospy.Duration(10))
-           # (pos,quat) = tl.lookupTransform( "/map",pose.header.frame_id,t)
-           # t_matrix=tl.fromTranslationRotation(pos,quat)
+            (pos,quat) = tl.lookupTransform( "/map",pose.header.frame_id,t)
+            t_matrix=tl.fromTranslationRotation(pos,quat)
+            point=[pose.pose.position.x, pose.pose.position.y, pose.pose.position.z, 1]
+            t_point=[point[0]*t_matrix[0][0]+point[1]*t_matrix[0][1]+point[2]*t_matrix[0][2]+point[3]*t_matrix[0][3],
+                     point[0]*t_matrix[1][0]+point[1]*t_matrix[1][1]+point[2]*t_matrix[1][2]+point[3]*t_matrix[1][3],
+                     point[0]*t_matrix[2][0]+point[1]*t_matrix[2][1]+point[2]*t_matrix[2][2]+point[3]*t_matrix[2][3]]
            # point=np.matrix(  ((pose.pose.position.x,),(pose.pose.position.y,),(pose.pose.position.z,),(1,) )     )
            # t_point=np.dot(t_matrix,point)
            # print t_matrix
@@ -106,11 +110,12 @@ class Utils():
            # print t_point
 
            # transformed_pose=pose
-           # transformed_pose.pose.position.x=t_point[0,0]
-           # transformed_pose.pose.position.y=t_point[1,0]
-           # transformed_pose.pose.position.z=t_point[2,0]
+           # transformed_pose.pose.position.x=t_point[0]
+           # transformed_pose.pose.position.y=t_point[1]
+           # transformed_pose.pose.position.z=t_point[2]
             
             transformed_pose=tl.transformPose("/map",pose)
+           # print "transformed_pose=", transformed_pose.pose.position
 
             transform_possible=True
             break
