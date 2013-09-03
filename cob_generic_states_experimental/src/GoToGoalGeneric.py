@@ -563,6 +563,10 @@ class GenericListener():
             return (n,det_pose)
         #extract pose for name return false if not present
     return (name,False)
+   
+  def get_detections(self):
+    return self.detections
+
 
 class SearchPersonGeneric(smach.StateMachine):
     def __init__(self):
