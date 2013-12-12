@@ -145,14 +145,14 @@ class CobIntroduction(smach.State):
         # head and cameras
         sss.say(["With my torso I can perform gestures like nodding."],False)
         sss.move("torso", "nod")
-        sss.say(["or shaking"],False)
+        sss.say(["or shaking"])
         sss.move("torso","shake")
         sss.say(["In my head there are cameras. I use them to recognize people."])
 
         # seek attention
         sss.move("torso","left")
         sss.say(["Hey there on the left!"])
-        rospy.sleep(2)
+        rospy.sleep(1)
         sss.say(["Keep your eyes focused on me!"])
         rospy.sleep(2)
 
@@ -162,13 +162,13 @@ class CobIntroduction(smach.State):
         sss.say(["On the backside I can use my cameras to detect objects."])
 
         # arm
-        sss.set_light("yellow")
         sss.say(["Oh, what is that?"])
         sss.say(["I have an arm and a gripper on the back side."])
+        sss.set_light("yellow")
         handle_arm = sss.move("arm",["intermediateback", "intermediatefront"], False)
         sss.move("head","front", False)
         sss.move("torso","front_left", False)
-        sss.say(["Lets move them to the front so that you can see them. My design follows a two side interaction concept: Normally I use the arm on the backside to manipulate objects and use the tray to safely hand over objects to humans on the front side."])
+        sss.say(["Lets move them to the front so that you can see them. My functional design follows a two side interaction concept: Normally I use the arm on the backside to manipulate objects and use the tray to safely hand over objects to humans on the front side."])
         handle_arm.wait()
         sss.set_light("green")
 
@@ -201,14 +201,18 @@ class CobIntroduction(smach.State):
         sss.move_base_rel("base",[0.1, 0, 0])
         sss.move_base_rel("base",[-0.1, 0, 0])
 
-        sss.say(["and sidewards. This helps a lot if I get you a drink in your home."], False)
+        sss.say(["and sidewards. This helps a lot if I get you a drink in your home. Using my safety laser scanners in the base I can safely navigate between humans."], False)
         sss.move_base_rel("base",[0, 0.1, 0])
         sss.move_base_rel("base",[0, -0.1, 0])
         sss.move_base_rel("base",[0, 0, -1.57])
         sss.set_light("green")
 
         # please take joystick
+        sss.move("torso","left", False)
+        sss.say(["Me and my brothers are in use as a research platform all over the world. If you are interessted you can rent or buy me for your own research."])
+        sss.move("torso","front_right", False)
         sss.say(["Now you know who I am and what I can do, so its your turn. Please take the joystick to drive me around and have fun!"])
+        sss.move("torso",["home","nod"])
 
         return 'succeeded'
 
