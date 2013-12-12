@@ -212,7 +212,7 @@ class CobIntroduction(smach.State):
         sss.say(["Me and my brothers are in use as a research platform all over the world. If you are interessted you can rent or buy me for your own research."])
         sss.move("torso","front_right", False)
         sss.say(["Now you know who I am and what I can do, so its your turn. Please take the joystick to drive me around and have fun!"])
-        sss.move("torso",["home","nod"])
+        sss.move("torso",["nod"])
 
         return 'succeeded'
 
