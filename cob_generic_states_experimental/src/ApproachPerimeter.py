@@ -176,8 +176,8 @@ class SelectNavigationGoal(smach.State):
 
 
 class ApproachPerimeter(smach.StateMachine):
-	def __init__(self):
-		smach.StateMachine.__init__(self, mode = "omni",
+	def __init__(self, mode = "omni"):
+		smach.StateMachine.__init__(self,
 			outcomes=['reached', 'not_reached', 'failed'],
 			input_keys=['center', 'radius', 'rotational_sampling_step', 'goal_pose_selection_strategy', 'invalidate_other_poses_radius', 'goal_pose_theta_offset', 'new_computation_flag'],
 			output_keys=['new_computation_flag'])
