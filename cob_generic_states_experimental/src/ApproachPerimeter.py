@@ -171,6 +171,8 @@ class SelectNavigationGoal(smach.State):
 				userdata.goal_poses_verified.remove(pose)
 		
 		userdata.goal_pose=[closest_pose.x, closest_pose.y, closest_pose.theta + userdata.goal_pose_theta_offset]
+
+		print 'ApproachPerimeter: SelectNavigationGoal commands base to: ', [closest_pose.x, closest_pose.y, closest_pose.theta + userdata.goal_pose_theta_offset]
 		return 'computed'
 
 
