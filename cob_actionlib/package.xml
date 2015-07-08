@@ -5,7 +5,7 @@
 		actionlib
 	</description>
 	<author>Thiago de Freitas</author>
-	<maintainer>Thiago de Freitas</maintainer>
+	<maintainer email="fmw@ipa.fhg.de">Florian Weisshardt</maintainer>
 	<license>LGPL</license>
 	<url>http://ros.org/wiki/cob_actionlib</url>
 

@@ -22,7 +22,7 @@
 	<build_depend>actionlib_msgs</build_depend>
 	<build_depend>std_msgs</build_depend>
 	<build_depend>sensor_msgs</build_depend>
-	<build_depend>kinematics_msgs</build_depend>
+	<!--build_depend>kinematics_msgs</build_depend-->
 	<build_depend>nav_msgs</build_depend>
 	<build_depend>cob_object_detection_msgs</build_depend>
 	<build_depend>cob_perception_msgs</build_depend>
@@ -41,7 +41,7 @@
 	<run_depend>actionlib_msgs</run_depend>
 	<run_depend>std_msgs</run_depend>
 	<run_depend>sensor_msgs</run_depend>
-	<run_depend>kinematics_msgs</run_depend>
+	<!--run_depend>kinematics_msgs</run_depend-->
 	<run_depend>nav_msgs</run_depend>
 	<run_depend>cob_object_detection_msgs</run_depend>
 	<run_depend>cob_perception_msgs</run_depend>
@@ -51,6 +51,6 @@
 	<run_depend>cob_script_server</run_depend>
 	<run_depend>cob_map_accessibility_analysis</run_depend>
 
-	<python path="${prefix}/states"/>
+	<!--python path="${prefix}/states"/-->
 
 </package>

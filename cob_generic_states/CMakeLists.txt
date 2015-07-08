@@ -9,7 +9,7 @@ set(catkin_RUN_PACKAGES
 	tf
 	std_msgs
 	actionlib_msgs
-	kinematics_msgs
+	#kinematics_msgs
 	cob_object_detection_msgs
 	cob_script_server
 	cob_object_detection_fake

@@ -10,7 +10,7 @@ set(catkin_RUN_PACKAGES
 	actionlib_msgs
 	std_msgs
 	sensor_msgs
-	kinematics_msgs
+	#kinematics_msgs
 	nav_msgs
 	cob_object_detection_msgs
 	cob_perception_msgs

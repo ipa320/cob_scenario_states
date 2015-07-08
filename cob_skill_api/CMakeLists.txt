@@ -8,7 +8,7 @@ set(catkin_RUN_PACKAGES
 	tf
 	cob_script_server
 	tf_conversions
-	kinematics_msgs
+	#kinematics_msgs
 	nav_msgs
 	cob_object_detection_msgs
 	visualization_msgs
