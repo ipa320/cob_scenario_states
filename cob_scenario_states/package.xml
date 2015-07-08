@@ -1,0 +1,21 @@
+<package>
+	<name>cob_scenario_states</name>
+	<version>0.1.0</version>
+	<description>This meta-package includes open source software with different robot behaviour scripts.</description>
+	<license>LGPL</license>
+	<url type="website">http://ros.org/wiki/cob_scenario_states</url>
+	<!-- <url type="bugtracker"></url> -->
+	<maintainer email="fmw@ipa.fhg.de">Florian Weisshardt</maintainer>
+
+	<buildtool_depend>catkin</buildtool_depend>
+
+	<run_depend>cob_actionlib</run_depend>
+	<run_depend>cob_generic_states</run_depend>
+	<run_depend>cob_generic_states_experimental</run_depend>
+	<run_depend>cob_map_accessibility_analysis</run_depend>
+	<run_depend>cob_skill_api</run_depend>
+
+	<export>
+		<metapackage/>
+	</export>
+</package>

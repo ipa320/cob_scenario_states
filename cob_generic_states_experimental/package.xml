@@ -1,0 +1,56 @@
+<package>
+	<name>cob_generic_states_experimental</name>
+	<version>0.1.0</version>
+	<description>
+		cob_generic_states_experimental
+	</description>
+	<author email="richard.bormann@ipa.fraunhofer.de">Richard Bormann</author>
+	<author>Tobias Sing</author>
+	<author email="fmw@ipa.fhg.de">Florian Weisshardt</author>
+	<maintainer email="fmw@ipa.fhg.de">Florian Weisshardt</maintainer>
+	<license>LGPL</license>
+	<url>http://ros.org/wiki/cob_generic_states_experimental</url>
+
+	<buildtool_depend>catkin</buildtool_depend>
+
+	<build_depend>cmake_modules</build_depend>
+	<build_depend>rospy</build_depend>
+	<build_depend>smach</build_depend>
+	<build_depend>smach_ros</build_depend>
+	<build_depend>tf</build_depend>
+	<build_depend>tf_conversions</build_depend>
+	<build_depend>actionlib_msgs</build_depend>
+	<build_depend>std_msgs</build_depend>
+	<build_depend>sensor_msgs</build_depend>
+	<build_depend>kinematics_msgs</build_depend>
+	<build_depend>nav_msgs</build_depend>
+	<build_depend>cob_object_detection_msgs</build_depend>
+	<build_depend>cob_perception_msgs</build_depend>
+	<build_depend>geometry_msgs</build_depend>
+	<build_depend>visualization_msgs</build_depend>
+	<build_depend>cob_3d_mapping_msgs</build_depend>
+	<build_depend>cob_script_server</build_depend>
+	<build_depend>cob_map_accessibility_analysis</build_depend>
+
+	<run_depend>cmake_modules</run_depend>
+	<run_depend>rospy</run_depend>
+	<run_depend>smach</run_depend>
+	<run_depend>smach_ros</run_depend>
+	<run_depend>tf</run_depend>
+	<run_depend>tf_conversions</run_depend>
+	<run_depend>actionlib_msgs</run_depend>
+	<run_depend>std_msgs</run_depend>
+	<run_depend>sensor_msgs</run_depend>
+	<run_depend>kinematics_msgs</run_depend>
+	<run_depend>nav_msgs</run_depend>
+	<run_depend>cob_object_detection_msgs</run_depend>
+	<run_depend>cob_perception_msgs</run_depend>
+	<run_depend>geometry_msgs</run_depend>
+	<run_depend>visualization_msgs</run_depend>
+	<run_depend>cob_3d_mapping_msgs</run_depend>
+	<run_depend>cob_script_server</run_depend>
+	<run_depend>cob_map_accessibility_analysis</run_depend>
+
+	<python path="${prefix}/states"/>
+
+</package>
