@@ -82,6 +82,7 @@ import rospy
 import copy
 import smach
 import smach_ros
+import math
 from ScreenFormatting import *
 
 #from simple_script_server import *  # import script
@@ -91,7 +92,6 @@ from geometry_msgs.msg import Pose2D
 from cob_map_accessibility_analysis.srv import CheckPerimeterAccessibility
 import tf
 from tf.transformations import *
-
 from ApproachPose import *
 
 """Computes all accessible robot poses on perimeter"""
@@ -126,7 +126,7 @@ class SelectNavigationGoal(smach.State):
 	def __init__(self):
 		smach.State.__init__(self,
 			outcomes=['computed', 'no_goals_left', 'failed'],
-			input_keys=['goal_poses_verified', 'gaze_direction_goal_pose', 'goal_pose_selection_strategy', 'invalidate_other_poses_radius', 'goal_pose_theta_offset'],
+			input_keys=['goal_poses_verified', 'gaze_direction_goal_pose', 'goal_pose_selection_strategy', 'invalidate_other_poses_radius', 'goal_pose_theta_offset','center', 'radius', 'rotational_sampling_step'],
 			output_keys=['goal_pose'])
 		self.listener = tf.TransformListener(True, rospy.Duration(20.0))
 		
@@ -147,6 +147,9 @@ class SelectNavigationGoal(smach.State):
 			goal_pose.y = robot_pose[0][1]
 		elif userdata.goal_pose_selection_strategy=='closest_to_target_gaze_direction':
 			goal_pose = userdata.gaze_direction_goal_pose
+		elif userdata.goal_pose_selection_strategy=='greatest_free_space':
+			#for theta in range(userdata.center.theta, userdata.center.theta+2*math.pi, userdata.rotational_sampling_step):
+			#for p in range(len(userdata.goal_poses_verified)-1,-1,-1):
 		else:
 			print "The selected strategy %s does not match any of the valid choices." %userdata.gaze_direction_goal_pose
 
