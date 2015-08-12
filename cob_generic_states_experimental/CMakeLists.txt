@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 2.8.3)
 project(cob_generic_states_experimental)
 
 set(catkin_RUN_PACKAGES
-	rospy
-	smach
-	smach_ros
 	tf
 	tf_conversions
 	actionlib_msgs
@@ -90,3 +87,6 @@ include_directories(
 #	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/common
 #	PATTERN ".svn" EXCLUDE
 #)
+
+#catkin_install_python(PROGRAMS src/*.py
+#                      DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
