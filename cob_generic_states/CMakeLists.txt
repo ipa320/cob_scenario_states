@@ -30,6 +30,7 @@ find_package(catkin REQUIRED COMPONENTS
 	${catkin_BUILD_PACKAGES}
 )
 
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##

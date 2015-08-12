@@ -35,6 +35,7 @@ find_package(catkin REQUIRED COMPONENTS
 	${catkin_BUILD_PACKAGES}
 )
 
+catkin_python_setup()
 
 ###################################
 ## catkin specific configuration ##
