@@ -37,6 +37,7 @@
 #                            Internally, the remaining, not yet visited states, are stored in the list 'goal_poses_verified' for the visit_all modes.
 #   'new_computation_flag': If True, the provided list of poses is examined for accessibility, else the old list from userdata.goal_poses_verified is used again.
 #                           This variable is used by the visit_all modes, which work on the already existing list of goal poses after the first call.
+#   'approach_path_accessibility_check: if true, the path to a goal position must be accessible as well'
 #
 #   Output_keys:
 #   'new_computation_flag': see above
@@ -95,7 +96,7 @@ class ComputeNavigationGoals(smach.State):
 	def __init__(self):
 		smach.State.__init__(self,
 			outcomes=['computed', 'failed'],
-			input_keys=['goal_poses', 'goal_pose_application', 'new_computation_flag'],
+			input_keys=['goal_poses', 'goal_pose_application', 'new_computation_flag', 'approach_path_accessibility_check'],
 			output_keys=['goal_poses_verified', 'new_computation_flag'])
 
 	def execute(self, userdata):
@@ -105,7 +106,7 @@ class ComputeNavigationGoals(smach.State):
 		rospy.wait_for_service('map_accessibility_analysis/map_points_accessibility_check',10)
 		try:
 			get_approach_pose = rospy.ServiceProxy('map_accessibility_analysis/map_points_accessibility_check', CheckPointAccessibility)
-			res = get_approach_pose(userdata.goal_poses)
+			res = get_approach_pose(userdata.goal_poses, userdata.approach_path_accessibility_check)
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 			return 'failed'
@@ -189,7 +190,7 @@ class ApproachPoses(smach.StateMachine):
 	def __init__(self):
 		smach.StateMachine.__init__(self,
 			outcomes=['reached', 'not_reached', 'failed'],
-			input_keys=['goal_poses', 'goal_pose_application', 'new_computation_flag'],
+			input_keys=['goal_poses', 'goal_pose_application', 'new_computation_flag', 'approach_path_accessibility_check'],
 			output_keys=['new_computation_flag'])
 		with self:
 
@@ -238,6 +239,7 @@ if __name__ == '__main__':
 		sm.userdata.goal_poses.append(pose)
 		sm.userdata.new_computation_flag = True
 		sm.userdata.goal_pose_application = 'use_as_alternatives' # 'visit_all_in_order' (commands the robot to all poses in the provided order), 'visit_all_nearest' (commands the robot to all poses using the closest next pose each time), 'use_as_alternatives' (visits the first pose of the list that is reachable)
+		sm.userdata.approach_path_accessibility_check = False
 		
 		# introspection -> smach_viewer
 		sis = smach_ros.IntrospectionServer('map_accessibility_analysis_introspection', sm, '/MAP_ACCESSIBILITY_ANALYSIS')

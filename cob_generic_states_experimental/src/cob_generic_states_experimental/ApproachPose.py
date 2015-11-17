@@ -166,7 +166,7 @@ class ApproachPose(smach.State):
 
 				# set light to "thinking" after not moving for 2 sec
 				if round(stopping_time) >= 2.0:
-					sss.set_light("blue")
+					#sss.set_light("blue")
 					yellow = False
 			else:
 				# robot is moving
