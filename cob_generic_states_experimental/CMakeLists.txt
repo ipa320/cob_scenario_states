@@ -19,7 +19,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
-#rosbuild_gensrv()
+rosbuild_gensrv()
+
+#rosbuild_add_executable(tracked_humans_publisher src/TrackedHumansPublisher.cpp)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
