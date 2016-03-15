@@ -13,27 +13,12 @@
 
 	<buildtool_depend>catkin</buildtool_depend>
 
-	<depend>cmake_modules</depend>
-	<depend>tf</depend>
-	<depend>tf_conversions</depend>
-	<depend>actionlib_msgs</depend>
-	<depend>std_msgs</depend>
-	<depend>sensor_msgs</depend>
-	<!--depend>kinematics_msgs</depend-->
-	<depend>nav_msgs</depend>
-	<depend>cob_object_detection_msgs</depend>
-	<depend>cob_perception_msgs</depend>
-	<depend>geometry_msgs</depend>
-	<depend>visualization_msgs</depend>
-	<depend>cob_3d_mapping_msgs</depend>
-	<depend>cob_script_server</depend>
-	<depend>cob_map_accessibility_analysis</depend>
+	<build_depend>message_generation</build_depend>
+	<exec_depend>message_runtime</exec_depend>
 
 	<exec_depend>rospy</exec_depend>
 	<exec_depend>smach</exec_depend>
 	<exec_depend>smach_ros</exec_depend>
 	<!--exec_depend>cob_script_server</exec_depend-->
-
-	<!--python path="${prefix}/states"/-->
 
 </package>

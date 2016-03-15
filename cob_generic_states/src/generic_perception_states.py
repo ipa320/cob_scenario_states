@@ -357,26 +357,3 @@ class DetectObjectFrontside(smach.State):
 			sss.move("torso","home")
 		
 		return result
-
-
-class SM(smach.StateMachine):
-        def __init__(self):
-                smach.StateMachine.__init__(self,outcomes=['ended'])
-                with self:
-                        smach.StateMachine.add('DETECT_OBJECT_TABLE',DetectObjectFrontside("DETECT_OBJECT_TABLE"),
-                                transitions={'no_object':'DETECT_OBJECT_TABLE',
-                                        'failed':'ended',
-					'succeeded':'ended',
-				        'no_more_retries':'ended'})
-
-
-
-if __name__=='__main__':
-        rospy.init_node('DetectObjectFrontside')
-        sm = SM()
-        sm.userdata.object_name = 'milk_box'
-        sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
-        sis.start()
-        outcome = sm.execute()
-        rospy.spin()
-
