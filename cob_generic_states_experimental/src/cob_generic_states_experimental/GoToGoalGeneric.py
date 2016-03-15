@@ -9,7 +9,7 @@ import math
 import smach
 import smach_ros
 import random
-from cob_people_detection_msgs.msg import *
+from cob_perception_msgs.msg import *
 from accompany_uva_msg.msg import *
 from ApproachPose import *
 import sys

@@ -147,7 +147,7 @@ class SelectNavigationGoal(smach.State):
 			goal_pose.y = robot_pose[0][1]
 		elif userdata.goal_pose_selection_strategy=='closest_to_target_gaze_direction':
 			goal_pose = userdata.gaze_direction_goal_pose
-		elif userdata.goal_pose_selection_strategy=='greatest_free_space':
+		#elif userdata.goal_pose_selection_strategy=='greatest_free_space':
 			#for theta in range(userdata.center.theta, userdata.center.theta+2*math.pi, userdata.rotational_sampling_step):
 			#for p in range(len(userdata.goal_poses_verified)-1,-1,-1):
 		else:
