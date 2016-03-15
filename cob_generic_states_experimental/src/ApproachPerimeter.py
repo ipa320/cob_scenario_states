@@ -29,6 +29,7 @@
 #   'center': Pose2D defining the center point of the circle to be visited. You may provide an orientation angle as well, which defines the "viewing direction" of the target.
 #   'radius': Double value of the radius of the circle.
 #   'rotational_sampling_step': Double value of the angular sampling step with in [rad] of goal poses on the perimeter of the circle.
+#   'goal_pose_theta_offset': Usually, the goal poses face the center of the circle. This offset can modify the final orientation with respect to the circle's center. 
 #   'goal_pose_selection_strategy': defines which of the possible poses on the circle shall be preferred
 #                                   'closest_to_target_gaze_direction' (commands the robot to the pose which is closest to the target's viewing direction, useful e.g. for living targets),
 #                                   'closest_to_robot' (commands the robot to the pose closest to the current robot position, useful e.g. for inspecting a location).
@@ -81,6 +82,7 @@ import rospy
 import copy
 import smach
 import smach_ros
+import math
 from ScreenFormatting import *
 
 #from simple_script_server import *  # import script
@@ -90,7 +92,6 @@ from geometry_msgs.msg import Pose2D
 from cob_map_accessibility_analysis.srv import CheckPerimeterAccessibility
 import tf
 from tf.transformations import *
-
 from ApproachPose import *
 
 """Computes all accessible robot poses on perimeter"""
@@ -125,7 +126,7 @@ class SelectNavigationGoal(smach.State):
 	def __init__(self):
 		smach.State.__init__(self,
 			outcomes=['computed', 'no_goals_left', 'failed'],
-			input_keys=['goal_poses_verified', 'gaze_direction_goal_pose', 'goal_pose_selection_strategy', 'invalidate_other_poses_radius'],
+			input_keys=['goal_poses_verified', 'gaze_direction_goal_pose', 'goal_pose_selection_strategy', 'invalidate_other_poses_radius', 'goal_pose_theta_offset','center', 'radius', 'rotational_sampling_step'],
 			output_keys=['goal_pose'])
 		self.listener = tf.TransformListener(True, rospy.Duration(20.0))
 		
@@ -146,6 +147,9 @@ class SelectNavigationGoal(smach.State):
 			goal_pose.y = robot_pose[0][1]
 		elif userdata.goal_pose_selection_strategy=='closest_to_target_gaze_direction':
 			goal_pose = userdata.gaze_direction_goal_pose
+		elif userdata.goal_pose_selection_strategy=='greatest_free_space':
+			#for theta in range(userdata.center.theta, userdata.center.theta+2*math.pi, userdata.rotational_sampling_step):
+			#for p in range(len(userdata.goal_poses_verified)-1,-1,-1):
 		else:
 			print "The selected strategy %s does not match any of the valid choices." %userdata.gaze_direction_goal_pose
 
@@ -169,17 +173,21 @@ class SelectNavigationGoal(smach.State):
 			if dist_squared < nogo_area_radius_squared:
 				userdata.goal_poses_verified.remove(pose)
 		
-		userdata.goal_pose=[closest_pose.x, closest_pose.y, closest_pose.theta]
+		userdata.goal_pose=[closest_pose.x, closest_pose.y, closest_pose.theta + userdata.goal_pose_theta_offset]
+
+		print 'ApproachPerimeter: SelectNavigationGoal commands base to: ', [closest_pose.x, closest_pose.y, closest_pose.theta + userdata.goal_pose_theta_offset]
 		return 'computed'
 
 
 
 class ApproachPerimeter(smach.StateMachine):
-	def __init__(self):
+	def __init__(self, mode = "omni"):
 		smach.StateMachine.__init__(self,
 			outcomes=['reached', 'not_reached', 'failed'],
-			input_keys=['center', 'radius', 'rotational_sampling_step', 'goal_pose_selection_strategy', 'invalidate_other_poses_radius', 'new_computation_flag'],
+			input_keys=['center', 'radius', 'rotational_sampling_step', 'goal_pose_selection_strategy', 'invalidate_other_poses_radius', 'goal_pose_theta_offset', 'new_computation_flag'],
 			output_keys=['new_computation_flag'])
+		self.move_mode = mode
+
 		with self:
 
 			smach.StateMachine.add('COMPUTE_GOALS', ComputeNavigationGoals(),
@@ -191,7 +199,7 @@ class ApproachPerimeter(smach.StateMachine):
 									'no_goals_left':'not_reached',
 									'failed':'failed'})
 
-			smach.StateMachine.add('MOVE_BASE', ApproachPose(),
+			smach.StateMachine.add('MOVE_BASE', ApproachPose(mode=self.move_mode),
 						transitions={'reached':'reached',
 									'not_reached':'SELECT_GOAL',
 									'failed':'failed'},
@@ -211,6 +219,7 @@ if __name__ == '__main__':
 		sm.userdata.center.theta = 0
 		sm.userdata.radius = 0.8
 		sm.userdata.rotational_sampling_step = 10.0/180.0*math.pi
+		sm.userdata.goal_pose_theta_offset = math.pi/2.0;
 		sm.userdata.new_computation_flag = True
 		sm.userdata.invalidate_other_poses_radius = 1.0 #in meters, radius the current goal covers
 		sm.userdata.goal_pose_selection_strategy = 'closest_to_target_gaze_direction'  #'closest_to_target_gaze_direction', 'closest_to_robot'

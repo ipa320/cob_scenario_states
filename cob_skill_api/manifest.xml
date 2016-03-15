@@ -17,7 +17,7 @@
   <depend package="kinematics_msgs"/>
   <depend package="nav_msgs"/>
   <depend package="cob_object_detection_msgs"/>
-  <depend package="cob_mmcontroller"/>
+  <!--depend package="cob_mmcontroller"/-->
   <depend package="visualization_msgs"/>
 
 </package>
