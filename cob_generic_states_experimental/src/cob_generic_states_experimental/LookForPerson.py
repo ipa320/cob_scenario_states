@@ -18,7 +18,7 @@ import rospy
 import smach
 import smach_ros
 import random
-from cob_people_detection_msgs.msg import *
+from cob_perception_msgs.msg import *
 from ApproachPose import *
 import sys
 from tf import TransformListener
