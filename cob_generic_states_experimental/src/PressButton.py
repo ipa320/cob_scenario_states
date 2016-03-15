@@ -166,10 +166,16 @@ if __name__=='__main__':
     sm.userdata.button = Detection()
     sm.userdata.button.pose.header.stamp = rospy.Time.now()
     sm.userdata.button.pose.header.frame_id = "/base_link"
-    sm.userdata.button.pose.pose.position.x = -0.5
-    sm.userdata.button.pose.pose.position.y = -0.5
-    sm.userdata.button.pose.pose.position.z = 1.0
-    [new_x, new_y, new_z, new_w] = tf.transformations.quaternion_from_euler(0.0, 0.0, 3.14) # rpy 
+    
+    sm.userdata.button.pose.pose.position.x = -0.55
+    sm.userdata.button.pose.pose.position.y = 0.2
+    sm.userdata.button.pose.pose.position.z = 1.1
+    [new_x, new_y, new_z, new_w] = tf.transformations.quaternion_from_euler(2.44, -1.535, -1.552) # rpy 
+
+    #sm.userdata.button.pose.pose.position.x = -0.5
+    #sm.userdata.button.pose.pose.position.y = -0.5
+    #sm.userdata.button.pose.pose.position.z = 1.0
+    #[new_x, new_y, new_z, new_w] = tf.transformations.quaternion_from_euler(0.0, 0.0, 3.14) # rpy 
     sm.userdata.button.pose.pose.orientation.x = new_x
     sm.userdata.button.pose.pose.orientation.y = new_y
     sm.userdata.button.pose.pose.orientation.z = new_z

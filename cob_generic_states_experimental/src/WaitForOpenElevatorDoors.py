@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-### State: WaitForOpenDoor(.py)
+### State: WaitForOpenElevatorDoors(.py)
 ### Description:
 ###   This state assumes that there are two doors in front
 ###   of the robot, one to the left and one to the right
@@ -37,7 +37,7 @@ import smach
 import smach_ros
 from cob_generic_states_experimental.srv import Door
 
-class WaitForOpenDoor(smach.State):
+class WaitForOpenElevatorDoors(smach.State):
 
   def __init__(self, waitDuration, useTeachedPoses=True):
     self.useTeachedPoses = useTeachedPoses
@@ -50,7 +50,8 @@ class WaitForOpenDoor(smach.State):
   def execute(self, userdata):
     if self.useTeachedPoses:
       try:
-        self.post_door = rospy.get_param('/script_server/base/post_door')
+        self.elevator_in_left = rospy.get_param('/script_server/base/elevator_in_left')
+        self.elevator_in_right = rospy.get_param('/script_server/base/elevator_in_right')
       except:
         print 'parameters missing:'
         print '/script_server/base/elevator_in_left'
@@ -72,13 +73,13 @@ class WaitForOpenDoor(smach.State):
       doorFunc = rospy.ServiceProxy('/door_state', Door)
       doorStatus = doorFunc().doors
       if len(doorStatus)==1:
-        if doorStatus[0].y > 0.3:
+        if doorStatus[0].y > 0.3:  
           doorOpen = True
           if self.useTeachedPoses:
             userdata.base_pose=self.elevator_in_left
           else:
             userdata.base_pose=[doorStatus[0].x,doorStatus[0].y,doorStatus[0].theta]
-        elif doorStatus[0].y < -0.3:
+        elif doorStatus[0].y < -0.3: 
           doorOpen = True
           if self.useTeachedPoses:
             userdata.base_pose=self.elevator_in_right
