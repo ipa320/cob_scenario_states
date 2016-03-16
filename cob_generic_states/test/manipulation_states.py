@@ -1,13 +1,11 @@
 #!/usr/bin/python
 
-PKG = 'cob_generic_states'
-import roslib; roslib.load_manifest(PKG)
 import rospy
 import smach
 import smach_ros
 import unittest
 
-from generic_manipulation_states import *
+from cob_generic_states.generic_manipulation_states import *
 
 class TestStates(unittest.TestCase):
 	def __init__(self, *args):
@@ -59,21 +57,6 @@ class TestStates(unittest.TestCase):
 			error_message = "Unexpected error:", sys.exc_info()[0]
 			self.fail(error_message)
 
-	def test_open_door(self):
-		# create a SMACH state machine
-		SM = smach.StateMachine(outcomes=['overall_succeeded','overall_failed'])
-
-		# open the container
-		with SM:
-			smach.StateMachine.add('TEST', open_door(),
-				transitions={'succeeded':'overall_succeeded', 'failed':'overall_failed'})
-
-		try:
-			SM.execute()
-		except:
-			error_message = "Unexpected error:", sys.exc_info()[0]
-			self.fail(error_message)
-
 	def test_put_object_on_tray_side(self):
 		# create a SMACH state machine
 		SM = smach.StateMachine(outcomes=['overall_succeeded','overall_failed'])
@@ -107,4 +90,4 @@ class TestStates(unittest.TestCase):
 # main
 if __name__ == '__main__':
     import rostest
-    rostest.rosrun(PKG, 'manipulation', TestStates)
+    rostest.rosrun('cob_generic_states', 'manipulation', TestStates)
