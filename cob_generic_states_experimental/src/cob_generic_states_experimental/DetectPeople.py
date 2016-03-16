@@ -12,7 +12,7 @@ class DetectPeople(smach.State):
 			outcomes=['found','not_found','failed'],
 			input_keys=[])
 	def execute(self, userdata):
-		sss.say(["I am detecting people now."])
+		sss.say("sound", ["I am detecting people now."])
 		sss.sleep(2)
-		sss.say(["I found two persons."])
+		sss.say("sound", ["I found two persons."])
 		return 'found'

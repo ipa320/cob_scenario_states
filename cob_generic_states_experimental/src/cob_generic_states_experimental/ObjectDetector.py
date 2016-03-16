@@ -149,7 +149,7 @@ class ObjectDetector:
 			print "Service not available: %s"%e
 			return 'failed', self.detected_objects
 	
-		sss.say(["I am now looking for objects"],False)
+		sss.say("sound", ["I am now looking for objects"],False)
 	
 		#iterate through torso poses until objects have been detected according to the mode	
 		for pose in self.torso_poses:

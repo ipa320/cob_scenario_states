@@ -82,7 +82,7 @@ class Light(smach.State):
 		self.color = color
 
 	def execute(self, userdata):
-		sss.set_light(self.color)
+		sss.set_light("light", self.color)
 		return 'succeeded'
 
 class LightDyn(smach.State):
@@ -92,5 +92,5 @@ class LightDyn(smach.State):
 			input_keys=['color'])
 
 	def execute(self, userdata):
-		sss.set_light(userdata.color)
+		sss.set_light("light", userdata.color)
 		return 'succeeded'

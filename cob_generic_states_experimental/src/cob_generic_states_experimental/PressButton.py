@@ -58,7 +58,7 @@ class PressButton(smach.State):
         pre_button_js, error_code = sss.calculate_ik(tmp_pose)
         if(error_code.val != error_code.SUCCESS):
             if error_code.val != error_code.NO_IK_SOLUTION:
-                sss.set_light('red')
+                sss.set_light("light", 'red')
             rospy.logerr("Ik pre_button Failed")
             return 'not_pressed'
 
@@ -70,7 +70,7 @@ class PressButton(smach.State):
         button_js, error_code = sss.calculate_ik(tmp_pose)
         if(error_code.val != error_code.SUCCESS):
             if error_code.val != error_code.NO_IK_SOLUTION:
-                sss.set_light('red')
+                sss.set_light("light", 'red')
             rospy.logerr("Ik button Failed")
             return 'not_pressed'
 
@@ -82,11 +82,11 @@ class PressButton(smach.State):
 #        post_button_js, error_code = sss.calculate_ik(tmp_pose)
 #        if(error_code.val != error_code.SUCCESS):
 #            if error_code.val != error_code.NO_IK_SOLUTION:
-#                sss.set_light('red')
+#                sss.set_light("light", 'red')
 #            rospy.logerr("Ik button Failed")
 #            return 'not_pressed'
 
-        sss.say(["I am pressing a button now."])
+        sss.say("sound", ["I am pressing a button now."])
         handle_arm = sss.move_planned("arm", [list(pre_button_js.position)])
         if handle_arm.get_error_code() > 0:
         	return 'not_pressed'

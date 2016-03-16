@@ -126,22 +126,22 @@ class ApproachPose(smach.State):
 			
 			# finished with succeeded
 			if (handle_base.get_state() == 3):
-				sss.set_light('green')
+				sss.set_light("light", 'green')
 				return 'reached'
 			# finished with aborted
 			elif (handle_base.get_state() == 4):
-				sss.set_light('green')
+				sss.set_light("light", 'green')
 				sss.stop("base")
 				return 'not_reached'
 			# finished with preempted or canceled
 			elif (handle_base.get_state() == 2) or (handle_base.get_state() == 8):
-				sss.set_light('green')
+				sss.set_light("light", 'green')
 				sss.stop("base")
 				return 'not_reached'
 			# return with error
 			elif (handle_base.get_error_code() > 0):
 				print "error_code = " + str(handle_base.get_error_code())
-				sss.set_light('red')
+				sss.set_light("light", 'red')
 				return 'failed'
 	
 			# check if the base is moving
@@ -153,23 +153,23 @@ class ApproachPose(smach.State):
 
 				# abort after timeout is reached
 				if stopping_time >= self.timeout:
-					sss.set_light('green')
+					sss.set_light("light", 'green')
 					sss.stop("base")
 					return 'not_reached'
 				
 				# announce warning after every 10 sec
 				if announce_time >= 10.0:
-					sss.say([self.warnings[random.randint(0,len(self.warnings)-1)]],False)
+					sss.say("sound", [self.warnings[random.randint(0,len(self.warnings)-1)]],False)
 					announce_time = 0.0
 
 				# set light to "thinking" after not moving for 2 sec
 				if round(stopping_time) >= 2.0:
-					#sss.set_light("blue")
+					#sss.set_light("light", "blue")
 					yellow = False
 			else:
 				# robot is moving
 				if not yellow:
-					sss.set_light("yellow")
+					sss.set_light("light", "yellow")
 					yellow = True
 			
 			# sleep

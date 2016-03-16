@@ -12,7 +12,7 @@ class PrepareRobot(smach.State):
                              outcomes=['succeeded'])
     def execute(self, userdata):
         sss.sleep(2) # 2 
-        sss.say(["Preparing."],False)
+        sss.say("sound", ["Preparing."],False)
         
         # bring robot into the starting state
         handle_tray = sss.move("tray","down",False)
@@ -30,6 +30,6 @@ class PrepareRobot(smach.State):
         
         
         # announce ready
-        sss.say(["Ready."])
+        sss.say("sound", ["Ready."])
         return 'succeeded'
     

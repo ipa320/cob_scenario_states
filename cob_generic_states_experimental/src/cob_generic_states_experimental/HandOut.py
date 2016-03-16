@@ -15,7 +15,7 @@ class HandOut(smach.State):
 			input_keys=['object'])
 
 	def execute(self, userdata):
-		sss.say(["Here is your " + userdata.object.label + ". Please help yourself."],False)
+		sss.say("sound", ["Here is your " + userdata.object.label + ". Please help yourself."],False)
 		sss.move("torso","nod",False)
 		
 		try:

@@ -79,7 +79,7 @@ class initialize(smach.State):
 			outcomes=['succeeded', 'failed'])
 		
 	def execute(self, userdata):
-		sss.set_light("yellow")
+		sss.set_light("light", "yellow")
 
 		# initialize components
 		handle_head = sss.init("head")
@@ -132,7 +132,7 @@ class initialize(smach.State):
 			return 'failed'
 
 		# set light
-		sss.set_light("green")
+		sss.set_light("light", "green")
 
 		return 'succeeded'
 
@@ -189,7 +189,7 @@ class get_order(smach.State):
 		handle_tray = sss.move("tray","up",False)
 		sss.move("head","front",False)
 		sss.sleep(2)
-		sss.say(["What do you want to order? Please select on my screen."],False)
+		sss.say("sound", ["What do you want to order? Please select on my screen."],False)
 		sss.move("torso","front",False)
 
 		# check for tablet_gui service
@@ -212,7 +212,7 @@ class get_order(smach.State):
 			print "Service call failed: %s"%e
 			return 'failed'
 		
-		sss.say(["You ordered " + res.object_name.data + "."],False)
+		sss.say("sound", ["You ordered " + res.object_name.data + "."],False)
 		sss.move("torso","nod",False)
 		sss.move("tray","down",False)
 		return 'succeeded'
@@ -229,7 +229,7 @@ class deliver_object(smach.State):
 
 	def execute(self, userdata):
 		sss.move("head","front",False)
-		sss.say(["Here is your " + userdata.object_name + ". Please help yourself."],False)
+		sss.say("sound", ["Here is your " + userdata.object_name + ". Please help yourself."],False)
 		sss.move("torso","nod",False)
 		
 #		try:

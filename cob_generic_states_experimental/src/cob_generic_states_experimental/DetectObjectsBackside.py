@@ -47,31 +47,31 @@ class DetectObjectsBackside(smach.State):
 
 	def execute(self, userdata):
 
-		sss.set_light('blue')
+		sss.set_light("light", 'blue')
 
 		#Preparations for object detection
 		handle_torso = sss.move("torso","home",False)
-		sss.set_light('yellow')
+		sss.set_light("light", 'yellow')
 		handle_arm = sss.move("arm","folded-to-look_at_table",False)
 		handle_head = sss.move("head","back",False)
 		handle_arm.wait()
 		handle_torso.wait()
 		handle_head.wait()
-		sss.set_light('blue')
+		sss.set_light("light", 'blue')
 
 		result, userdata.objects = self.object_detector.execute(userdata)
 
 		# ... cleanup robot components
 		if result != "detected":
-			sss.set_light('yellow')
+			sss.set_light("light", 'yellow')
 			sss.move("torso","front")
 			handle_arm = sss.move("arm","look_at_table-to-folded")
 		sss.move("torso","home")
 
 		if result == "failed":
-			sss.set_light('red')
+			sss.set_light("light", 'red')
 		else:
-			sss.set_light('green')
+			sss.set_light("light", 'green')
 		
 		return result
 

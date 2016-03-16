@@ -13,7 +13,7 @@ class MoveYourself(smach.State):
 
 	def execute(self, userdata):
 		# ------------------------------------
-		sss.set_light("yellow")
+		sss.set_light("light", "yellow")
 		handle_arm = sss.move("arm","pregrasp",False)
 		handle_tray = sss.move("tray","up",False)
 		handle_torso = sss.move("torso","nod",False)
@@ -32,7 +32,7 @@ class MoveYourself(smach.State):
 			print "torso state = ",handle_torso.get_state()
 			print "tray state = ",handle_tray.get_state()
 			print "arm state = ",handle_arm.get_state()
-			sss.set_light("red")
+			sss.set_light("light", "red")
 			return 'failed' 
 		
 		# ------------------------------------
@@ -54,10 +54,10 @@ class MoveYourself(smach.State):
 			print "torso state = ",handle_torso.get_state()
 			print "tray state = ",handle_tray.get_state()
 			print "arm state = ",handle_arm.get_state()
-			sss.set_light("red")
+			sss.set_light("light", "red")
 			return 'failed'
 
-		sss.set_light("green")
+		sss.set_light("light", "green")
 		return 'succeeded'
 
 

@@ -70,9 +70,9 @@ class AnnounceFoundObjects(smach.State):
 			object_names += obj.label + ", "
 		
 		if object_names != "":
-			sss.say(["I found: " + object_names])
+			sss.say("sound", ["I found: " + object_names])
 		else:
-			sss.say(["I found: nothing"])
+			sss.say("sound", ["I found: nothing"])
 		userdata.objects = []
 		return 'announced'
 

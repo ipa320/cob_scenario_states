@@ -190,7 +190,7 @@ class grasp_side(smach.State):
 			return 'not_grasped'
 
 		# execute grasp
-		sss.say(["I am grasping the " + userdata.object.label + " now."],False)
+		sss.say("sound", ["I am grasping the " + userdata.object.label + " now."],False)
 		sss.move("torso","front")
 		handle_arm = sss.move("arm", [pre_grasp_conf , grasp_conf],False)
 		sss.move("sdh", "cylopen")
@@ -224,7 +224,7 @@ class grasp_side_planned(smach.State):
 	def execute(self, userdata):
 		# check if maximum retries reached
 		if self.retries > self.max_retries:
-			sss.set_light('yellow')
+			sss.set_light("light", 'yellow')
 			self.retries = 0
 			handle_torso = sss.move("torso","home",False)
 			handle_torso.wait()
@@ -256,7 +256,7 @@ class grasp_side_planned(smach.State):
 		res = self.transformer(req)
 		if not res.success:
 			print "Service call GetPoseStampedTransformed failed", sys.exc_info()
-			sss.set_light('red')
+			sss.set_light("light", 'red')
 			self.retries = 0
 			return 'failed'
 		
@@ -282,7 +282,7 @@ class grasp_side_planned(smach.State):
 		post_grasp_bl.pose.position.x = post_grasp_bl.pose.position.x + 0.05 # x offset for post grasp position
 		post_grasp_bl.pose.position.z = post_grasp_bl.pose.position.z + 0.17 # z offset for post grasp position
 
-		sss.set_light('blue')
+		sss.set_light("light", 'blue')
 	
 		# calculate ik solutions for pre grasp configuration
 		seed_js = JointState()
@@ -291,7 +291,7 @@ class grasp_side_planned(smach.State):
 		pre_grasp_js, error_code = sss.calculate_ik(pre_grasp_bl,seed_js)
 		if(error_code.val != error_code.SUCCESS):
 			if error_code.val != error_code.NO_IK_SOLUTION:
-				sss.set_light('red')
+				sss.set_light("light", 'red')
 			rospy.logerr("Ik pre_grasp Failed")
 			self.retries += 1
 			return 'not_grasped'
@@ -300,7 +300,7 @@ class grasp_side_planned(smach.State):
 		grasp_js, error_code = sss.calculate_ik(object_pose_bl, pre_grasp_js)
 		if(error_code.val != error_code.SUCCESS):
 			if error_code.val != error_code.NO_IK_SOLUTION:
-				sss.set_light('red')
+				sss.set_light("light", 'red')
 			rospy.logerr("Ik grasp Failed")
 			self.retries += 1
 			return 'not_grasped'
@@ -309,14 +309,14 @@ class grasp_side_planned(smach.State):
 		post_grasp_js, error_code = sss.calculate_ik(post_grasp_bl, grasp_js)
 		if(error_code.val != error_code.SUCCESS):
 			if error_code.val != error_code.NO_IK_SOLUTION:
-				sss.set_light('red')
+				sss.set_light("light", 'red')
 			rospy.logerr("Ik post_grasp Failed")
 			self.retries += 1
 			return 'not_grasped'
 
 		# execute grasp
-		sss.set_light('yellow')
-		sss.say(["I am grasping the " + userdata.object.label + " now."],False)
+		sss.set_light("light", 'yellow')
+		sss.say("sound", ["I am grasping the " + userdata.object.label + " now."],False)
 		#handle_arm = sss.move("arm", [pre_grasp_conf , grasp_conf],False)
 		handle_arm = sss.move_planned("arm", [list(pre_grasp_js.position)],False)
 		sss.move("sdh", "cylopen",False)
@@ -334,7 +334,7 @@ class grasp_side_planned(smach.State):
 		if self.grasped().success.data:
 			return 'grasped'
 		else:
-			sss.say(["I could not grasp " + userdata.object.label],False)
+			sss.say("sound", ["I could not grasp " + userdata.object.label],False)
 			return 'not_grasped'
 		
 ## Grasp top state
@@ -423,7 +423,7 @@ class grasp_top(smach.State):
 			return 'no_ik_solution'	
 
 		# execute grasp
-		sss.say(["I am grasping the " + userdata.object.label + " now."],False)
+		sss.say("sound", ["I am grasping the " + userdata.object.label + " now."],False)
 		sss.move("torso","home")
 		handle_arm = sss.move("arm", [pre_grasp_conf , grasp_conf],False)
 		sss.move("sdh", "spheropen")

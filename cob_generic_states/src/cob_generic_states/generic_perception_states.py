@@ -202,16 +202,16 @@ class DetectObjectBackside(smach.State):
 
 	def execute(self, userdata):
 
-		sss.set_light('blue')
+		sss.set_light("light", 'blue')
 	
 		# check if maximum retries reached
 		if self.retries > self.max_retries:
-			sss.set_light('yellow')
+			sss.set_light("light", 'yellow')
 			self.retries = 0
 			handle_torso = sss.move("torso","home",False)
 			handle_torso.wait()
 			handle_arm = sss.move("arm","look_at_table-to-folded")
-			sss.set_light('blue')
+			sss.set_light("light", 'blue')
 			return 'no_more_retries'
 		
 		# move sdh as feedback
@@ -224,15 +224,15 @@ class DetectObjectBackside(smach.State):
 			object_name = "given object"
 
 		if self.retries == 0: # only move arm, sdh and head for the first try
-			sss.set_light('yellow')
-			sss.say(["I will now search for the " + object_name + "."],False)
+			sss.set_light("light", 'yellow')
+			sss.say("sound", ["I will now search for the " + object_name + "."],False)
 			handle_arm = sss.move("arm","folded-to-look_at_table",False)
 			handle_torso = sss.move("torso","shake",False)
 			handle_head = sss.move("head","back",False)
 			handle_arm.wait()
 			handle_head.wait()
 			handle_torso.wait()
-			sss.set_light('blue')
+			sss.set_light("light", 'blue')
 
 		# have an other viewing point for each retry
 		handle_torso = sss.move("torso",self.torso_poses[self.retries % len(self.torso_poses)]) 
@@ -246,7 +246,7 @@ class DetectObjectBackside(smach.State):
 		result = self.object_detector.execute(userdata)
 		if result == 'failed':
 			self.retries = 0
-			sss.set_light('red')
+			sss.set_light("light", 'red')
 		elif results == "no_object":
 			self.retries += 1
 		else: #suceeded
@@ -304,16 +304,16 @@ class DetectObjectFrontside(smach.State):
 
 	def execute(self, userdata):
 
-		sss.set_light('blue')
+		sss.set_light("light", 'blue')
 	
 		# check if maximum retries reached
 		if self.retries > self.max_retries:
-			sss.set_light('yellow')
+			sss.set_light("light", 'yellow')
 			self.retries = 0
 			handle_torso = sss.move("torso","home",False)
 			handle_torso.wait()
 			handle_arm = sss.move("arm","look_at_table-to-folded")
-			sss.set_light('blue')
+			sss.set_light("light", 'blue')
 			return 'no_more_retries'
 		
 		# move sdh as feedback
@@ -326,13 +326,13 @@ class DetectObjectFrontside(smach.State):
 			object_name = "given object"
 
 		if self.retries == 0: # only move sdh and head for the first try
-			sss.set_light('yellow')
-			sss.say(["I will now search for the " + object_name + "."],False)
+			sss.set_light("light", 'yellow')
+			sss.say("sound", ["I will now search for the " + object_name + "."],False)
 			handle_torso = sss.move("torso","shake",False)
 			handle_head = sss.move("head","front",False)
 			handle_head.wait()
 			handle_torso.wait()
-			sss.set_light('blue')
+			sss.set_light("light", 'blue')
 
 		# have an other viewing point for each retry
 		handle_torso = sss.move("torso",self.torso_poses[self.retries % len(self.torso_poses)]) 
@@ -346,7 +346,7 @@ class DetectObjectFrontside(smach.State):
 		result = self.object_detector.execute(userdata)
 		if result == 'failed':
 			self.retries = 0
-			sss.set_light('red')
+			sss.set_light("light", 'red')
 		elif results == "no_object":
 			self.retries += 1
 		else: #suceeded
