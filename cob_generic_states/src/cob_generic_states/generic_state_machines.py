@@ -62,26 +62,9 @@ import smach
 import smach_ros
 
 # generic states
-from generic_manipulation_states import *
-from generic_perception_states import *
+from cob_generic_states.generic_manipulation_states import *
+from cob_generic_states.generic_perception_states import *
 
-class sm_open_door(smach.StateMachine):
-	def __init__(self):	
-		smach.StateMachine.__init__(self, 
-			outcomes=['succeeded', 'door_not_opened', 'failed'])
-		
-		with self:
-			smach.StateMachine.add('DETECT_DOOR', detect_object("door", max_retries = 10),
-				transitions={'succeeded':'OPEN_DOOR', 
-							'no_object':'DETECT_DOOR', 
-							'no_more_retries':'door_not_opened', 
-							'failed':'failed'})
-
-			smach.StateMachine.add('OPEN_DOOR', open_door(),
-				transitions={'succeeded':'succeeded', 
-							'no_ik_solution':'DETECT_DOOR',
-							'no_more_retries':'door_not_opened',
-							'failed':'failed'})
 
 class sm_pick_object(smach.StateMachine):
 	def __init__(self):	
