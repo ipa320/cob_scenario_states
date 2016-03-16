@@ -1,20 +1,18 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
 import random
 import math
 import numpy
 import sys
 import copy
+
 from std_msgs.msg import ColorRGBA
-from visualization_msgs.msg import Marker
-from visualization_msgs.msg import MarkerArray
+from std_srvs.srv import *
 from geometry_msgs.msg import *
-from cob_srvs.srv import *
-from cob_generic_states_experimental.srv import *
 from sensor_msgs.msg import LaserScan
-# from cob_generic_states_experimental.srv import *
+from visualization_msgs.msg import Marker, MarkerArray
+from cob_generic_states_experimental.srv import *
 
 pub_marker = rospy.Publisher("marker2", MarkerArray)
 

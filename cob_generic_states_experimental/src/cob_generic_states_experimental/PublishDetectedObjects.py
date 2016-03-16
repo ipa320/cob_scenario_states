@@ -1,6 +1,5 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')   # todo: additional command line parameter
+
 import rospy
 import smach
 import smach_ros
@@ -8,8 +7,6 @@ from cob_object_detection_msgs.msg import *
 from cob_object_detection_msgs.srv import *
 from visualization_msgs.msg import Marker
 
-
-#from simple_script_server import *  # import script
 
 class PublishDetectedObjects(smach.State):
 	def __init__(self):

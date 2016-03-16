@@ -56,9 +56,6 @@
 #
 #################################################################
 
-
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
 import rospy
 import smach
 import smach_ros

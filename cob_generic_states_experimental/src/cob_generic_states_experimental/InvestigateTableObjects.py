@@ -1,13 +1,12 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
 import smach
 import smach_ros
 from simple_script_server import *  # import script
 sss = simple_script_server()
 
-from DetectObjectsBackside import *
+from cob_generic_states_experimental.DetectObjectsBackside import *
 
 class SetObjectName(smach.State):
 	def __init__(self):

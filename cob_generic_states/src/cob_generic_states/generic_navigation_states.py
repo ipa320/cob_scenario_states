@@ -55,11 +55,11 @@
 #
 #################################################################
 
-import roslib
-roslib.load_manifest('cob_generic_states')
 import rospy
 import smach
 import smach_ros
+
+from std_srvs.srv import Trigger
 from nav_msgs.msg import Odometry
 
 from simple_script_server import *

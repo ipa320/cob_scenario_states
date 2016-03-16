@@ -1,26 +1,17 @@
 #!/usr/bin/env python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
-
-import sensor_msgs.msg
-from sensor_msgs.msg import *
-
-from cob_generic_states_experimental.srv import Door
-
-import subprocess
-from subprocess import Popen, PIPE, STDOUT
-
 import os
 import sys
 import unittest
+import threading
+import random
+from subprocess import Popen, PIPE, STDOUT
 
+from sensor_msgs.msg import *
+from cob_generic_states_experimental.srv import Door
 
 import rostest
-
-import threading
-import re
-import random
 
 
 # global variables

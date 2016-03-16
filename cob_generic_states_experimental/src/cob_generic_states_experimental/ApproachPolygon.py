@@ -71,28 +71,23 @@
 #
 #################################################################
 
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
 import rospy
 import struct
 import ctypes
 import copy
 import smach
 import smach_ros
-from simple_script_server import *  # import script
-sss = simple_script_server()
-
-from cob_3d_mapping_msgs.srv import GetApproachPoseForPolygon
-from cob_3d_mapping_msgs.msg import *
-from sensor_msgs.msg import PointCloud2, PointField  
-from std_msgs.msg import Header
 
 import tf
 from tf.transformations import *
 
-from ApproachPose import *
+from std_msgs.msg import Header
+from sensor_msgs.msg import PointCloud2, PointField 
+from cob_3d_mapping_msgs.srv import GetApproachPoseForPolygon
+from cob_3d_mapping_msgs.msg import *
 
-from ScreenFormatting import *
+from cob_generic_states_experimental.ApproachPose import *
+from cob_generic_states_experimental.ScreenFormatting import *
 
 
 """Computes all accessible robot poses around polygon, returns best pose (successively)"""

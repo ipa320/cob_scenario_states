@@ -55,22 +55,19 @@
 #
 #################################################################
 
-import roslib
-roslib.load_manifest('cob_generic_states')
 import rospy
+import os
+import copy
+from math import *
+
 import smach
 import smach_ros
-
-from math import *
-import copy
 
 from simple_script_server import *
 sss = simple_script_server()
 
 from cob_object_detection_msgs.msg import *
 from cob_object_detection_msgs.srv import *
-
-import os
 
 ## detect_obect
 #

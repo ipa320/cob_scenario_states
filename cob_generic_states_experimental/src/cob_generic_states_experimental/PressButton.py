@@ -1,21 +1,23 @@
 #!/usr/bin/python
 
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
 import rospy
-import smach
-import smach_ros
+import copy
+
 from simple_script_server import *  # import script
 sss = simple_script_server()
 
+import smach
+import smach_ros
+
 import tf
+import tf_conversions.posemath as pm
+
 from std_msgs.msg import *
+from std_srvs.srv import *
 from sensor_msgs.msg import *
 from geometry_msgs.msg import *
 from cob_object_detection_msgs.msg import *
 from cob_srvs.srv import *
-import tf_conversions.posemath as pm
-import copy
 
 def integrate_pose(pseudo_frame_as_pose, target_pose):
     return pm.toMsg(pm.fromMatrix( numpy.dot(pm.toMatrix(pm.fromMsg(pseudo_frame_as_pose)), pm.toMatrix(pm.fromMsg(target_pose))) ))

@@ -1,12 +1,11 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
 import smach
 import smach_ros
 
-from DetectObjects import *
-from PressButton import *
+from cob_generic_states_experimental.DetectObjects import *
+from cob_generic_states_experimental.PressButton import *
 
 class DetectAndPressButton(smach.StateMachine):
     def __init__(self):

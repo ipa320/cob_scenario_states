@@ -1,5 +1,5 @@
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+#!/usr/bin/python
+
 import rospy
 import smach
 import smach_ros

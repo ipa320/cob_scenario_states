@@ -23,7 +23,6 @@
   <exec_depend>cob_object_detection_msgs</exec_depend>
   <exec_depend>cob_perception_msgs</exec_depend>
   <exec_depend>cob_script_server</exec_depend>
-  <exec_depend>cob_srvs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>rospy</exec_depend>
@@ -31,6 +30,7 @@
   <exec_depend>smach_ros</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
   <exec_depend>tf</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
 

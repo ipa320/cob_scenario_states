@@ -1,15 +1,18 @@
+#!/usr/bin/python
 
-import roslib
 import rospy
+import sys
 import math
 import random
-import sys
-from tf import TransformListener
-from tf.transformations import euler_from_quaternion
-import tf
 import time
 import threading
 import numpy as np
+
+import tf
+from tf import TransformListener
+from tf.transformations import euler_from_quaternion
+
+
 ###############''WORKAROUND FOR TRANSFORMLISTENER ISSUE####################
 _tl=None
 _tl_creation_lock=threading.Lock()

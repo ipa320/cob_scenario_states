@@ -11,18 +11,17 @@
 #  - cob_navigation_global/2dnav_ros_dwa
 #Set name to look for in SetName and Position in SetNavigationGoal.
 
-
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
 import rospy
+import sys
+import random
+
 import smach
 import smach_ros
-import random
-from cob_perception_msgs.msg import *
-from ApproachPose import *
-import sys
+
 from tf import TransformListener
 from tf.transformations import euler_from_quaternion
+from cob_perception_msgs.msg import *
+from cob_generic_states_experimental.ApproachPose import *
 
 class SelectNavigationGoal(smach.State):
   def __init__(self):

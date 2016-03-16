@@ -55,8 +55,6 @@
 #
 #################################################################
 
-import roslib
-roslib.load_manifest('cob_generic_states')
 import rospy
 import smach
 import smach_ros
@@ -66,6 +64,7 @@ sss = simple_script_server()
 
 from cob_generic_states.srv import *
 
+from std_srvs.srv import *
 from cob_srvs.srv import *
 
 ## Initialize state

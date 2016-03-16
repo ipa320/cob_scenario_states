@@ -73,23 +73,19 @@
 #
 #################################################################
 
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
 import rospy
 import copy
 import smach
 import smach_ros
-from ScreenFormatting import *
 
-#from simple_script_server import *  # import script
-#sss = simple_script_server()
-
-from geometry_msgs.msg import Pose2D
-from cob_map_accessibility_analysis.srv import CheckPointAccessibility
 import tf
 from tf.transformations import *
 
-from ApproachPose import *
+from geometry_msgs.msg import Pose2D
+from cob_map_accessibility_analysis.srv import CheckPointAccessibility
+
+from cob_generic_states_experimental.ApproachPose import *
+from cob_generic_states_experimental.ScreenFormatting import *
 
 """Computes all accessible robot poses on perimeter"""
 class ComputeNavigationGoals(smach.State):

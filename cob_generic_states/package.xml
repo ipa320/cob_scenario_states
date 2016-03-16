@@ -22,6 +22,7 @@
   <exec_depend>cob_script_server</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>rospy</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
   <exec_depend>smach</exec_depend>
   <exec_depend>smach_ros</exec_depend>
 

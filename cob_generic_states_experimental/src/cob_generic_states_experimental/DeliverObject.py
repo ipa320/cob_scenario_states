@@ -1,12 +1,11 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
 import smach
 import smach_ros
 
-from ApproachPose import *
-from HandOut import *
+from cob_generic_states_experimental.ApproachPose import *
+from cob_generic_states_experimental.HandOut import *
 
 class DeliverObject(smach.StateMachine):
     def __init__(self):

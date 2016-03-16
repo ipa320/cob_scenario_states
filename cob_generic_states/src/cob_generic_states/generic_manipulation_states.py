@@ -55,19 +55,18 @@
 #
 #################################################################
 
-import roslib
-roslib.load_manifest('cob_generic_states')
 import rospy
+import sys
+import copy
+
 import smach
 import smach_ros
 
-import copy
-
 from simple_script_server import *
 sss = simple_script_server()
-import sys
 
 import tf
+from std_srvs.srv import Trigger
 from moveit_msgs.srv import *
 from sensor_msgs.msg import *
 

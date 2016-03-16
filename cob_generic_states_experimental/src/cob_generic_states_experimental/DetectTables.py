@@ -1,6 +1,5 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
 import smach
 import smach_ros
@@ -9,9 +8,7 @@ sss = simple_script_server()
 
 from cob_3d_mapping_msgs.msg import *
 from cob_3d_mapping_msgs.srv import *
-from cob_srvs.srv import Trigger
-
-
+from std_srvs.srv import Trigger
 
 class DetectTables(smach.State):
 	def __init__(self):

@@ -1,6 +1,5 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
 import smach
 import smach_ros
@@ -14,7 +13,7 @@ sss = simple_script_server()
 from cob_object_detection_msgs.msg import *
 from cob_object_detection_msgs.srv import *
 
-from ObjectDetector import *
+from cob_generic_states_experimental.ObjectDetector import *
 
 ## Detect front state
 #
