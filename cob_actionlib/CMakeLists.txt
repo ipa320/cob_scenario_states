@@ -4,4 +4,3 @@ project(cob_actionlib)
 find_package(catkin REQUIRED COMPONENTS)
 
 catkin_package()
-

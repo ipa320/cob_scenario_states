@@ -1,24 +1,37 @@
 <package format="2">
-	<name>cob_generic_states_experimental</name>
-	<version>0.1.0</version>
-	<description>
-		cob_generic_states_experimental
-	</description>
-	<author email="richard.bormann@ipa.fraunhofer.de">Richard Bormann</author>
-	<author>Tobias Sing</author>
-	<author email="fmw@ipa.fhg.de">Florian Weisshardt</author>
-	<maintainer email="fmw@ipa.fhg.de">Florian Weisshardt</maintainer>
-	<license>LGPL</license>
-	<url>http://ros.org/wiki/cob_generic_states_experimental</url>
+  <name>cob_generic_states_experimental</name>
+  <version>0.1.0</version>
+  <description>
+    cob_generic_states_experimental
+  </description>
 
-	<buildtool_depend>catkin</buildtool_depend>
+  <license>LGPL</license>
+  <url>http://ros.org/wiki/cob_generic_states_experimental</url>
 
-	<build_depend>message_generation</build_depend>
-	<exec_depend>message_runtime</exec_depend>
+  <author email="richard.bormann@ipa.fraunhofer.de">Richard Bormann</author>
+  <author>Tobias Sing</author>
+  <author email="fmw@ipa.fhg.de">Florian Weisshardt</author>
+  <maintainer email="fmw@ipa.fhg.de">Florian Weisshardt</maintainer>
 
-	<exec_depend>rospy</exec_depend>
-	<exec_depend>smach</exec_depend>
-	<exec_depend>smach_ros</exec_depend>
-	<!--exec_depend>cob_script_server</exec_depend-->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+
+  <exec_depend>cob_3d_mapping_msgs</exec_depend>
+  <exec_depend>cob_map_accessibility_analysis</exec_depend>
+  <exec_depend>cob_object_detection_msgs</exec_depend>
+  <exec_depend>cob_perception_msgs</exec_depend>
+  <exec_depend>cob_script_server</exec_depend>
+  <exec_depend>cob_srvs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>smach</exec_depend>
+  <exec_depend>smach_ros</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tf</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
 
 </package>

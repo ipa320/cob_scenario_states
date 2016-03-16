@@ -1,17 +1,19 @@
-<package>
-	<name>cob_actionlib</name>
-	<version>0.1.0</version>
-	<description>
-		cob_actionlib
-	</description>
-	<author>Thiago de Freitas</author>
-	<maintainer email="fmw@ipa.fhg.de">Florian Weisshardt</maintainer>
-	<license>LGPL</license>
-	<url>http://ros.org/wiki/cob_actionlib</url>
+<package format="2">
+  <name>cob_actionlib</name>
+  <version>0.1.0</version>
+  <description>
+    cob_actionlib
+  </description>
 
-	<buildtool_depend>catkin</buildtool_depend>
+  <license>LGPL</license>
+  <url>http://ros.org/wiki/cob_actionlib</url>
 
-	<run_depend>rospy</run_depend>
-	<run_depend>actionlib</run_depend>
+  <author>Thiago de Freitas</author>
+  <maintainer email="fmw@ipa.fhg.de">Florian Weisshardt</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>actionlib</exec_depend>
 
 </package>
