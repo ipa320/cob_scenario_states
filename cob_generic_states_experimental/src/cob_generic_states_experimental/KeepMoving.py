@@ -1,5 +1,5 @@
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+#!/usr/bin/python
+
 import rospy
 import smach
 import smach_ros
@@ -20,13 +20,13 @@ class KeepMoving(smach.State):
       choice = random.randint(1,4)
       if choice==1:
         choice2 = random.randint(0, len(statements)-1)
-        sss.say([statements[choice2]])
+        sss.say("sound", [statements[choice2]])
       elif choice==2:       
-        sss.set_light("red")      
+        sss.set_light("light", "red")      
       elif choice==3:
-        sss.set_light("blue")
+        sss.set_light("light", "blue")
       else:
-		sss.set_light("green")  
+		sss.set_light("light", "green")  
       #else:
       #  sss.move("torso","front")
         #sss.move("torso", "back")

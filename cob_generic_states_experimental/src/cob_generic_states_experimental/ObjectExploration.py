@@ -1,20 +1,17 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
 import smach
 import smach_ros
-from simple_script_server import *  # import script
-sss = simple_script_server()
 
 from cob_3d_mapping_msgs.msg import *
 from cob_3d_mapping_msgs.srv import *
-from cob_srvs.srv import Trigger
+from std_srvs.srv import Trigger
 
-from ApproachPose import *
-from ApproachPolygon import *
-from DetectTables import *
-from InvestigateTableObjects import *
+from cob_generic_states_experimental.ApproachPose import *
+from cob_generic_states_experimental.ApproachPolygon import *
+from cob_generic_states_experimental.DetectTables import *
+from cob_generic_states_experimental.InvestigateTableObjects import *
 
 class SelectNavigationGoal(smach.State):
 	def __init__(self):

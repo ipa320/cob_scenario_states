@@ -1,12 +1,12 @@
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+#!/usr/bin/python
+
 import rospy
 import smach
 import smach_ros
 from simple_script_server import *  # import script
 sss = simple_script_server()
 
-from cob_srvs.srv import Trigger
+from std_srvs.srv import Trigger
 
 class HandOut(smach.State):
 	def __init__(self):
@@ -15,7 +15,7 @@ class HandOut(smach.State):
 			input_keys=['object'])
 
 	def execute(self, userdata):
-		sss.say(["Here is your " + userdata.object.label + ". Please help yourself."],False)
+		sss.say("sound", ["Here is your " + userdata.object.label + ". Please help yourself."],False)
 		sss.move("torso","nod",False)
 		
 		try:

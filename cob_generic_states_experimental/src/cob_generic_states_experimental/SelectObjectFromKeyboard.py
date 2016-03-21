@@ -1,10 +1,8 @@
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+#!/usr/bin/python
+
 import rospy
 import smach
 import smach_ros
-##from simple_script_server import *  # import script
-##sss = simple_script_server()
 
 class SelectObjectFromKeyboard(smach.State):
     def __init__(self):

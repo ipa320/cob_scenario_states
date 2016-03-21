@@ -1,6 +1,4 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
 import rospy
 import smach
 import smach_ros
@@ -104,7 +102,7 @@ class CobIntroduction(smach.State):
 			
     def execute(self, userdata):
         handle_torso = sss.move("torso","nod",False)
-        handle_say = sss.say(["Hello, nice to meet you. My name is Care-O-bot. I am a mobile service robot build by Fraunhofer I. P. A., in Stuttgart and I am designed as a household assistant. My job is to help for example elderly people to stay longer at home, so that they do not have to go to a care facility."],False)
+        handle_say = sss.say("sound", ["Hello, nice to meet you. My name is Care-O-bot. I am a mobile service robot build by Fraunhofer I. P. A., in Stuttgart and I am designed as a household assistant. My job is to help for example elderly people to stay longer at home, so that they do not have to go to a care facility."],False)
         handle_torso.wait()
         sss.move("torso","left")
         rospy.sleep(1)
@@ -117,101 +115,101 @@ class CobIntroduction(smach.State):
         sss.move("torso","home")
         handle_say.wait()
         
-        sss.say(["I will show you some of my capabilities in a second."])
+        sss.say("sound", ["I will show you some of my capabilities in a second."])
         
         # sound and led
-        sss.say(["First of all, I can speak to you and change colors. This way I can express my mood and intention."])
+        sss.say("sound", ["First of all, I can speak to you and change colors. This way I can express my mood and intention."])
 
-        sss.set_light("yellow")
-        handle_say = sss.say(["I normally light up in yellow if I am moving some of my hardware components, so please pay attention."], False)
+        sss.set_light("light", "yellow")
+        handle_say = sss.say("sound", ["I normally light up in yellow if I am moving some of my hardware components, so please pay attention."], False)
         handle_say.wait()
 
-        sss.set_light("blue")
-        handle_say = sss.say(["Blue means that I am heavily thinking which means I am for example calculating a collision free path."])
+        sss.set_light("light", "blue")
+        handle_say = sss.say("sound", ["Blue means that I am heavily thinking which means I am for example calculating a collision free path."])
         handle_say.wait()
 
-        sss.set_light("green")
-        handle_say = sss.say(["If I light up in green, everything is fine and I am ready to be at your service."])
+        sss.set_light("light", "green")
+        handle_say = sss.say("sound", ["If I light up in green, everything is fine and I am ready to be at your service."])
         handle_say.wait()
         rospy.sleep(1)
 
         # tray
-        sss.set_light("yellow")
+        sss.set_light("light", "yellow")
         handle_tray = sss.move("tray", "up", False)
-        sss.say(["I have a tray that can be used to receive or hand over objects from people."])
+        sss.say("sound", ["I have a tray that can be used to receive or hand over objects from people."])
         handle_tray.wait()
-        sss.set_light("green")
+        sss.set_light("light", "green")
 
         # head and cameras
-        sss.say(["With my torso I can perform gestures like nodding."],False)
+        sss.say("sound", ["With my torso I can perform gestures like nodding."],False)
         sss.move("torso", "nod")
-        sss.say(["or shaking"])
+        sss.say("sound", ["or shaking"])
         sss.move("torso","shake")
-        sss.say(["In my head there are cameras. I use them to recognize people."])
+        sss.say("sound", ["In my head there are cameras. I use them to recognize people."])
 
         # seek attention
         sss.move("torso","left")
-        sss.say(["Hey there on the left!"])
+        sss.say("sound", ["Hey there on the left!"])
         rospy.sleep(1)
-        sss.say(["Keep your eyes focused on me!"])
+        sss.say("sound", ["Keep your eyes focused on me!"])
         rospy.sleep(2)
 
         sss.move("torso","home", False)
-        sss.say(["I can also flip my cameras to the back side, see."])
+        sss.say("sound", ["I can also flip my cameras to the back side, see."])
         sss.move("head","back")
-        sss.say(["On the backside I can use my cameras to detect objects."])
+        sss.say("sound", ["On the backside I can use my cameras to detect objects."])
 
         # arm
-        sss.say(["Oh, what is that?"])
-        sss.say(["I have an arm and a gripper on the back side."])
-        sss.set_light("yellow")
+        sss.say("sound", ["Oh, what is that?"])
+        sss.say("sound", ["I have an arm and a gripper on the back side."])
+        sss.set_light("light", "yellow")
         handle_arm = sss.move("arm",["intermediateback", "intermediatefront"], False)
         sss.move("head","front", False)
         sss.move("torso","front_left", False)
-        sss.say(["Lets move them to the front so that you can see them. My functional design follows a two side interaction concept: Normally I use the arm on the backside to manipulate objects and use the tray to safely hand over objects to humans on the front side."])
+        sss.say("sound", ["Lets move them to the front so that you can see them. My functional design follows a two side interaction concept: Normally I use the arm on the backside to manipulate objects and use the tray to safely hand over objects to humans on the front side."])
         handle_arm.wait()
-        sss.set_light("green")
+        sss.set_light("light", "green")
 
         # gripper
         handle_sdh = sss.move("sdh","cylopen",False)
         sss.move("torso","front_right", False)
-        handle_say = sss.say(["If I want to grasp an object I can use my gripper. My gripper is very flexible it can adapt to various objects. I can grasp box shaped or cylindrical objects."],False)
+        handle_say = sss.say("sound", ["If I want to grasp an object I can use my gripper. My gripper is very flexible it can adapt to various objects. I can grasp box shaped or cylindrical objects."],False)
         handle_sdh.wait()
         sss.move("sdh","cylclosed")
         sss.move("sdh","home")
         handle_say.wait()
 
-        sss.say(["My gripper can also hold spherical objects like a ball or an apple."], False)
+        sss.say("sound", ["My gripper can also hold spherical objects like a ball or an apple."], False)
         sss.move("sdh","spheropen")
         sss.move("torso","home", False)
         sss.move("sdh","spherclosed")
         sss.move("sdh","home",False)
 
         # arm back
-        sss.set_light("yellow")
-        sss.say(["Are you already impressed? Wait, let me go on."], False)
+        sss.set_light("light", "yellow")
+        sss.say("sound", ["Are you already impressed? Wait, let me go on."], False)
         handle_arm = sss.move("arm",["intermediatefront", "intermediateback", "folded"], False)
         sss.move("tray","down", False)
 
         # base
-        sss.say(["I have an omnidirectional base which allows me to turn on the spot."], False)
+        sss.say("sound", ["I have an omnidirectional base which allows me to turn on the spot."], False)
         sss.move_base_rel("base",[0, 0, 1.57])
 
-        sss.say(["I can also move forward and backwards"], False)
+        sss.say("sound", ["I can also move forward and backwards"], False)
         sss.move_base_rel("base",[0.1, 0, 0])
         sss.move_base_rel("base",[-0.1, 0, 0])
 
-        sss.say(["and sidewards. This helps a lot if I get you a drink in your home. Using my safety laser scanners in the base I can safely navigate between humans."], False)
+        sss.say("sound", ["and sidewards. This helps a lot if I get you a drink in your home. Using my safety laser scanners in the base I can safely navigate between humans."], False)
         sss.move_base_rel("base",[0, 0.1, 0])
         sss.move_base_rel("base",[0, -0.1, 0])
         sss.move_base_rel("base",[0, 0, -1.57])
-        sss.set_light("green")
+        sss.set_light("light", "green")
 
         # please take joystick
         sss.move("torso","left", False)
-        sss.say(["Me and my brothers are in use as a research platform all over the world. If you are interessted you can rent or buy me for your own research."])
+        sss.say("sound", ["Me and my brothers are in use as a research platform all over the world. If you are interessted you can rent or buy me for your own research."])
         sss.move("torso","front_right", False)
-        sss.say(["Now you know who I am and what I can do, so its your turn. Please take the joystick to drive me around and have fun!"])
+        sss.say("sound", ["Now you know who I am and what I can do, so its your turn. Please take the joystick to drive me around and have fun!"])
         sss.move("torso",["nod"])
 
         return 'succeeded'

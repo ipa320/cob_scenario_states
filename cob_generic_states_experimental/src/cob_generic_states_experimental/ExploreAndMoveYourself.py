@@ -1,6 +1,5 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
 import smach
 import smach_ros
@@ -9,10 +8,10 @@ import random
 from nav_msgs.srv import *
 from cob_object_detection_msgs.msg import *
 
-from ApproachPose import *
-from DetectObjectsFrontside import *
-from MoveYourself import *
-from Explore import *
+from cob_generic_states_experimental.ApproachPose import *
+from cob_generic_states_experimental.DetectObjectsFrontside import *
+from cob_generic_states_experimental.MoveYourself import *
+from cob_generic_states_experimental.Explore import *
 
 class ExploreAndMoveYourself(smach.StateMachine):
     def __init__(self):

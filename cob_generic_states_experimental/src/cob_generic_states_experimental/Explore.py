@@ -1,6 +1,5 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
 import smach
 import smach_ros
@@ -9,8 +8,8 @@ import random
 from nav_msgs.srv import *
 from cob_object_detection_msgs.msg import *
 
-from ApproachPose import *
-from DetectObjectsFrontside import *
+from cob_generic_states_experimental.ApproachPose import *
+from cob_generic_states_experimental.DetectObjectsFrontside import *
 
 class SelectNavigationGoal(smach.State):
 	def __init__(self):
@@ -71,9 +70,9 @@ class AnnounceFoundObjects(smach.State):
 			object_names += obj.label + ", "
 		
 		if object_names != "":
-			sss.say(["I found: " + object_names])
+			sss.say("sound", ["I found: " + object_names])
 		else:
-			sss.say(["I found: nothing"])
+			sss.say("sound", ["I found: nothing"])
 		userdata.objects = []
 		return 'announced'
 

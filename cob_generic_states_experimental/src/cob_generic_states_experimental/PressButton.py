@@ -1,21 +1,23 @@
 #!/usr/bin/python
 
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
 import rospy
-import smach
-import smach_ros
+import copy
+
 from simple_script_server import *  # import script
 sss = simple_script_server()
 
+import smach
+import smach_ros
+
 import tf
+import tf_conversions.posemath as pm
+
 from std_msgs.msg import *
+from std_srvs.srv import *
 from sensor_msgs.msg import *
 from geometry_msgs.msg import *
 from cob_object_detection_msgs.msg import *
 from cob_srvs.srv import *
-import tf_conversions.posemath as pm
-import copy
 
 def integrate_pose(pseudo_frame_as_pose, target_pose):
     return pm.toMsg(pm.fromMatrix( numpy.dot(pm.toMatrix(pm.fromMsg(pseudo_frame_as_pose)), pm.toMatrix(pm.fromMsg(target_pose))) ))
@@ -56,7 +58,7 @@ class PressButton(smach.State):
         pre_button_js, error_code = sss.calculate_ik(tmp_pose)
         if(error_code.val != error_code.SUCCESS):
             if error_code.val != error_code.NO_IK_SOLUTION:
-                sss.set_light('red')
+                sss.set_light("light", 'red')
             rospy.logerr("Ik pre_button Failed")
             return 'not_pressed'
 
@@ -68,7 +70,7 @@ class PressButton(smach.State):
         button_js, error_code = sss.calculate_ik(tmp_pose)
         if(error_code.val != error_code.SUCCESS):
             if error_code.val != error_code.NO_IK_SOLUTION:
-                sss.set_light('red')
+                sss.set_light("light", 'red')
             rospy.logerr("Ik button Failed")
             return 'not_pressed'
 
@@ -80,11 +82,11 @@ class PressButton(smach.State):
 #        post_button_js, error_code = sss.calculate_ik(tmp_pose)
 #        if(error_code.val != error_code.SUCCESS):
 #            if error_code.val != error_code.NO_IK_SOLUTION:
-#                sss.set_light('red')
+#                sss.set_light("light", 'red')
 #            rospy.logerr("Ik button Failed")
 #            return 'not_pressed'
 
-        sss.say(["I am pressing a button now."])
+        sss.say("sound", ["I am pressing a button now."])
         handle_arm = sss.move_planned("arm", [list(pre_button_js.position)])
         if handle_arm.get_error_code() > 0:
         	return 'not_pressed'

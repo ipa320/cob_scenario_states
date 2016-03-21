@@ -11,18 +11,17 @@
 #  - cob_navigation_global/2dnav_ros_dwa
 #Set name to look for in SetName and Position in SetNavigationGoal.
 
-
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
 import rospy
+import sys
+import random
+
 import smach
 import smach_ros
-import random
-from cob_perception_msgs.msg import *
-from ApproachPose import *
-import sys
+
 from tf import TransformListener
 from tf.transformations import euler_from_quaternion
+from cob_perception_msgs.msg import *
+from cob_generic_states_experimental.ApproachPose import *
 
 class SelectNavigationGoal(smach.State):
   def __init__(self):
@@ -57,7 +56,7 @@ class SetName(smach.State):
   def execute(self, userdata):
     userdata.id='Richard'
     #userdata.id='Richard'
-    sss.say(["I am looking for %s!"%str(userdata.id)])
+    sss.say("sound", ["I am looking for %s!"%str(userdata.id)])
     return 'set'
 
 class Rotate(smach.State):
@@ -83,7 +82,7 @@ class Rotate(smach.State):
     return
 
   def execute(self, userdata):
-    sss.say(["I am going to take a look around now."])
+    sss.say("sound", ["I am going to take a look around now."])
 
     # get position from tf
     if self.tf.frameExists("/base_link") and self.tf.frameExists("/map"):
@@ -115,20 +114,20 @@ class Rotate(smach.State):
         # right person is detected
         if det == userdata.id:
           self.stop_rotating=True
-          sss.say(['I have found you, %s! Nice to see you.'%str(det)])
+          sss.say("sound", ['I have found you, %s! Nice to see you.'%str(det)])
         elif det in self.false_detections:
         # false person is detected
           print "Already in false detections"
        #  person detected is unknown - only react the first time
         elif det == "Unknown":
           print "Unknown face detected"
-          sss.say(['Hi! Nice to meet you, but I am still searching for %s.'%str(userdata.id)])
+          sss.say("sound", ['Hi! Nice to meet you, but I am still searching for %s.'%str(userdata.id)])
           self.false_detections.append("Unknown")
       # wrong face is detected the first time
         else:
           self.false_detections.append(det)
           print "known - wrong face detected"
-          sss.say(['Hello %s! Have you seen %s.'%(str(det),str(userdata.id))])
+          sss.say("sound", ['Hello %s! Have you seen %s.'%(str(det),str(userdata.id))])
       #clear detection list, so it is not checked twice
       del self.detections[:]
       time.sleep(2)
@@ -156,10 +155,10 @@ class Talk(smach.State):
     print "found:  %s"% userdata.detected
     if userdata.id != userdata.detected:
       #speech=self.phrases[3]+name+" !"
-      sss.say(['No, I am sorry, but you are not %s.'%str(name)])
+      sss.say("sound", ['No, I am sorry, but you are not %s.'%str(name)])
       return 'not_found'
     else:
-      sss.say(['I have found you, %s! Nice to see you.'%str(name)])
+      sss.say("sound", ['I have found you, %s! Nice to see you.'%str(name)])
       time.sleep(2)
       return 'found'
 

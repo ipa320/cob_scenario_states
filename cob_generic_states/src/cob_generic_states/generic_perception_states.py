@@ -55,22 +55,19 @@
 #
 #################################################################
 
-import roslib
-roslib.load_manifest('cob_generic_states')
 import rospy
+import os
+import copy
+from math import *
+
 import smach
 import smach_ros
-
-from math import *
-import copy
 
 from simple_script_server import *
 sss = simple_script_server()
 
 from cob_object_detection_msgs.msg import *
 from cob_object_detection_msgs.srv import *
-
-import os
 
 ## detect_obect
 #
@@ -205,16 +202,16 @@ class DetectObjectBackside(smach.State):
 
 	def execute(self, userdata):
 
-		sss.set_light('blue')
+		sss.set_light("light", 'blue')
 	
 		# check if maximum retries reached
 		if self.retries > self.max_retries:
-			sss.set_light('yellow')
+			sss.set_light("light", 'yellow')
 			self.retries = 0
 			handle_torso = sss.move("torso","home",False)
 			handle_torso.wait()
 			handle_arm = sss.move("arm","look_at_table-to-folded")
-			sss.set_light('blue')
+			sss.set_light("light", 'blue')
 			return 'no_more_retries'
 		
 		# move sdh as feedback
@@ -227,15 +224,15 @@ class DetectObjectBackside(smach.State):
 			object_name = "given object"
 
 		if self.retries == 0: # only move arm, sdh and head for the first try
-			sss.set_light('yellow')
-			sss.say(["I will now search for the " + object_name + "."],False)
+			sss.set_light("light", 'yellow')
+			sss.say("sound", ["I will now search for the " + object_name + "."],False)
 			handle_arm = sss.move("arm","folded-to-look_at_table",False)
 			handle_torso = sss.move("torso","shake",False)
 			handle_head = sss.move("head","back",False)
 			handle_arm.wait()
 			handle_head.wait()
 			handle_torso.wait()
-			sss.set_light('blue')
+			sss.set_light("light", 'blue')
 
 		# have an other viewing point for each retry
 		handle_torso = sss.move("torso",self.torso_poses[self.retries % len(self.torso_poses)]) 
@@ -249,7 +246,7 @@ class DetectObjectBackside(smach.State):
 		result = self.object_detector.execute(userdata)
 		if result == 'failed':
 			self.retries = 0
-			sss.set_light('red')
+			sss.set_light("light", 'red')
 		elif results == "no_object":
 			self.retries += 1
 		else: #suceeded
@@ -307,16 +304,16 @@ class DetectObjectFrontside(smach.State):
 
 	def execute(self, userdata):
 
-		sss.set_light('blue')
+		sss.set_light("light", 'blue')
 	
 		# check if maximum retries reached
 		if self.retries > self.max_retries:
-			sss.set_light('yellow')
+			sss.set_light("light", 'yellow')
 			self.retries = 0
 			handle_torso = sss.move("torso","home",False)
 			handle_torso.wait()
 			handle_arm = sss.move("arm","look_at_table-to-folded")
-			sss.set_light('blue')
+			sss.set_light("light", 'blue')
 			return 'no_more_retries'
 		
 		# move sdh as feedback
@@ -329,13 +326,13 @@ class DetectObjectFrontside(smach.State):
 			object_name = "given object"
 
 		if self.retries == 0: # only move sdh and head for the first try
-			sss.set_light('yellow')
-			sss.say(["I will now search for the " + object_name + "."],False)
+			sss.set_light("light", 'yellow')
+			sss.say("sound", ["I will now search for the " + object_name + "."],False)
 			handle_torso = sss.move("torso","shake",False)
 			handle_head = sss.move("head","front",False)
 			handle_head.wait()
 			handle_torso.wait()
-			sss.set_light('blue')
+			sss.set_light("light", 'blue')
 
 		# have an other viewing point for each retry
 		handle_torso = sss.move("torso",self.torso_poses[self.retries % len(self.torso_poses)]) 
@@ -349,7 +346,7 @@ class DetectObjectFrontside(smach.State):
 		result = self.object_detector.execute(userdata)
 		if result == 'failed':
 			self.retries = 0
-			sss.set_light('red')
+			sss.set_light("light", 'red')
 		elif results == "no_object":
 			self.retries += 1
 		else: #suceeded
@@ -357,26 +354,3 @@ class DetectObjectFrontside(smach.State):
 			sss.move("torso","home")
 		
 		return result
-
-
-class SM(smach.StateMachine):
-        def __init__(self):
-                smach.StateMachine.__init__(self,outcomes=['ended'])
-                with self:
-                        smach.StateMachine.add('DETECT_OBJECT_TABLE',DetectObjectFrontside("DETECT_OBJECT_TABLE"),
-                                transitions={'no_object':'DETECT_OBJECT_TABLE',
-                                        'failed':'ended',
-					'succeeded':'ended',
-				        'no_more_retries':'ended'})
-
-
-
-if __name__=='__main__':
-        rospy.init_node('DetectObjectFrontside')
-        sm = SM()
-        sm.userdata.object_name = 'milk_box'
-        sis = smach_ros.IntrospectionServer('SM', sm, 'SM')
-        sis.start()
-        outcome = sm.execute()
-        rospy.spin()
-

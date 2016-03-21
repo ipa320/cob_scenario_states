@@ -1,13 +1,11 @@
 #!/usr/bin/python
 
-PKG = 'cob_generic_states'
-import roslib; roslib.load_manifest(PKG)
 import rospy
 import smach
 import smach_ros
 import unittest
 
-from generic_perception_states import *
+from cob_generic_states.generic_perception_states import *
 
 class TestStates(unittest.TestCase):
 	def __init__(self, *args):
@@ -32,4 +30,4 @@ class TestStates(unittest.TestCase):
 # main
 if __name__ == '__main__':
     import rostest
-    rostest.rosrun(PKG, 'perception', TestStates)
+    rostest.rosrun('cob_generic_states', 'perception', TestStates)

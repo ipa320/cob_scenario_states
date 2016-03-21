@@ -55,11 +55,11 @@
 #
 #################################################################
 
-import roslib
-roslib.load_manifest('cob_generic_states')
 import rospy
 import smach
 import smach_ros
+
+from std_srvs.srv import Trigger
 from nav_msgs.msg import Odometry
 
 from simple_script_server import *
@@ -112,7 +112,7 @@ class approach_pose(smach.State):
 			return 'failed'
 
 		# try reaching pose
-		sss.set_light('yellow')
+		sss.set_light("light", 'yellow')
 		handle_base = sss.move("base", pose, mode=self.mode, blocking=False)
 		move_second = self.move_second
 
@@ -125,13 +125,13 @@ class approach_pose(smach.State):
 			elif (handle_base.get_state() == 3) and (move_second):
 				return 'succeeded'		
 			elif (handle_base.get_state() == 4):	
-				sss.set_light('red')
+				sss.set_light("light", 'red')
 				return 'failed'		
 	
 			#Check if the base is moving
 			if not self.is_moving: # robot stands still
 				if timeout > 10:
-					sss.say(["I can not reach my target position because my path or target is blocked"],False)
+					sss.say("sound", ["I can not reach my target position because my path or target is blocked"],False)
 					timeout = 0
 				else:
 					timeout = timeout + 1
@@ -196,7 +196,7 @@ class approach_pose_without_retry(smach.State):
 			# evaluate sevice response
 			if not is_moving: # robot stands still
 				if timeout > 10:
-					sss.say(["I can not reach my target position because my path or target is blocked, I will abort."],False)
+					sss.say("sound", ["I can not reach my target position because my path or target is blocked, I will abort."],False)
 					rospy.wait_for_service('base_controller/stop',10)
 					try:
 						stop = rospy.ServiceProxy('base_controller/stop',Trigger)

@@ -1,41 +1,29 @@
-<package>
-	<name>cob_generic_states</name>
-	<version>0.1.0</version>
-	<description>
-		This package provides a set of generic states using [[cob_script_server]] and [[smach]] which can be used in multiple scenarios.
-	</description>
-	<author email="fmw@ipa.fhg.de">Florian Weisshardt</author>
-	<maintainer email="fmw@ipa.fhg.de">Florian Weisshardt</maintainer>
-	<license>LGPL</license>
-	<url>http://ros.org/wiki/cob_generic_states</url>
+<package format="2">
+  <name>cob_generic_states</name>
+  <version>0.1.0</version>
+  <description>
+    This package provides a set of generic states using [[cob_script_server]] and [[smach]] which can be used in multiple scenarios.
+  </description>
 
-	<buildtool_depend>catkin</buildtool_depend>
+  <license>LGPL</license>
+  <url>http://ros.org/wiki/cob_generic_states</url>
 
-	<build_depend>cmake_modules</build_depend>
-	<build_depend>rospy</build_depend>
-	<build_depend>smach</build_depend>
-	<build_depend>smach_ros</build_depend>
-	<build_depend>tf</build_depend>
-	<build_depend>std_msgs</build_depend>
-	<build_depend>actionlib_msgs</build_depend>
-	<!--build_depend>kinematics_msgs</build_depend-->
-	<build_depend>cob_object_detection_msgs</build_depend>
-	<build_depend>cob_script_server</build_depend>
-	<build_depend>cob_object_detection_fake</build_depend>
-	<build_depend>message_generation</build_depend>
+  <author email="fmw@ipa.fhg.de">Florian Weisshardt</author>
+  <maintainer email="fmw@ipa.fhg.de">Florian Weisshardt</maintainer>
 
+  <buildtool_depend>catkin</buildtool_depend>
 
-	<run_depend>cmake_modules</run_depend>
-	<run_depend>rospy</run_depend>
-	<run_depend>smach</run_depend>
-	<run_depend>smach_ros</run_depend>
-	<run_depend>tf</run_depend>
-	<run_depend>std_msgs</run_depend>
-	<run_depend>actionlib_msgs</run_depend>
-	<!--run_depend>kinematics_msgs</run_depend-->
-	<run_depend>cob_object_detection_msgs</run_depend>
-	<run_depend>cob_script_server</run_depend>
-	<run_depend>cob_object_detection_fake</run_depend>
-	<run_depend>message_runtime</run_depend>
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+
+  <depend>std_msgs</depend>
+
+  <exec_depend>cob_object_detection_msgs</exec_depend>
+  <exec_depend>cob_script_server</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
+  <exec_depend>smach</exec_depend>
+  <exec_depend>smach_ros</exec_depend>
 
 </package>

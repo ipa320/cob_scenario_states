@@ -1,13 +1,12 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
 import smach
 import smach_ros
 
-from ApproachPose import *
-from DetectAndPressButton import *
-from WaitForOpenDoor import *
+from cob_generic_states_experimental.ApproachPose import *
+from cob_generic_states_experimental.DetectAndPressButton import *
+from cob_generic_states_experimental.WaitForOpenDoor import *
 
 
 class ChangeFloor(smach.StateMachine):

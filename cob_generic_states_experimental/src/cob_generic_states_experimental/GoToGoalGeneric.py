@@ -1,29 +1,30 @@
 #!/usr/bin/python
 
-
-############### PARAMETER SETTINGS #######################
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
 import rospy
+import sys
 import math
+import time
+import random
+import threading
+
 import smach
 import smach_ros
-import random
-from cob_perception_msgs.msg import *
-from accompany_uva_msg.msg import *
-from ApproachPose import *
-import sys
+
+import tf
 from tf import TransformListener
 from tf.transformations import euler_from_quaternion
-import tf
-import time
-import threading
-from geometry_msgs.msg import Pose2D
 
-from GoToUtils import *
+from geometry_msgs.msg import Pose2D
+from cob_perception_msgs.msg import *
+#from accompany_uva_msg.msg import *
 from cob_map_accessibility_analysis.srv import CheckPerimeterAccessibility
 from cob_map_accessibility_analysis.srv import CheckPointAccessibility
-from ScreenFormatting import *
+
+from cob_generic_states_experimental.ApproachPose import *
+from cob_generic_states_experimental.GoToUtils import *
+from cob_generic_states_experimental.ScreenFormatting import *
+
+
 ############### PARAMETER SETTINGS #######################
 #
 #global MAP_BOUNDS

@@ -1,6 +1,5 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')
+
 import rospy
 import smach
 import smach_ros
@@ -14,7 +13,7 @@ sss = simple_script_server()
 from cob_object_detection_msgs.msg import *
 from cob_object_detection_msgs.srv import *
 
-from ObjectDetector import *
+from cob_generic_states_experimental.ObjectDetector import *
 
 ## Detect front state
 #
@@ -47,14 +46,14 @@ class DetectObjectsFrontside(smach.State):
 
 	def execute(self, userdata):
 
-		sss.set_light('blue')
+		sss.set_light("light", 'blue')
 
 		#Preparations for object detection
 		handle_torso = sss.move("torso","home",False)
 		handle_head = sss.move("head","front",False)
 		handle_head.wait()
 		handle_torso.wait()
-		sss.set_light('blue')
+		sss.set_light("light", 'blue')
 
 		result, userdata.objects = self.object_detector.execute(userdata)
 
@@ -62,9 +61,9 @@ class DetectObjectsFrontside(smach.State):
 		sss.move("torso","home")
 
 		if result == "failed":
-			sss.set_light('red')
+			sss.set_light("light", 'red')
 		else:
-			sss.set_light('green')
+			sss.set_light("light", 'green')
 		
 		return result
 

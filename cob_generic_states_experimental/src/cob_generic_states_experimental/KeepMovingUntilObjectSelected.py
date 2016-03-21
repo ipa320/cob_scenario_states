@@ -1,12 +1,11 @@
 #!/usr/bin/python
-import roslib
-roslib.load_manifest('cob_generic_states_experimental')   # todo: additional command line parameter
+
 import rospy
 import smach
 import smach_ros
 
-from SelectObjectFromTablet import *
-from KeepMoving import *
+from cob_generic_states_experimental.SelectObjectFromTablet import *
+from cob_generic_states_experimental.KeepMoving import *
 
 class KeepMovingUntilObjectSelected(smach.Concurrence):
     def __init__(self):
