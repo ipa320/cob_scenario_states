@@ -12,7 +12,6 @@
 
   <exec_depend>cob_generic_states</exec_depend>
   <exec_depend>cob_generic_states_experimental</exec_depend>
-  <exec_depend>cob_map_accessibility_analysis</exec_depend>
 
   <export>
     <metapackage/>
